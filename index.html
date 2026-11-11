@@ -52,6 +52,15 @@ nav.tabs button[aria-selected="true"] .tn{background:var(--accent);color:var(--a
 nav.tabs button[aria-selected="true"] .ti{opacity:1;stroke-width:1.9}
 nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 nav.tabs button:hover{color:var(--ink)}
+.ini-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+.ini-k{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font:inherit}
+.ini-k .v{font-family:var(--f-display);font-size:1.9rem;font-weight:800;color:var(--accent);line-height:1}
+.ini-k:hover,.ini-t:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(20,40,120,.1)}
+.ini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.ini-t{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;font:inherit;color:var(--ink)}
+.ini-t svg{width:34px;height:34px;padding:7px;border-radius:10px;background:var(--accent);stroke:#fff;fill:rgba(255,255,255,.3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ini-t b{font-size:1rem}.ini-t small{color:var(--muted);font-size:.8rem;line-height:1.3}
+.ini-n{position:absolute;top:12px;right:14px;font-size:.75rem;font-weight:700;color:var(--muted)}
 @media (min-width:1000px){
   #app{max-width:none;margin:0 0 0 240px;padding-left:26px}
   nav.tabs{position:fixed;left:0;top:0;bottom:0;width:240px;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:22px 12px 18px;background:var(--accent);overflow-y:auto;z-index:30;box-shadow:2px 0 14px rgba(20,10,60,.12)}
@@ -215,6 +224,7 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
     <div class="hright"><div class="who" id="who"><span class="status">Conectando…</span></div><div class="legal" id="legal"></div></div>
   </header>
   <nav class="tabs" role="tablist">
+    <button class="free" role="tab" data-tab="inicio" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span class="tl">Inicio</span></button>
     <button class="free" role="tab" data-tab="empleados" aria-selected="false"><span class="tn">1</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="tl">Empleados</span></button>
     <button class="free" role="tab" data-tab="afil" aria-selected="false"><span class="tn">2</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v8M8 12h8"/></svg><span class="tl">Afiliaciones</span></button>
     <button class="free" role="tab" data-tab="hor" aria-selected="false"><span class="tn">3</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="tl">Horarios</span></button>
@@ -229,8 +239,9 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
     <button class="free" role="tab" data-tab="th" aria-selected="false"><span class="tn">12</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/><path d="M17.5 3.5l1 1.8 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L14.5 5.6l2-.3z"/></svg><span class="tl">Talento humano</span></button>
     <button class="free" role="tab" data-tab="params" aria-selected="false"><span class="tn">13</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="tl">Parámetros y usuarios</span></button>
   </nav>
-  <div class="stbar" style="display:flex;justify-content:flex-end;margin:-10px 0 8px"><span class="status" id="status"></span></div>
+  <div class="stbar" style="display:flex;justify-content:space-between;align-items:center;margin:-10px 0 8px"><button class="free ghost" id="goHome" style="font-weight:700;color:var(--accent);padding:4px 8px">← Volver al inicio</button><span class="status" id="status" style="margin-left:auto"></span></div>
   <div id="roBanner"></div>
+  <section id="v-inicio" hidden></section>
   <section id="v-hor" hidden></section>
   <section id="v-asis" hidden></section>
   <section id="v-novedades"></section>
@@ -348,7 +359,7 @@ function caja(b){return {v:2,users:USERS.map(({email,nombre,rol,perm,empresas,sa
 function escribirCaja(b){localStorage.setItem(LKEY,JSON.stringify(caja(b)))}
 const esAdmin=()=>!ME||ME.rol==='admin';
 const nivel=t=>esAdmin()?'editar':((ME.perm||{})[t]||'no');
-function puedeVer(t){return t==='params'||nivel(t)!=='no'}
+function puedeVer(t){return t==='params'||t==='inicio'||nivel(t)!=='no'}
 /* varias empresas (versión general) */
 let DATA={empresas:{},actual:null};
 function sync(){if(MODO==='general'&&DATA.actual&&DATA.empresas[DATA.actual])DATA.empresas[DATA.actual]={config:S.config,emps:S.emps,cuentas:S.cuentas,nov:S.nov,liq:S.liq,prest:S.prest||{},cierres:S.cierres||{},th:S.th||{disc:[],perm:[],dot:[]},hor:S.hor||{},asis:S.asis||{},pilaEd:S.pilaEd||{}}}
@@ -527,16 +538,35 @@ function lockUI(){
   const noW=!PERM.write,noA=!PERM.admin&&UI.tab==='params';
   if(noW||noA)sec.querySelectorAll('input:not(.free),select:not(.free),button:not(.free)').forEach(x=>x.disabled=true);
 }
+/* ===================== menú principal ===================== */
+const DESC_MOD={empleados:'Fichas, ingresos, salarios y orden de la lista',afil:'Formatos y seguimiento de EPS, ARL y caja',hor:'Turnos semanales que alimentan la nómina',novedades:'Incapacidades, licencias, extras y descuentos',nomina:'Liquidar, revisar y cerrar el periodo',pila:'Aportes a seguridad social del mes',prov:'Cesantías, intereses, prima y vacaciones',vac:'Días causados, tomados y pendientes',liq:'Liquidación y documentos de retiro',cert:'Certificaciones laborales y cartas',contratos:'Contratos, otrosíes y prórrogas',th:'Periodo de prueba, evaluaciones y procesos',params:'Empresa, parámetros legales y usuarios'};
+function renderInicio(){
+  const c=S.config,hoy=todayCO(),act=empList(),mesN=+hoy.slice(5,7),MES=MESESL[mesN-1]||'';
+  let porLiq=0,venc=[],cumple=[];
+  try{porLiq=empAll().filter(e=>e.retiro&&e.activo!==false&&!Object.values(S.liq||{}).some(l=>l.empId===e.id)).length}catch(x){}
+  try{act.forEach(e=>{const f=fijoInfo(e);if(f&&f.fin&&f.fin>=hoy&&f.fin<=addDays(hoy,45))venc.push([e,f.fin])})}catch(x){}
+  try{act.forEach(e=>{const n=e.nacimiento||'';if((n&&+n.slice(5,7)===mesN)||(!n&&new RegExp(nrm(MES)).test(nrm(e.cumple||''))))cumple.push(e)})}catch(x){}
+  const k=(v,t,tab)=>`<button class="free kpi ini-k" ${tab?`data-go="${tab}"`:''}><span class="v">${v}</span><span class="k">${t}</span></button>`;
+  const mods=[...document.querySelectorAll('nav.tabs[role=tablist] button')].filter(b=>b.dataset.tab!=='inicio'&&!b.hidden);
+  $('#v-inicio').innerHTML=`<div class="bar"><h2 class="grow">Bienvenida${ME&&ME.nombre?', '+esc(ME.nombre.split(' ')[0]):''}</h2><span class="status">${esc(fechaLarga(hoy))}</span></div>
+   <div class="ini-kpis">${k(act.length,'Empleados activos','empleados')}${k(porLiq,'Retiros por liquidar','liq')}${k(venc.length,'Contratos fijos vencen en 45 días','contratos')}${k(cumple.length,'Cumpleaños de '+MES,'empleados')}</div>
+   ${venc.length?`<div class="panel" style="margin:10px 0"><b>Contratos a término fijo por vencer</b> (recuerde el preaviso de 30 días): ${venc.sort((a,b)=>a[1]<b[1]?-1:1).map(([e,f])=>`${esc(e.nombre)} — ${fCorta(f)}`).join(' · ')}</div>`:''}
+   <h2 style="margin:18px 0 10px">Módulos</h2>
+   <div class="ini-grid">${mods.map(b=>`<button class="free ini-t" data-go="${b.dataset.tab}">${b.querySelector('svg').outerHTML}<span class="ini-n">${esc(b.querySelector('.tn')?.textContent||'')}</span><b>${esc(b.querySelector('.tl').textContent)}</b><small>${esc(DESC_MOD[b.dataset.tab]||'')}</small></button>`).join('')}</div>`;
+  document.querySelectorAll('#v-inicio [data-go]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.go;saveUI();render();scrollTo({top:0})});
+}
 function render(){
   renderLegal();renderWho();
-  if(!['hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','params'].includes(UI.tab)||!puedeVer(UI.tab))UI.tab=(['nomina','hor','novedades','prov','empleados','afil','pila','vac','liq','cert','contratos','th'].find(puedeVer))||'params';
-  PERM.admin=esAdmin();PERM.cuentas=esAdmin()||!!(ME&&ME.perm&&ME.perm.cuentas);PERM.write=UI.tab==='params'?true:nivel(UI.tab)==='editar';
+  if(!['inicio','hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','params'].includes(UI.tab)||!puedeVer(UI.tab))UI.tab=(['inicio','nomina','hor','novedades','prov','empleados','afil','pila','vac','liq','cert','contratos','th'].find(puedeVer))||'params';
+  PERM.admin=esAdmin();PERM.cuentas=esAdmin()||!!(ME&&ME.perm&&ME.perm.cuentas);PERM.write=UI.tab==='params'||UI.tab==='inicio'?true:nivel(UI.tab)==='editar';
   document.querySelectorAll('nav.tabs[role=tablist] button').forEach(b=>{b.hidden=!puedeVer(b.dataset.tab);if(b.dataset.tab==='params')b.querySelector('.tl').textContent=esAdmin()?'Parámetros y usuarios':'Mi contraseña';b.setAttribute('aria-selected',b.dataset.tab===UI.tab)});
-  ['hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','params'].forEach(t=>$('#v-'+t).hidden=t!==UI.tab);
-  setTimeout(()=>ojos(),0);const RV=({afil:renderAfil,prov:renderProv,hor:renderHor,asis:renderAsis,th:renderTH,contratos:renderContratos,pila:renderPila,novedades:renderNov,nomina:renderNomina,empleados:renderEmps,vac:renderVac,liq:renderLiq,cert:renderCert,params:renderParams});try{RV[UI.tab]()}catch(er){console.error(er);const v=$('#v-'+UI.tab);if(v)v.innerHTML=`<div class="alert" role="alert"><b>No se pudo mostrar esta pestaña.</b> Tome una foto de este recuadro y envíela para corregirlo.<pre style="white-space:pre-wrap;font-size:.75rem;margin:8px 0 0">${esc(String(er&&er.message||er))}\n${esc(String(er&&er.stack||'').split('\n').slice(1,4).join('\n'))}</pre></div>`}
+  {const gh=$('#goHome');if(gh){gh.hidden=UI.tab==='inicio';gh.onclick=()=>{UI.tab='inicio';saveUI();render();scrollTo({top:0})}}}
+  ['inicio','hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','params'].forEach(t=>$('#v-'+t).hidden=t!==UI.tab);
+  setTimeout(()=>ojos(),0);const RV=({inicio:renderInicio,afil:renderAfil,prov:renderProv,hor:renderHor,asis:renderAsis,th:renderTH,contratos:renderContratos,pila:renderPila,novedades:renderNov,nomina:renderNomina,empleados:renderEmps,vac:renderVac,liq:renderLiq,cert:renderCert,params:renderParams});try{RV[UI.tab]()}catch(er){console.error(er);const v=$('#v-'+UI.tab);if(v)v.innerHTML=`<div class="alert" role="alert"><b>No se pudo mostrar esta pestaña.</b> Tome una foto de este recuadro y envíela para corregirlo.<pre style="white-space:pre-wrap;font-size:.75rem;margin:8px 0 0">${esc(String(er&&er.message||er))}\n${esc(String(er&&er.stack||'').split('\n').slice(1,4).join('\n'))}</pre></div>`}
   lockUI();
 }
-document.querySelectorAll('nav.tabs[role=tablist] button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;saveUI();render()});
+document.querySelectorAll('nav.tabs[role=tablist] button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;saveUI();render();scrollTo({top:0})});
+document.querySelectorAll('#app .brand').forEach(b=>{b.style.cursor='pointer';b.title='Ir al inicio';b.onclick=()=>{UI.tab='inicio';saveUI();render();scrollTo({top:0})}});
 const lugarSede=sd=>{const c=S.config,d=(c.sedeDir||{})[sd]||c.direccion||'';return [sd,d].filter(Boolean).join(' – ')};
 function sedeSelect(id){return `<select class="free" id="${id}" aria-label="Centro de costo"><option value="">Todos los centros de costo</option>${S.config.sedes.map(s=>`<option${UI.sede===s?' selected':''}>${esc(s)}</option>`).join('')}</select>`}
 function periodoCtl(pre){return `<input class="free" type="month" id="${pre}Mes" value="${UI.mes}" aria-label="Mes">
@@ -4012,7 +4042,7 @@ function migrar(){
   if(MODO!=='escalautos'||S.config.mig1)return;['emp-1016945282','emp-1022931960'].forEach(id=>{delete S.emps[id];delete S.cuentas[id];Object.values(S.nov).forEach(n=>{if(n.por)delete n.por[id]})});S.config.mig1=true;saveLocal()}
 function abrirApp(){migrar();if(MODO!=='general'){if(sembrarHor(S))saveLocal()}else if(DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(sembrarHor(em))ch=true});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}if(!esAdmin()&&UI.tab==='params')UI.tab='';if(MODO==='cliente'&&!S.config.empresa){UI.tab='params';setTimeout(()=>toast('Escriba la razón social y el NIT, y suba el logo de la empresa'),400)}$('#lock').hidden=true;$('#kP').value='';if(MODO==='general'&&!esAdmin()&&(ME.empresas||[]).length===1&&DATA.empresas[ME.empresas[0]]){DATA.actual=ME.empresas[0];cargarDatos(DATA.empresas[DATA.actual])}
   if(MODO==='general'&&DATA.actual&&!esAdmin()&&(ME.empresas||[]).length&&!ME.empresas.includes(DATA.actual)){DATA.actual=null}
-  setTimeout(avisoRec,600);if(MODO==='general'&&!DATA.actual){renderPicker();return}$('#picker').hidden=true;$('#app').hidden=false;render();setStatus('Datos abiertos en este dispositivo')}
+  setTimeout(avisoRec,600);UI.tab='inicio';if(MODO==='general'&&!DATA.actual){renderPicker();return}$('#picker').hidden=true;$('#app').hidden=false;render();setStatus('Datos abiertos en este dispositivo')}
 /* código de recuperación automático: si el administrador no tiene uno, se crea y se le pide enviarlo a su correo */
 async function avisoRec(){if(!ME||ME.rol!=='admin'||REC||!DEKRAW||document.getElementById('recAviso'))return;
   const c=nuevoCodigo();REC={...await envolver(REC_ID,normCod(c),DEKRAW),admin:ME.email,fecha:new Date().toISOString()};RECUI.cod=c;try{escribirCaja(await cifrar(KEY,payload()))}catch(e){}
