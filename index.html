@@ -6,7 +6,7 @@
 <script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></head><body><title>Escala TH</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -17,8 +17,8 @@
   --accent:#1f4fd1; --accent-ink:#ffffff; --accent-soft:#e1e8fb;
   --warn:#a35a06; --warn-soft:#fbecd5; --bad:#b42318; --bad-soft:#fbe1de; --good:#157a3d; --good-soft:#dcf2e4;
   --hatch:#cdd1da;
-  --f-display:"Fraunces",Georgia,"Times New Roman",serif;
-  --f-body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-display:"Nunito","Segoe UI",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Nunito","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -36,8 +36,8 @@ body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-siz
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
 .wrap{max-width:1360px;margin:0 auto}
 header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-block:22px 14px;border-bottom:2px solid var(--ink)}
-h1{font-family:var(--f-display);font-weight:600;font-size:1.9rem;letter-spacing:-.01em;margin:0;line-height:1.05;font-variation-settings:'opsz' 96}
-body{font-feature-settings:'cv11','ss01';}td,.kpi,.n{font-variant-numeric:tabular-nums}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.8rem;letter-spacing:-.01em;margin:0;line-height:1.05}
+td,.kpi,.n{font-variant-numeric:tabular-nums}
 h1 small{display:block;font-family:var(--f-body);font-weight:500;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:none;margin-bottom:5px}
 .hright{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .legal{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:flex-end}
@@ -46,13 +46,32 @@ h1 small{display:block;font-family:var(--f-body);font-weight:500;font-size:.78re
 .who .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:.72rem;color:#fff;background:var(--accent)}
 nav.tabs{display:flex;gap:2px;flex-wrap:wrap;margin-block:14px 18px;align-items:center}
 nav.tabs button{font:inherit;font-weight:500;font-size:.86rem;border:1px solid transparent;background:none;color:var(--muted);padding:7px 11px 7px 8px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-nav.tabs .tn{font-family:var(--f-display);font-size:.74rem;font-weight:600;font-style:italic;min-width:18px;height:18px;border-radius:5px;display:grid;place-items:center;background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+nav.tabs .tn{font-family:var(--f-display);font-size:.7rem;font-weight:700;min-width:18px;height:18px;border-radius:5px;display:grid;place-items:center;background:var(--paper);color:var(--muted);border:1px solid var(--line)}
 nav.tabs .ti{width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.6;opacity:.85;stroke-linecap:round;stroke-linejoin:round;flex:none}
 nav.tabs button[aria-selected="true"] .tn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 nav.tabs button[aria-selected="true"] .ti{opacity:1;stroke-width:1.9}
 nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 nav.tabs button:hover{color:var(--ink)}
-h2{font-family:var(--f-display);font-weight:600;font-size:1.22rem;margin:0;text-wrap:balance;letter-spacing:-.005em}
+@media (min-width:1000px){
+  #app{max-width:none;margin:0 0 0 240px;padding-left:26px}
+  nav.tabs{position:fixed;left:0;top:0;bottom:0;width:240px;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:22px 12px 18px;background:var(--accent);overflow-y:auto;z-index:30;box-shadow:2px 0 14px rgba(20,10,60,.12)}
+  nav.tabs::before{content:"Menú";color:rgba(255,255,255,.7);font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:0 12px 10px}
+  nav.tabs button{color:#fff;font-weight:700;font-size:.93rem;padding:10px 12px;border-radius:10px;justify-content:flex-start;width:100%;gap:13px;border-color:transparent;text-align:left}
+  nav.tabs button:hover{background:rgba(255,255,255,.14);color:#fff}
+  nav.tabs button[aria-selected="true"]{background:rgba(255,255,255,.24);color:#fff;border-color:transparent;box-shadow:inset 3px 0 0 #fff}
+  nav.tabs .ti{width:22px;height:22px;stroke:#fff;fill:rgba(255,255,255,.3);stroke-width:2;opacity:1}
+  nav.tabs button[aria-selected="true"] .ti{stroke-width:2.2;fill:rgba(255,255,255,.45)}
+  nav.tabs .tn{order:3;margin-left:auto;background:transparent;border:0;color:rgba(255,255,255,.65);min-width:auto}
+  nav.tabs button[aria-selected="true"] .tn{background:transparent;color:#fff;border:0}
+  nav.tabs .tl{line-height:1.2}
+  .stbar{margin:6px 0 10px!important}
+  header.top{flex-wrap:wrap;row-gap:8px}
+  header.top .hright{margin-left:auto;align-items:flex-end;text-align:right}
+  nav.tabs button[data-tab="liq"]{margin-top:10px;position:relative}
+  nav.tabs button[data-tab="liq"]::before{content:"";position:absolute;left:8px;right:8px;top:-7px;border-top:1px solid rgba(255,255,255,.3)}
+}
+@media print{nav.tabs{display:none!important}#app{margin:0!important;padding:0!important}}
+h2{font-family:var(--f-display);font-weight:800;font-size:1.18rem;margin:0;text-wrap:balance;letter-spacing:-.005em}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
 .bar .grow{flex:1 1 auto}
 button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:7px;cursor:pointer}
@@ -210,7 +229,7 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
     <button class="free" role="tab" data-tab="th" aria-selected="false"><span class="tn">12</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/><path d="M17.5 3.5l1 1.8 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L14.5 5.6l2-.3z"/></svg><span class="tl">Talento humano</span></button>
     <button class="free" role="tab" data-tab="params" aria-selected="false"><span class="tn">13</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="tl">Parámetros y usuarios</span></button>
   </nav>
-  <div style="display:flex;justify-content:flex-end;margin:-10px 0 8px"><span class="status" id="status"></span></div>
+  <div class="stbar" style="display:flex;justify-content:flex-end;margin:-10px 0 8px"><span class="status" id="status"></span></div>
   <div id="roBanner"></div>
   <section id="v-hor" hidden></section>
   <section id="v-asis" hidden></section>
