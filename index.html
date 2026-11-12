@@ -396,7 +396,7 @@ const nivel=t=>esAdmin()?'editar':((ME.perm||{})[t]||'no');
 function puedeVer(t){return t==='params'||t==='inicio'||nivel(t)!=='no'}
 /* varias empresas (versión general) */
 let DATA={empresas:{},actual:null};
-function sync(){if(MODO==='general'&&DATA.actual&&DATA.empresas[DATA.actual])DATA.empresas[DATA.actual]={config:S.config,emps:S.emps,cuentas:S.cuentas,nov:S.nov,liq:S.liq,prest:S.prest||{},cierres:S.cierres||{},th:S.th||{disc:[],perm:[],dot:[]},hor:S.hor||{},asis:S.asis||{},pilaEd:S.pilaEd||{},log:S.log||[],incap:S.incap||{}}}
+function sync(){if(MODO==='general'&&DATA.actual&&DATA.empresas[DATA.actual])DATA.empresas[DATA.actual]={config:S.config,emps:S.emps,cuentas:S.cuentas,nov:S.nov,liq:S.liq,prest:S.prest||{},cierres:S.cierres||{},th:S.th||{disc:[],perm:[],dot:[]},hor:S.hor||{},asis:S.asis||{},pilaEd:S.pilaEd||{},log:S.log||[],incap:S.incap||{},c220:S.c220||{}}}
 function payload(){if(MODO==='general'){sync();return DATA}return S}
 function aplicarPayload(d){if(MODO==='general'){DATA=d&&d.empresas?d:{empresas:{},actual:null};if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);else{DATA.actual=null;cargarDatos({config:DEF_CONFIG})}}else cargarDatos(d)}
 function fechaISO(v){if(v==null||v==='')return '';if(typeof v==='number'&&v>20000&&v<80000)return new Date(Date.UTC(1899,11,30)+v*864e5).toISOString().slice(0,10);
@@ -404,7 +404,7 @@ function fechaISO(v){if(v==null||v==='')return '';if(typeof v==='number'&&v>2000
   m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/.exec(t);if(m){let y=+m[3];if(y<100)y+=2000;const d=new Date(Date.UTC(y,+m[2]-1,+m[1]));return isNaN(d)||d.getUTCMonth()!==+m[2]-1?'':d.toISOString().slice(0,10)}
   const d=new Date(t);return isNaN(d)?'':d.toISOString().slice(0,10)}
 function limpiarEmps(E){const o={};Object.entries(E||{}).forEach(([k,e])=>{if(!e||typeof e!=='object')return;const id=e.id||k;if(/^PORB$/i.test(String(e.afp||'').trim()))e.afp='PORVENIR';['ingreso','retiro','nacimiento','finContrato','finFijo'].forEach(f=>{if(f in e)e[f]=fechaISO(e[f])});o[id]={...e,id,nombre:String(e.nombre??'').trim()||'(sin nombre)',doc:e.doc==null?'':String(e.doc),cargo:e.cargo==null?'':String(e.cargo),sede:e.sede==null?'':String(e.sede),salario:+e.salario||0,...(e.salarios&&!Array.isArray(e.salarios)?{salarios:[]}:{}),...(e.benef&&!Array.isArray(e.benef)?{benef:[]}:{})}});return o}
-function cargarDatos(j){S.config={...DEF_CONFIG,...j.config,arl:{...DEF_CONFIG.arl,...((j.config||{}).arl||{})}};S.emps=limpiarEmps(j.emps);S.cuentas=j.cuentas||{};S.mallas={};S.nov=j.nov||{};S.liq=j.liq||{};S.prest=j.prest||{};S.cierres=j.cierres||{};S.th=j.th||{disc:[],perm:[],dot:[]};S.hor=j.hor||{};S.asis=j.asis||{};S.pilaEd=j.pilaEd||{};S.log=Array.isArray(j.log)?j.log:[];S.incap=j.incap||{};S.config.listas={...structuredClone(DEF_CONFIG.listas),...(S.config.listas||{})}}
+function cargarDatos(j){S.config={...DEF_CONFIG,...j.config,arl:{...DEF_CONFIG.arl,...((j.config||{}).arl||{})}};S.emps=limpiarEmps(j.emps);S.cuentas=j.cuentas||{};S.mallas={};S.nov=j.nov||{};S.liq=j.liq||{};S.prest=j.prest||{};S.cierres=j.cierres||{};S.th=j.th||{disc:[],perm:[],dot:[]};S.hor=j.hor||{};S.asis=j.asis||{};S.pilaEd=j.pilaEd||{};S.log=Array.isArray(j.log)?j.log:[];S.incap=j.incap||{};S.c220=j.c220||{};S.config.listas={...structuredClone(DEF_CONFIG.listas),...(S.config.listas||{})}}
 function guardadoLocal(){try{return JSON.parse(localStorage.getItem(LKEY)||'null')}catch(e){return null}}
 function saveLocal(){if(!KEY)return;clearTimeout(saveT);saveT=setTimeout(async()=>{try{const b=await cifrar(KEY,payload());escribirCaja(b);setStatus('Guardado en este dispositivo')}catch(e){toast('No se pudo guardar en este navegador. Descargue una copia de seguridad.')}},300)}
 function setStatus(t){$('#status').textContent=t}
@@ -413,7 +413,7 @@ function bitacora(txt){try{S.log=S.log||[];const u=(ME&&(ME.nombre||ME.email))||
   if(last&&last.u===u&&last.d===txt&&now-new Date(last.t)<120000){last.t=now.toISOString();return}
   S.log.push({t:now.toISOString(),u,d:txt});if(S.log.length>1500)S.log.splice(0,S.log.length-1500)}catch(e){}}
 async function persist(kind,id){
-  if(kind!=='incap')bitacora(kind==='config'?'Cambió parámetros de la empresa':kind==='emp'?`Modificó el empleado ${(S.emps[id]||{}).nombre||id}`:kind==='malla'?`Modificó horarios de la semana ${id}`:kind==='nov'?`Modificó novedades del periodo ${id}`:kind==='pila'?'Modificó la planilla de seguridad social':`Cambio en ${kind}`);
+  if(kind!=='incap'&&kind!=='c220')bitacora(kind==='config'?'Cambió parámetros de la empresa':kind==='emp'?`Modificó el empleado ${(S.emps[id]||{}).nombre||id}`:kind==='malla'?`Modificó horarios de la semana ${id}`:kind==='nov'?`Modificó novedades del periodo ${id}`:kind==='pila'?'Modificó la planilla de seguridad social':`Cambio en ${kind}`);
   if(MODE!=='db'){if(!PERM.write){setStatus('Solo consulta: no se guardó');return}saveLocal();setStatus('Guardado en este navegador');return}
   if(!PERM.write){setStatus('Solo consulta: no se guardó');return}
   try{
@@ -529,7 +529,8 @@ function liquidar(e,P){
   R.salud=C100(R.ibc*c.salud/100);R.pension=C100(R.ibc*c.pension/100);
   const tf=xs<4?0:xs<16?.01:xs<17?.012:xs<18?.014:xs<19?.016:xs<20?.018:.02;R.fsp=tf?C100(R.ibc*tf):0;
   R.dedAuto={salud:R.salud,pension:R.pension,fsp:R.fsp};R.dedManual=[];[['salM','salud'],['penM','pension'],['fspM','fsp']].forEach(([k,d])=>{if(N[k]!==undefined&&N[k]!==''&&!isNaN(+N[k])){R[d]=Math.max(0,Math.round(+N[k]));R.dedManual.push(d)}});
-  R.ret=nv(N.ret);R.pre=nv(N.pre);R.emb=nv(N.emb);R.ant=nv(N.ant);R.otr=nv(N.otr);
+  R.retMan=N.ret!==undefined&&N.ret!==null&&N.ret!=='';R.ret=R.retMan?nv(N.ret):0;R.pre=nv(N.pre);R.emb=nv(N.emb);R.ant=nv(N.ant);R.otr=nv(N.otr);
+  if(!R.retMan&&S.config.retAuto!==false)try{const rt=retencionPeriodo(e,P,R);R.ret=rt.ret;R.retD=rt}catch(x){}
   R.ded=R.salud+R.pension+R.fsp+R.ret+R.pre+R.emb+R.ant+R.otr;R.neto=R.dev-R.ded;
   const exo=c.exonerado&&ibcMes<10*c.smmlv,cl=e.arl||c.arlDef||'II';
   R.ap={salud:exo?0:C100(R.ibc*.085),pension:C100(R.ibc*.12),arl:C100(R.ibc*(c.arl[cl]??1.044)/100),caja:C100(R.ibc*c.caja/100),sena:exo?0:C100(R.ibc*.02),icbf:exo?0:C100(R.ibc*.03)};
@@ -1225,6 +1226,122 @@ function bindIncap(){
   const xb=$('#incXls');if(xb)xb.onclick=()=>{if(typeof XLSX==='undefined')return toast('No se pudo cargar el generador de Excel');const rows=Object.values(S.incap).map(x=>({Empleado:(S.emps[x.empId]||{}).nombre||x.nombre,Origen:x.tipo==='arl'?'ARL':x.tipo==='lma'?'Licencia maternidad/paternidad':'EPS',Entidad:x.tipo==='arl'?S.config.arlEnt:(S.emps[x.empId]||{}).eps,Periodo:x.per||'',Desde:x.desde||'',Hasta:x.hasta||'','Días':x.dias||'','A cobrar':+x.cobrar||0,Radicado:x.radicado||'','Fecha radicación':x.fechaRad||'',Estado:INC_EST[x.estado||'pendiente'],'Pagado por la entidad':+x.valPagado||0,'Fecha pago':x.fechaPago||'',Observaciones:x.obs||''}));
     const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Incapacidades');XLSX.writeFile(wb,`Incapacidades_${todayCO()}.xlsx`)};
 }
+/* ===== retención en la fuente por salarios, procedimiento 1 (arts. 383, 387, 388 y 336 E.T.) ===== */
+const UVT_ANIO={2024:47065,2025:49799,2026:52374};
+const uvtDe=y=>+((S.config.uvt||{})[y])||UVT_ANIO[y]||UVT_ANIO[2026];
+const TABLA383=[[0,95,0,0],[95,150,.19,0],[150,360,.28,10],[360,640,.33,69],[640,945,.35,162],[945,2300,.37,268],[2300,1e12,.39,770]];
+function retTabla(bU){for(const [a,b,t,f] of TABLA383)if(bU>a&&bU<=b)return (bU-a)*t+f;return 0}
+function retCalc(e,ing,incr,y){ // ing: ingresos laborales del mes; incr: aportes obligatorios del trabajador (salud, pensión, FSP)
+  const U=uvtDe(y),d=e.retDatos||{},sub1=Math.max(0,ing-incr);
+  const dep=d.dep?Math.min(ing*.1,32*U):0,viv=Math.min(+d.viv||0,100*U),pre=Math.min(+d.pre||0,16*U),ded=dep+viv+pre;
+  const afc=Math.min(+d.afc||0,ing*.3,3800*U/12),sub2=Math.max(0,sub1-ded-afc),ex25=Math.min(sub2*.25,790*U/12);
+  const lim=Math.min(sub1*.4,1340*U/12),benef=Math.min(ded+afc+ex25,lim),base=Math.max(0,sub1-benef),bU=base/U,rU=retTabla(bU),ret=Math.round(rU*U/1000)*1000;
+  return {ing,incr,sub1,dep,viv,pre,ded,afc,ex25,lim,benef,base,bU,ret,U,pct:base?ret/base:0}}
+function retencionPeriodo(e,P,R){
+  const y=+P.ini.slice(0,4),ingR=(+R.dev||0),incrR=(+R.salud||0)+(+R.pension||0)+(+R.fsp||0);
+  if(P.tipo==='q1'||/_q1$/.test(P.key)){const r=retCalc(e,0,0,y);r.nota='Se calcula en la segunda quincena con el total del mes';r.ret=0;return r}
+  if(P.tipo==='q2'||/_q2$/.test(P.key)){const mes=P.key.slice(0,7),k1=mes+'_q1',ci=(S.cierres||{})[k1];let q1=ci&&ci.filas.find(f=>f.e.id===e.id);
+    if(!q1&&!(ci&&!liqPagaPeriodo(e,periodo(mes,'q1')))){try{const P1=periodo(mes,'q1');if(!((e.ingreso&&e.ingreso>P1.fin)||(e.retiro&&e.retiro<P1.ini)))q1=liquidar(e,P1)}catch(x){}}
+    const i1=q1?(+q1.dev||0):0,c1=q1?(+q1.salud||0)+(+q1.pension||0)+(+q1.fsp||0):0,r1=q1?(+q1.ret||0):0,r=retCalc(e,ingR+i1,incrR+c1,y);r.ret=Math.max(0,r.ret-r1);r.nota=`Mes completo: ${money(ingR+i1)}${r1?' · ya retenido en la 1.ª quincena '+money(r1):''}`;return r}
+  return retCalc(e,ingR,incrR,y)}
+function panelRet(P,R){
+  const c=S.config,y=+P.ini.slice(0,4),U=uvtDe(y),act=c.retAuto!==false,filas=(R||[]).filter(r=>r&&r.e);
+  const con=filas.filter(r=>(+r.ret||0)>0),cerca=filas.filter(r=>r.retD&&r.retD.bU>80&&!(+r.ret>0));
+  const inp=(e,k,t)=>`<input class="free money" type="${t==='c'?'checkbox':'number'}" min="0" step="1000" data-rtd="${e.id}" data-rk="${k}" ${t==='c'?((e.retDatos||{})[k]?'checked':''):`value="${esc((e.retDatos||{})[k]||'')}"`} style="${t==='c'?'':'width:110px'}">`;
+  return `<details class="section panel" style="padding:12px 14px;margin-top:14px" id="retBox" ${UI.retOpen?'open':''}><summary><b>Retención en la fuente por salarios</b> <span class="status">· procedimiento 1 · UVT ${y}: ${money(U)}${con.length?` · ${con.length} con retención este periodo`:' · nadie con retención este periodo'}</span></summary>
+   <p class="note">La app calcula cada mes la retención con la tabla del art. 383 del E.T. Del ingreso laboral resta los aportes obligatorios del trabajador (salud, pensión y FSP), las deducciones (dependientes 10 % hasta 32 UVT, intereses de vivienda hasta 100 UVT, medicina prepagada hasta 16 UVT), los aportes AFC y la renta exenta del 25 % (hasta 790 UVT al año). Todos esos beneficios juntos no pueden superar el 40 % ni 1.340 UVT al año. Solo hay retención si la base pasa de 95 UVT (${money(95*U)} al mes). En las quincenas se calcula en la segunda, con el total del mes. Si escribe un valor en la columna «Retención» de Novedades, se usa ese.</p>
+   <div class="bar" style="margin:6px 0"><label class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="retAuto"${act?' checked':''}${PERM.write?'':' disabled'}> Calcular la retención automáticamente</label><label class="f">UVT ${y}<input class="free money" type="number" id="retUvt" value="${U}" style="width:110px"${PERM.write?'':' disabled'}></label><span class="grow"></span><button class="free ghost" id="retXls">Descargar Excel del cálculo</button></div>
+   ${cerca.length?`<div class="alert info">Cerca del tope (base mayor a 80 UVT, sin retención todavía): ${cerca.map(r=>esc(r.e.nombre)).join(', ')}.</div>`:''}
+   <div class="scroll"><table><thead><tr><th class="sticky">Empleado</th><th class="n">Ingreso del mes</th><th class="n">Aportes trabajador</th><th>Dependientes</th><th class="n">Intereses vivienda / mes</th><th class="n">Medicina prepagada / mes</th><th class="n">AFC o voluntarios / mes</th><th class="n">Renta exenta 25 %</th><th class="n">Base</th><th class="n">Base en UVT</th><th class="n">Retención</th></tr></thead><tbody>
+   ${filas.map(r=>{const d=r.retD||retCalc(r.e,+r.dev||0,(+r.salud||0)+(+r.pension||0)+(+r.fsp||0),y),e=S.emps[r.e.id]||r.e;return `<tr><td class="sticky"><b>${esc(e.nombre)}</b>${d.nota?`<br><span class="status">${esc(d.nota)}</span>`:''}${r.retMan?'<br><span class="pill">Valor escrito en Novedades</span>':''}</td><td class="n">${money(d.ing)}</td><td class="n">${money(d.incr)}</td><td style="text-align:center">${inp(e,'dep','c')}</td><td>${inp(e,'viv')}</td><td>${inp(e,'pre')}</td><td>${inp(e,'afc')}</td><td class="n">${money(Math.round(d.ex25))}</td><td class="n">${money(Math.round(d.base))}</td><td class="n">${(Math.round(d.bU*100)/100).toLocaleString('es-CO')}</td><td class="n"><b>${money(+r.ret||0)}</b></td></tr>`}).join('')}</tbody></table></div>
+   <p class="note">Dependientes: marque si el trabajador entregó el certificado de dependiente económico. Intereses de vivienda y medicina prepagada: valor mensual según el certificado del año anterior. AFC o aportes voluntarios: solo si se descuentan por nómina.</p></details>`}
+function bindRet(){const b=$('#retBox');if(!b)return;b.ontoggle=()=>{UI.retOpen=b.open};
+  const a=$('#retAuto');if(a)a.onchange=()=>{S.config.retAuto=a.checked;persist('config');renderNomina()};
+  const u=$('#retUvt');if(u)u.onchange=()=>{const y=UI.mes.slice(0,4);S.config.uvt={...(S.config.uvt||{}),[y]:+u.value||UVT_ANIO[y]};persist('config');renderNomina()};
+  document.querySelectorAll('[data-rtd]').forEach(i=>i.onchange=()=>{const e=S.emps[i.dataset.rtd];if(!e)return;e.retDatos=e.retDatos||{};e.retDatos[i.dataset.rk]=i.type==='checkbox'?i.checked:(+i.value||0);persist('emp',e.id);renderNomina()});
+  const x=$('#retXls');if(x)x.onclick=()=>{if(typeof XLSX==='undefined')return toast('No se pudo cargar el generador de Excel');const y=+UI.mes.slice(0,4);const rows=(ULTIMA||[]).filter(r=>r&&r.e).map(r=>{const d=r.retD||retCalc(r.e,+r.dev||0,(+r.salud||0)+(+r.pension||0)+(+r.fsp||0),y);return {Empleado:r.e.nombre,'Cédula':r.e.doc||'','Ingreso laboral del mes':Math.round(d.ing),'Aportes obligatorios trabajador':Math.round(d.incr),'Subtotal':Math.round(d.sub1),'Dependientes':Math.round(d.dep),'Intereses vivienda':Math.round(d.viv),'Medicina prepagada':Math.round(d.pre),'AFC / voluntarios':Math.round(d.afc),'Renta exenta 25%':Math.round(d.ex25),'Límite 40% / 1.340 UVT':Math.round(d.lim),'Beneficios aplicados':Math.round(d.benef),'Base gravable':Math.round(d.base),'Base en UVT':Math.round(d.bU*100)/100,'Retención':+r.ret||0}});
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Retención');XLSX.writeFile(wb,`Retencion_${UI.mes}_${UI.tipo}.xlsx`)}}
+/* ===== certificado de ingresos y retenciones, formulario 220 (Res. DIAN 0022 de 2024, años gravables 2023 y siguientes) ===== */
+const C220={36:'Pagos por salarios',37:'Pagos realizados con bonos electrónicos o de papel de servicio, cheques, tarjetas, vales, etc.',38:'Valor del exceso de los pagos por alimentación mayores a 41 UVT, art. 387-1 E.T.',39:'Pagos por honorarios',40:'Pagos por servicios',41:'Pagos por comisiones',42:'Pagos por prestaciones sociales',43:'Pagos por viáticos',44:'Pagos por gastos de representación',45:'Pagos por compensaciones por el trabajo asociado cooperativo',46:'Otros pagos',47:'Auxilio de cesantía e intereses efectivamente pagados al empleado',48:'Auxilio de cesantía reconocido a trabajadores del régimen tradicional del CST (Cap. VII, Tít. VIII, Parte Primera)',49:'Auxilio de cesantía consignado al fondo de cesantías',50:'Pensiones de jubilación, vejez o invalidez',51:'Apoyos económicos educativos financiados con recursos públicos, no reembolsables o condonados',52:'Total ingresos brutos (sume 36 a 51)',
+  53:'Aportes obligatorios por salud a cargo del trabajador',54:'Aportes obligatorios a fondos de pensiones y solidaridad pensional a cargo del trabajador',55:'Cotizaciones voluntarias al régimen de ahorro individual con solidaridad - RAIS',56:'Aportes voluntarios a fondos de pensiones',57:'Aportes a cuentas AFC',58:'Aportes a cuentas AVC',59:'Ingreso laboral promedio de los últimos seis meses (num. 4 art. 206 E.T.)',60:'Valor de la retención en la fuente por ingresos laborales y de pensiones'};
+const C220ED=[36,41,42,46,47,49,53,54,56,57,59,60];
+function datos220(e,y){
+  const v={};for(let k=36;k<=60;k++)v[k]=0;const mes={},ini=`${y}-01-01`,fin=`${y}-12-31`;
+  Object.entries(S.cierres||{}).forEach(([k,ci])=>{if(!k.startsWith(y+'-')||!ci)return;const r=(ci.filas||[]).find(f=>f.e&&f.e.id===e.id);if(!r)return;
+    const com=+r.com||0;v[36]+=(+r.devSal||0)-com+(+r.auxT||0);v[41]+=com;v[46]+=+r.nsal||0;v[53]+=+r.salud||0;v[54]+=(+r.pension||0)+(+r.fsp||0);v[60]+=+r.ret||0;mes[k.slice(0,7)]=(mes[k.slice(0,7)]||0)+(+r.dev||0)});
+  [1,2].forEach(n=>{const p=(S.prest||{})[`prima_${y}_${n}`];if(p&&p.por&&p.por[e.id])v[42]+=+p.por[e.id]||0});
+  const ret=e.retiro&&e.retiro>=ini&&e.retiro<=fin,sv=Object.values(S.liq||{}).find(l=>l.empId===e.id&&l.retiro>=ini&&l.retiro<=fin);
+  if(ret&&sv){try{const {L}=liqDe(e);(L.items||[]).forEach(i=>{const c=i.c||'',x=+i.v||0;if(/^Salario|^Auxilio de transporte/.test(c))v[36]+=x;else if(/^Prima|^Vacaciones/.test(c))v[42]+=x;else if(/esant/i.test(c))v[47]+=x;else if(/Indemnizaci/.test(c))v[46]+=x;else v[46]+=x})}catch(x){}}
+  else if(!ret){try{const hoy=todayCO(),f=hoy<`${y}-12-30`?hoy:`${y}-12-30`,r=calcPrest(e,'ces',ini,f);if(r){v[47]+=r.int||0;v[49]+=r.ces||0}}catch(x){}}
+  const ult=Object.keys(mes).sort().slice(-6);v[59]=ult.length?Math.round(ult.reduce((a,m)=>a+mes[m],0)/ult.length):0;
+  const O=(((S.c220||{})[y]||{})[e.id])||{};C220ED.forEach(k=>{if(O[k]!==undefined&&O[k]!=='')v[k]=+O[k]});
+  for(let k=36;k<=60;k++)v[k]=Math.round(v[k]);v[52]=0;for(let k=36;k<=51;k++)v[52]+=v[k];
+  const desde=e.ingreso&&e.ingreso>ini?e.ingreso:ini,hasta=ret?e.retiro:fin;return {v,desde,hasta,O,meses:Object.keys(mes).length}}
+const C2={y:null};
+function render220(){
+  const y=C2.y||(+todayCO().slice(0,4)-(+todayCO().slice(5,7)<=3?1:0)),c=S.config,U=uvtDe(y),E=empAll().filter(e=>(!e.ingreso||e.ingreso<=`${y}-12-31`)&&(!e.retiro||e.retiro>=`${y}-01-01`)).sort((a,b)=>a.nombre.localeCompare(b.nombre));C2.y=y;
+  const D=E.map(e=>[e,datos220(e,y)]);
+  let h=`<div class="bar"><h2 class="grow">Certificado de ingresos y retenciones · formulario 220</h2></div><div class="panel grid-form"><label class="f">Documento<select id="ctT" class="free"><option value="cert">Certificación laboral</option><option value="cta">Carta de apertura de cuenta bancaria</option><option value="c220" selected>Certificado de ingresos y retenciones (formulario 220)</option></select></label>
+   <label class="f">Año gravable<select id="c2Y" class="free">${[0,1,2].map(i=>+todayCO().slice(0,4)-i).map(a=>`<option${a===y?' selected':''}>${a}</option>`).join('')}</select></label>
+   <label class="f">Fecha de expedición<input id="c2F" class="free" type="date" value="${esc(C2.fecha||todayCO())}"></label></div>
+   <p class="note">Se arma con las nóminas guardadas del año, las primas y cesantías registradas en Provisiones y las liquidaciones de retiro. Revise y corrija cualquier valor antes de descargar: lo que escriba queda guardado. El certificado se debe entregar a más tardar en la fecha que fije el calendario tributario (normalmente antes del 31 de marzo de ${y+1}). Formato del formulario 220 de la Resolución DIAN 0022 de 2024, generado por computador.</p>
+   <div class="bar"><span class="grow"></span><button class="free primary" id="c2All">Descargar todos (PDF en un ZIP)</button><button class="free" id="c2Xls">Excel resumen</button></div>
+   <div class="panel scroll fija"><table><thead><tr><th class="sticky">Trabajador</th><th>Periodo</th>${C220ED.map(k=>`<th class="n" title="${esc(C220[k])}">${k}<br><span class="status" style="font-weight:400">${esc(C220[k].split(' ').slice(0,3).join(' '))}</span></th>`).join('')}<th class="n">52<br><span class="status" style="font-weight:400">Total ingresos</span></th><th></th></tr></thead><tbody>
+   ${D.map(([e,d])=>`<tr><td class="sticky"><b>${esc(e.nombre)}</b><br><span class="status">C.C. ${esc(e.doc||'')}${d.meses?'':' · sin nóminas guardadas en el año'}${e.retiro&&e.retiro.startsWith(y+'-')&&!Object.values(S.liq||{}).some(l=>l.empId===e.id)?' · <b>liquidación sin guardar</b>':''}</span></td><td style="white-space:nowrap">${fCorta(d.desde)} – ${fCorta(d.hasta)}</td>${C220ED.map(k=>`<td><input class="money" type="number" step="1" data-c2e="${e.id}" data-c2k="${k}" value="${d.O[k]!==undefined&&d.O[k]!==''?esc(d.O[k]):''}" placeholder="${d.v[k]}" style="width:105px${d.O[k]!==undefined&&d.O[k]!==''?';border-color:var(--accent)':''}"></td>`).join('')}<td class="n"><b>${money(d.v[52])}</b></td><td><button class="ghost" data-c2p="${e.id}">PDF</button></td></tr>`).join('')}</tbody></table></div>
+   <p class="note">En gris está el cálculo de la app; escriba solo donde necesite otro valor y bórrelo para volver al cálculo. Topes del año ${y} para no declarar (UVT ${money(U)}): patrimonio bruto hasta 4.500 UVT (${money(4500*U)}); ingresos, consumos con tarjeta, compras y consignaciones hasta 1.400 UVT (${money(1400*U)}).</p>`;
+  $('#v-cert').innerHTML=h;
+  $('#ctT').onchange=ev=>{CT.tipo=ev.target.value;renderCert()};$('#c2Y').onchange=ev=>{C2.y=+ev.target.value;render220()};$('#c2F').onchange=ev=>{C2.fecha=ev.target.value};
+  document.querySelectorAll('[data-c2e]').forEach(i=>i.onchange=()=>{S.c220=S.c220||{};const Y=S.c220[y]||(S.c220[y]={}),o=Y[i.dataset.c2e]||(Y[i.dataset.c2e]={});if(i.value==='')delete o[i.dataset.c2k];else o[i.dataset.c2k]=+i.value;persist('c220');render220()});
+  document.querySelectorAll('[data-c2p]').forEach(b=>b.onclick=async()=>{const e=S.emps[b.dataset.c2p];const by=await pdf220(e,y);if(by)await guardarArchivo(`Certificado_220_${y}_${nrm(e.nombre).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}.pdf`,new Blob([by],{type:'application/pdf'}))});
+  $('#c2All').onclick=async()=>{if(typeof JSZip==='undefined')return toast('No se pudo cargar el generador de ZIP');const z=new JSZip();for(const [e] of D){const by=await pdf220(e,y);if(!by)return;z.file(`Certificado_220_${y}_${nrm(e.nombre).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}.pdf`,by)}
+    await guardarArchivo(`Certificados_220_${y}.zip`,await z.generateAsync({type:'blob'}));bitacora(`Descargó los certificados de ingresos y retenciones ${y}`)};
+  $('#c2Xls').onclick=()=>{if(typeof XLSX==='undefined')return toast('No se pudo cargar el generador de Excel');const rows=D.map(([e,d])=>{const o={Trabajador:e.nombre,'Cédula':e.doc||'',Desde:d.desde,Hasta:d.hasta};[...C220ED,52].sort((a,b)=>a-b).forEach(k=>o[k+' '+C220[k]]=d.v[k]);return o});
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Formulario 220 '+y);XLSX.writeFile(wb,`Certificados_220_${y}.xlsx`)};
+}
+async function pdf220(e,y){
+  let PL;try{PL=await cargarPdfLib()}catch(er){toast('No se pudo cargar el generador de PDF. Revise la conexión a internet.');return null}
+  const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,d=datos220(e,y),v=d.v,U=uvtDe(y),doc=await PDFDocument.create(),W=612,H=1008,M=28,TW=W-2*M,pg=doc.addPage([W,H]);
+  const FN=await doc.embedFont(StandardFonts.Helvetica),FB=await doc.embedFont(StandardFonts.HelveticaBold);doc.setTitle(`Formulario 220 ${y} · ${e.nombre}`);doc.setAuthor(c.empresa||'');
+  const hx=h=>{h=String(h||'').replace('#','');return rgb(parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255)},K=hx(DC()),NEG=rgb(.08,.08,.1),GR=rgb(.42,.44,.48),LN=rgb(.55,.57,.62),SF=rgb(.93,.94,.96),BL=rgb(1,1,1);
+  const ok=t=>{let o='';for(const ch of String(t??'')){try{FN.encodeText(ch);o+=ch}catch(x){o+=' '}}return o};
+  const txt=(t,x,yy,sz=7,f=FN,col=NEG)=>pg.drawText(ok(t),{x,y:yy,size:sz,font:f,color:col});
+  const fit=(t,f,sz,w)=>{t=ok(t);while(t&&f.widthOfTextAtSize(t,sz)>w)t=t.slice(0,-1);return t};
+  const box=(x,yy,w,h,n,lab,val,o={})=>{pg.drawRectangle({x,y:yy,width:w,height:h,borderColor:LN,borderWidth:.6,color:o.fill||BL});if(n)txt(String(n),x+2,yy+h-7,5.5,FB,K);if(lab)txt(fit(lab,FN,5.6,w-(n?14:4)),x+(n?13:2),yy+h-7,5.6,FN,GR);
+    if(val!==undefined&&val!=='')txt(fit(val,o.b?FB:FN,o.sz||8,w-6),o.right?x+w-3-Math.min(w-6,(o.b?FB:FN).widthOfTextAtSize(fit(val,o.b?FB:FN,o.sz||8,w-6),o.sz||8)):x+(n&&!lab?14:3),yy+3.5,o.sz||8,o.b?FB:FN)};
+  const sec=(t,yy)=>{pg.drawRectangle({x:M,y:yy,width:TW,height:12,color:K});txt(t,M+4,yy+3.2,7,FB,BL);return yy};
+  const nm=fuaSplit(e.nombre),nit=String(c.nit||''),mm=nit.match(/^\s*([\d.]+)\s*-\s*(\d)/),nitN=mm?mm[1].replace(/\D/g,''):nitDe(c).slice(0,9),dv=mm?mm[2]:(nitDe(c).slice(9,10)||''),f2=x=>x?x.split('-').reverse().join('/'):'',$m=x=>x?Math.round(x).toLocaleString('es-CO'):'0';
+  let Y=H-M;
+  pg.drawRectangle({x:M,y:Y-44,width:TW,height:44,borderColor:LN,borderWidth:.8});
+  txt('Certificado de Ingresos y Retenciones por Rentas de Trabajo y de Pensiones',M+8,Y-17,11,FB);txt(`Año gravable ${y}`,M+8,Y-31,9,FB,K);txt('Formulario generado por computador conforme a la Resolución DIAN 0022 de 2024',M+8,Y-40,6,FN,GR);
+  pg.drawRectangle({x:W-M-70,y:Y-44,width:70,height:44,color:K});txt('220',W-M-56,Y-30,20,FB,BL);Y-=50;
+  box(M,Y-20,TW*.5,20,4,'Número de formulario','');Y-=24;
+  sec('Retenedor',Y-12);Y-=12;const h1=20;
+  box(M,Y-h1,TW*.22,h1,5,'Número de Identificación Tributaria (NIT)',nitN,{b:true});box(M+TW*.22,Y-h1,TW*.06,h1,6,'DV.',dv,{b:true});box(M+TW*.28,Y-h1,TW*.72,h1,11,'Razón social',(c.empresa||'').toUpperCase(),{b:true});Y-=h1;
+  box(M,Y-h1,TW*.18,h1,7,'Primer apellido','');box(M+TW*.18,Y-h1,TW*.18,h1,8,'Segundo apellido','');box(M+TW*.36,Y-h1,TW*.18,h1,9,'Primer nombre','');box(M+TW*.54,Y-h1,TW*.46,h1,10,'Otros nombres','');Y-=h1+4;
+  sec('Trabajador',Y-12);Y-=12;
+  box(M,Y-h1,TW*.1,h1,24,'Tipo doc.',{CC:'13',CE:'22',TI:'12',PA:'41',PEP:'47',PPT:'48'}[e.tipoDoc||'CC']||'13',{b:true});box(M+TW*.1,Y-h1,TW*.18,h1,25,'Número de identificación',String(e.doc||''),{b:true});box(M+TW*.28,Y-h1,TW*.18,h1,26,'Primer apellido',nm.ap1,{b:true});box(M+TW*.46,Y-h1,TW*.18,h1,27,'Segundo apellido',nm.ap2,{b:true});box(M+TW*.64,Y-h1,TW*.16,h1,28,'Primer nombre',nm.no1,{b:true});box(M+TW*.8,Y-h1,TW*.2,h1,29,'Otros nombres',nm.no2,{b:true});Y-=h1;
+  box(M,Y-h1,TW*.2,h1,null,'Período de la certificación','',{fill:SF});box(M+TW*.2,Y-h1,TW*.13,h1,30,'DE',f2(d.desde));box(M+TW*.33,Y-h1,TW*.13,h1,31,'A',f2(d.hasta));box(M+TW*.46,Y-h1,TW*.14,h1,32,'Fecha de expedición',f2(C2.fecha||todayCO()));box(M+TW*.6,Y-h1,TW*.24,h1,33,'Lugar donde se practicó la retención',c.ciudad||'');box(M+TW*.84,Y-h1,TW*.07,h1,34,'Dpto.',String(c.pilaDep||(esFarmaser()?'25':'11')));box(M+TW*.91,Y-h1,TW*.09,h1,35,'Mpio.',String(c.pilaMun||(esFarmaser()?'754':'001')));Y-=h1+4;
+  const fila=(n,yy,hh=14)=>{const lw=TW*.78;pg.drawRectangle({x:M,y:yy,width:lw,height:hh,borderColor:LN,borderWidth:.5});txt(fit(C220[n],FN,6.6,lw-8),M+4,yy+4.2,6.6);pg.drawRectangle({x:M+lw,y:yy,width:16,height:hh,borderColor:LN,borderWidth:.5,color:SF});txt(String(n),M+lw+3,yy+4.2,6.5,FB,K);
+    pg.drawRectangle({x:M+lw+16,y:yy,width:TW-lw-16,height:hh,borderColor:LN,borderWidth:.5});const t=$m(v[n]),bb=n===52||n===60;txt(t,W-M-4-(bb?FB:FN).widthOfTextAtSize(t,7.5),yy+4,7.5,bb?FB:FN)};
+  sec('Concepto de los ingresos                                                                                                                                                                       Valor',Y-12);Y-=12;for(let n=36;n<=52;n++){fila(n,Y-14);Y-=14}Y-=4;
+  sec('Concepto de los aportes                                                                                                                                                                          Valor',Y-12);Y-=12;for(let n=53;n<=60;n++){fila(n,Y-14);Y-=14}Y-=4;
+  sec('Nombre del pagador o agente retenedor',Y-12);Y-=12;box(M,Y-16,TW,16,null,'',(c.cartaFirma||c.repLegal||c.firmante||'').toUpperCase()+'  ·  '+(c.empresa||'').toUpperCase(),{sz:7.5});Y-=20;
+  sec('Datos a cargo del trabajador o pensionado',Y-12);Y-=12;
+  const cw=[TW*.58,TW*.21,TW*.21];[['Concepto de otros ingresos',null,null],['Arrendamientos',61,68],['Honorarios, comisiones y servicios',62,69],['Intereses y rendimientos financieros',63,70],['Enajenación de activos fijos',64,71],['Loterías, rifas, apuestas y similares',65,72],['Otros',66,73],['Totales: (Valor recibido: sume 61 a 66), (Valor retenido: sume 68 a 73)',67,74]].forEach(([t,a,b],i)=>{const hh=11;
+    box(M,Y-hh,cw[0],hh,null,'',t,{sz:6.4,b:i===0,fill:i===0?SF:BL});box(M+cw[0],Y-hh,cw[1],hh,a,i===0?'':'',i===0?'Valor recibido':'',{sz:6.4,b:true,fill:i===0?SF:BL});box(M+cw[0]+cw[1],Y-hh,cw[2],hh,b,'',i===0?'Valor retenido':'',{sz:6.4,b:true,fill:i===0?SF:BL});Y-=hh});
+  box(M,Y-11,cw[0]+cw[1],11,null,'','Total retenciones año gravable '+y+' (sume 60 + 74)',{sz:6.4,b:true});box(M+cw[0]+cw[1],Y-11,cw[2],11,75,'','',{sz:6.4});Y-=15;
+  box(M,Y-11,TW*.08,11,null,'','Item',{sz:6.4,b:true,fill:SF});box(M+TW*.08,Y-11,TW*.71,11,76,'','Identificación de los bienes poseídos',{sz:6.4,b:true,fill:SF});box(M+TW*.79,Y-11,TW*.21,11,77,'','Valor patrimonial',{sz:6.4,b:true,fill:SF});Y-=11;
+  for(let i=1;i<=3;i++){box(M,Y-11,TW*.08,11,null,'',String(i),{sz:6.4});box(M+TW*.08,Y-11,TW*.71,11,null,'','');box(M+TW*.79,Y-11,TW*.21,11,null,'','');Y-=11}
+  box(M,Y-11,TW*.79,11,null,'','Deudas vigentes a 31 de diciembre de '+y,{sz:6.4,b:true});box(M+TW*.79,Y-11,TW*.21,11,78,'','');Y-=15;
+  sec('Identificación del dependiente económico de acuerdo con el parágrafo 2 del artículo 387 del Estatuto Tributario',Y-12);Y-=12;
+  box(M,Y-18,TW*.12,18,79,'Tipo documento','');box(M+TW*.12,Y-18,TW*.2,18,80,'No. Documento','');box(M+TW*.32,Y-18,TW*.48,18,81,'Apellidos y nombres','');box(M+TW*.8,Y-18,TW*.2,18,82,'Parentesco','');Y-=22;
+  const certs=[`Mi patrimonio bruto no excedió de 4.500 UVT ($${$m(4500*U)}).`,`No fui responsable del impuesto sobre las ventas a 31 de diciembre de ${y}.`,`Mis ingresos brutos fueron inferiores a 1.400 UVT ($${$m(1400*U)}).`,`Mis consumos mediante tarjeta de crédito no excedieron la suma de 1.400 UVT ($${$m(1400*U)}).`,`Que el total de mis compras y consumos no superaron la suma de 1.400 UVT ($${$m(1400*U)}).`,`Que el valor total de mis consignaciones bancarias, depósitos o inversiones financieras no excedieron los 1.400 UVT ($${$m(1400*U)}).`];
+  const bh=12+certs.length*9+16;pg.drawRectangle({x:M,y:Y-bh,width:TW*.72,height:bh,borderColor:LN,borderWidth:.6});txt(`Certifico que durante el año gravable ${y}:`,M+4,Y-10,7,FB);certs.forEach((t,i)=>txt(`${i+1}. ${t}`,M+6,Y-20-i*9,5.9));
+  txt('Por lo tanto, manifiesto que no estoy obligado a presentar declaración de renta y complementario por el año gravable '+y+'.',M+4,Y-bh+5,5.9,FB);
+  pg.drawRectangle({x:M+TW*.72,y:Y-bh,width:TW*.28,height:bh,borderColor:LN,borderWidth:.6});pg.drawLine({start:{x:M+TW*.72+10,y:Y-bh+20},end:{x:W-M-10,y:Y-bh+20},thickness:.6,color:NEG});txt('Firma del trabajador o pensionado',M+TW*.72+16,Y-bh+11,6.5,FN,GR);Y-=bh+6;
+  txt('Nota: este certificado sustituye para todos los efectos legales la declaración de renta y complementario para el trabajador o pensionado que lo firme.',M,Y-6,5.9,FN,GR);
+  txt('Para aquellos trabajadores independientes contribuyentes del impuesto unificado deberán presentar la declaración anual consolidada del Régimen Simple de Tributación (SIMPLE).',M,Y-14,5.9,FN,GR);
+  return await doc.save()}
 function bindNov(P){
   const aplicarSal=id=>{const v=+$('#ns-'+id).value,f=$('#nsd-'+id).value;if(!v||!f)return;if(f<P.ini||f>P.fin)return toast('La fecha debe estar dentro del periodo');const e=S.emps[id];e.salarios=(e.salarios||[]).filter(x=>x.desde!==f);e.salarios.push({desde:f,valor:v});e.salarios.sort((a,b)=>a.desde<b.desde?-1:1);persist('emp',id);toast(`Salario de ${e.nombre.split(' ')[0]}: ${money(v)} desde ${fd(f)}`);renderNov()};
   document.querySelectorAll('[data-ns]').forEach(i=>i.onchange=()=>aplicarSal(i.dataset.ns));document.querySelectorAll('[data-nsd]').forEach(i=>i.onchange=()=>aplicarSal(i.dataset.nsd));
@@ -1266,7 +1383,8 @@ function renderNomina(){
   const hist=Object.entries(S.cierres||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   h+=`<div class="section"><h2 style="margin-bottom:10px">Nóminas guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Periodo</th><th>Guardada</th><th class="n">Empleados</th><th class="n">Devengado</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(([k,c])=>{const [mes,t]=k.split('_'),pp=periodo(mes,t),sm=f=>c.filas.reduce((a,r)=>a+(r[f]||0),0);return `<tr><td>${tituloP(pp)}</td><td>${fCorta(c.fecha)}</td><td class="n">${c.filas.length}</td><td class="n">${money(sm('dev'))}</td><td class="n">${money(sm('neto'))}</td><td><button class="ghost free" data-vercierre="${k}">Ver</button></td></tr>`}).join('')}</tbody></table></div>`:'<p class="note">Todavía no hay nóminas guardadas. Al terminar cada periodo, use «Guardar nómina del periodo».</p>'}</div>`;
   h+=`<div id="detalle"></div>`;
-  $('#v-nomina').innerHTML=h;bindNom();
+  try{h+=panelRet(P,ULTIMA)}catch(x){console.warn(x)}
+  $('#v-nomina').innerHTML=h;bindNom();bindRet();
   document.querySelectorAll('[data-vercierre]').forEach(b=>b.onclick=()=>{const [mes,t]=b.dataset.vercierre.split('_');UI.mes=mes;UI.tipo=t;UI.det=null;saveUI();renderNomina();scrollTo({top:0})});
   const bc=$('#nCerrar');if(bc)bc.onclick=()=>{if(!UI.cAsk){UI.cAsk=true;bc.textContent='¿Confirmar? Los valores quedan fijos';setTimeout(()=>{UI.cAsk=false;const x=$('#nCerrar');if(x)x.textContent='Guardar nómina del periodo'},4000);return}
     UI.cAsk=false;bitacora(`Guardó (cerró) la nómina ${P.key}`);S.cierres=S.cierres||{};S.cierres[P.key]={fecha:todayCO(),por:CUR.email,filas:JSON.parse(JSON.stringify(R.map(r=>({...r,e:{id:r.e.id,nombre:r.e.nombre,doc:r.e.doc||'',cargo:r.e.cargo||'',sede:r.e.sede||'',arl:r.e.arl||'II',ingreso:r.e.ingreso||'',retiro:r.e.retiro||''}}))))};saveLocal();renderNomina();toast('Nómina guardada en el historial')};
@@ -4104,8 +4222,9 @@ function textoCta(F){
   return {p1,p2,p3};
 }
 function renderCert(){
+  if(CT.tipo==='c220')return render220();
   const lista=empAll(),F=CT.f;
-  const cta=CT.tipo==='cta';let h=`<div class="bar"><h2 class="grow">${cta?'Carta de apertura de cuenta':'Certificados laborales'}</h2></div><div class="panel grid-form"><label class="f">Documento<select id="ctT" class="free"><option value="cert"${cta?'':' selected'}>Certificación laboral</option><option value="cta"${cta?' selected':''}>Carta de apertura de cuenta bancaria</option></select></label><label class="f">Trabajador<select id="ctE" class="free"><option value="">Elija…</option>${lista.map(x=>`<option value="${x.id}"${CT.eid===x.id?' selected':''}>${esc(x.nombre)}${x.activo===false?' (retirado)':''}</option>`).join('')}</select></label></div>`;
+  const cta=CT.tipo==='cta';let h=`<div class="bar"><h2 class="grow">${cta?'Carta de apertura de cuenta':'Certificados laborales'}</h2></div><div class="panel grid-form"><label class="f">Documento<select id="ctT" class="free"><option value="cert"${cta?'':' selected'}>Certificación laboral</option><option value="cta"${cta?' selected':''}>Carta de apertura de cuenta bancaria</option><option value="c220">Certificado de ingresos y retenciones (formulario 220)</option></select></label><label class="f">Trabajador<select id="ctE" class="free"><option value="">Elija…</option>${lista.map(x=>`<option value="${x.id}"${CT.eid===x.id?' selected':''}>${esc(x.nombre)}${x.activo===false?' (retirado)':''}</option>`).join('')}</select></label></div>`;
   if(F&&cta){
     const T=textoCta(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
     h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
