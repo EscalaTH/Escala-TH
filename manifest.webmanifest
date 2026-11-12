@@ -1,7 +1,7 @@
 {
- "name": "Escala TH",
- "short_name": "Escala TH",
- "description": "Talento humano y nómina de Escalautos",
+ "name": "Gestor Talento Humano",
+ "short_name": "Talento Humano",
+ "description": "Gestor Talento Humano · Escalautos",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
