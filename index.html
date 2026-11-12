@@ -56,6 +56,9 @@ nav.tabs button:hover{color:var(--ink)}
 .ini-k{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font:inherit}
 .ini-k .v{font-family:var(--f-display);font-size:1.9rem;font-weight:800;color:var(--accent);line-height:1}
 .ini-k:hover,.ini-t:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(20,40,120,.1)}
+.ini-al{display:grid;gap:8px}.ini-a{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit;color:var(--ink)}.ini-a small{color:var(--muted);line-height:1.35}.ini-a:hover{border-color:var(--accent)}
+.ini-m{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.ini-m small{color:var(--muted);font-size:12px}.ini-ind .panel{padding:14px 16px}
+.ini-ind{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-top:10px}@media(max-width:800px){.ini-ind{grid-template-columns:1fr}}.ini-sd{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:8px;font-size:13px}.ini-sd i{grid-column:1/-1;height:6px;border-radius:3px;background:var(--accent);opacity:.7}
 .ini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .ini-t{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;font:inherit;color:var(--ink)}
 .ini-t svg{width:34px;height:34px;padding:7px;border-radius:10px;background:var(--accent);stroke:#fff;fill:rgba(255,255,255,.3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -356,26 +359,61 @@ async function envolver(email,pw,raw){const salt=toB64(crypto.getRandomValues(ne
   return {salt,wiv:toB64(iv),wct:toB64(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,raw))}}
 async function desenvolver(u,pw){const k=await derivar(u.email,pw,u.salt);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(u.wiv)},k,fromB64(u.wct)))}
 function caja(b){return {v:2,users:USERS.map(({email,nombre,rol,perm,empresas,salt,wiv,wct})=>({email,nombre,rol,perm:perm||{},empresas:empresas||[],salt,wiv,wct})),...(REC?{rec:REC}:{}),...(MAESTRA?{maestra:MAESTRA}:{}),...b}}
-function escribirCaja(b){localStorage.setItem(LKEY,JSON.stringify(caja(b)))}
+function escribirCaja(b){localStorage.setItem(LKEY,JSON.stringify(caja(b)));fsProgramar(b)}
+/* ===== guardado automático en un archivo del computador (p. ej. carpeta de Google Drive) ===== */
+const FS={h:null,ok:false,t:null,err:'',sup:typeof window.showSaveFilePicker==='function'},FS_K=LKEY+'.fsT';
+function fsDB(){return new Promise((ok,no)=>{const r=indexedDB.open('escala-archivo',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function fsGet(){try{const db=await fsDB();return await new Promise(ok=>{const q=db.transaction('h').objectStore('h').get(LKEY);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function fsPut(h){try{const db=await fsDB();await new Promise(ok=>{const t=db.transaction('h','readwrite');h?t.objectStore('h').put(h,LKEY):t.objectStore('h').delete(LKEY);t.oncomplete=ok;t.onerror=ok})}catch(e){}}
+const fsTexto=b=>JSON.stringify({app:'nomina-cifrada',modo:MODO,fecha:new Date().toISOString(),caja:caja(b)});
+let fsT=null,fsUlt=null;
+function fsProgramar(b){if(!FS.h||!FS.ok)return;fsUlt=b;clearTimeout(fsT);fsT=setTimeout(fsEscribir,2500)}
+async function fsEscribir(){if(!FS.h||!FS.ok||!fsUlt)return;try{const w=await FS.h.createWritable();const txt=fsTexto(fsUlt);await w.write(txt);await w.close();FS.t=new Date().toISOString();FS.err='';try{localStorage.setItem(FS_K,FS.t)}catch(e){}setStatus('Guardado en este dispositivo y en «'+FS.h.name+'»')}
+  catch(e){FS.err=e&&e.name==='NotAllowedError'?'Se necesita volver a dar permiso':'No se pudo escribir el archivo';FS.ok=false;fsBarra()}}
+async function fsIniciar(){if(!FS.sup)return;FS.h=await fsGet();if(!FS.h)return fsBarra();try{FS.ok=(await FS.h.queryPermission({mode:'readwrite'}))==='granted'}catch(e){FS.ok=false}
+  if(FS.ok)await fsRevisar();fsBarra();if(FS.ok){clearTimeout(saveT);const b=await cifrar(KEY,payload());fsUlt=b;fsEscribir()}}
+async function fsRevisar(){ // si otro computador guardó en el mismo archivo después, ofrece cargar esos datos
+  try{const f=await FS.h.getFile(),j=JSON.parse(await f.text()),loc=localStorage.getItem(FS_K)||'';FS.otro=null;
+    if(j&&j.caja&&j.caja.ct&&j.fecha&&loc&&j.fecha>loc&&Math.abs(Date.parse(j.fecha)-Date.parse(loc))>5000)FS.otro=j}catch(e){}}
+async function fsActivar(){if(!FS.h)return;try{FS.ok=(await FS.h.requestPermission({mode:'readwrite'}))==='granted'}catch(e){FS.ok=false}if(FS.ok){FS.err='';await fsRevisar();if(!FS.otro){const b=await cifrar(KEY,payload());fsUlt=b;await fsEscribir()}}fsBarra();if(UI.tab==='params')render()}
+async function fsElegir(){if(!FS.sup)return toast('Este navegador no permite guardar en un archivo. Use Google Chrome o Edge en el computador.');
+  try{const h=await window.showSaveFilePicker({suggestedName:`Escala_TH_datos_${MODO==='general'?'SER_SAS':nrm(S.config.empresa||MODO).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}.json`,types:[{description:'Datos cifrados de la app',accept:{'application/json':['.json']}}]});
+    FS.h=h;FS.ok=true;FS.otro=null;await fsPut(h);clearTimeout(saveT);const b=await cifrar(KEY,payload());escribirCaja(b);fsUlt=b;await fsEscribir();bitacora('Activó el guardado automático en el archivo '+h.name);fsBarra();render();toast('Listo: cada cambio se guarda también en «'+h.name+'»')}catch(e){if(e&&e.name!=='AbortError')toast('No se pudo vincular el archivo')}}
+async function fsQuitar(){FS.h=null;FS.ok=false;FS.otro=null;await fsPut(null);try{localStorage.removeItem(FS_K)}catch(e){}fsBarra();render();toast('Se dejó de guardar en el archivo')}
+function fsCargarOtro(){const j=FS.otro;if(!j)return;try{localStorage.setItem(LKEY,JSON.stringify(j.caja));localStorage.setItem(FS_K,j.fecha)}catch(e){return toast('No se pudo cargar')}location.reload()}
+function fsBarra(){let el=$('#fsBar');if(!el){const st=document.querySelector('.stbar');if(!st)return;st.insertAdjacentHTML('afterend','<div id="fsBar"></div>');el=$('#fsBar')}
+  if(FS.otro){el.innerHTML=`<div class="alert" style="margin:6px 0">El archivo «${esc(FS.h.name)}» tiene cambios más recientes (${new Date(FS.otro.fecha).toLocaleString('es-CO')}), probablemente hechos en otro computador. <button class="free primary" id="fsLoad">Cargar esos datos</button> <button class="free ghost" id="fsKeep">Seguir con los de este computador</button></div>`;
+    $('#fsLoad').onclick=fsCargarOtro;$('#fsKeep').onclick=async()=>{FS.otro=null;const b=await cifrar(KEY,payload());fsUlt=b;await fsEscribir();fsBarra()};return}
+  if(FS.h&&!FS.ok){el.innerHTML=`<div class="alert info" style="margin:6px 0">Para seguir guardando automáticamente en «${esc(FS.h.name)}» dé permiso otra vez. <button class="free primary" id="fsOn">Dar permiso</button></div>`;$('#fsOn').onclick=fsActivar;return}
+  el.innerHTML=''}
+function panelArchivo(){const t=FS.t||localStorage.getItem(FS_K);
+  return `<div class="section"><h2 style="margin-bottom:8px">Guardado automático en un archivo</h2><div class="panel imp"><p class="note" style="margin:0">Además de este navegador, la app puede guardar <b>cada cambio</b> en un archivo cifrado de su computador. Si lo crea dentro de su carpeta de <b>Google Drive para computador</b> (o OneDrive), queda respaldado en la nube sin descargar copias. Para abrirlo en otro computador: entre allí a la app y use «Abrir una copia cifrada» con ese archivo; luego vincúlelo también allí.</p>
+   ${!FS.sup?'<div class="alert">Este navegador no lo permite. Funciona en Google Chrome o Microsoft Edge en el computador, abriendo la app desde el acceso directo o el archivo (no dentro de Claude).</div>':FS.h?`<div class="row"><span class="pill ${FS.ok?'good':''}">${FS.ok?'Activo':'Sin permiso'}</span><b>${esc(FS.h.name)}</b><span class="status">${t?'Último guardado: '+new Date(t).toLocaleString('es-CO'):''}${FS.err?' · '+esc(FS.err):''}</span>${FS.ok?'':'<button class="free primary" id="fsOn2">Dar permiso</button>'}<button class="free" id="fsPick">Cambiar archivo</button><button class="free ghost danger" id="fsOff">Dejar de guardar en archivo</button></div>`
+   :`<div class="row"><button class="free primary" id="fsPick">Elegir dónde guardar (por ejemplo, en Google Drive)</button></div>`}</div></div>`}
+function bindArchivo(){const a=$('#fsPick');if(a)a.onclick=fsElegir;const b=$('#fsOff');if(b)b.onclick=fsQuitar;const c=$('#fsOn2');if(c)c.onclick=fsActivar}
 const esAdmin=()=>!ME||ME.rol==='admin';
 const nivel=t=>esAdmin()?'editar':((ME.perm||{})[t]||'no');
 function puedeVer(t){return t==='params'||t==='inicio'||nivel(t)!=='no'}
 /* varias empresas (versión general) */
 let DATA={empresas:{},actual:null};
-function sync(){if(MODO==='general'&&DATA.actual&&DATA.empresas[DATA.actual])DATA.empresas[DATA.actual]={config:S.config,emps:S.emps,cuentas:S.cuentas,nov:S.nov,liq:S.liq,prest:S.prest||{},cierres:S.cierres||{},th:S.th||{disc:[],perm:[],dot:[]},hor:S.hor||{},asis:S.asis||{},pilaEd:S.pilaEd||{}}}
+function sync(){if(MODO==='general'&&DATA.actual&&DATA.empresas[DATA.actual])DATA.empresas[DATA.actual]={config:S.config,emps:S.emps,cuentas:S.cuentas,nov:S.nov,liq:S.liq,prest:S.prest||{},cierres:S.cierres||{},th:S.th||{disc:[],perm:[],dot:[]},hor:S.hor||{},asis:S.asis||{},pilaEd:S.pilaEd||{},log:S.log||[],incap:S.incap||{}}}
 function payload(){if(MODO==='general'){sync();return DATA}return S}
 function aplicarPayload(d){if(MODO==='general'){DATA=d&&d.empresas?d:{empresas:{},actual:null};if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);else{DATA.actual=null;cargarDatos({config:DEF_CONFIG})}}else cargarDatos(d)}
 function fechaISO(v){if(v==null||v==='')return '';if(typeof v==='number'&&v>20000&&v<80000)return new Date(Date.UTC(1899,11,30)+v*864e5).toISOString().slice(0,10);
   const t=String(v).trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t);if(m){const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));return isNaN(d)||d.getUTCMonth()!==+m[2]-1?'':d.toISOString().slice(0,10)}
   m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/.exec(t);if(m){let y=+m[3];if(y<100)y+=2000;const d=new Date(Date.UTC(y,+m[2]-1,+m[1]));return isNaN(d)||d.getUTCMonth()!==+m[2]-1?'':d.toISOString().slice(0,10)}
   const d=new Date(t);return isNaN(d)?'':d.toISOString().slice(0,10)}
-function limpiarEmps(E){const o={};Object.entries(E||{}).forEach(([k,e])=>{if(!e||typeof e!=='object')return;const id=e.id||k;['ingreso','retiro','nacimiento','finContrato','finFijo'].forEach(f=>{if(f in e)e[f]=fechaISO(e[f])});o[id]={...e,id,nombre:String(e.nombre??'').trim()||'(sin nombre)',doc:e.doc==null?'':String(e.doc),cargo:e.cargo==null?'':String(e.cargo),sede:e.sede==null?'':String(e.sede),salario:+e.salario||0,...(e.salarios&&!Array.isArray(e.salarios)?{salarios:[]}:{}),...(e.benef&&!Array.isArray(e.benef)?{benef:[]}:{})}});return o}
-function cargarDatos(j){S.config={...DEF_CONFIG,...j.config,arl:{...DEF_CONFIG.arl,...((j.config||{}).arl||{})}};S.emps=limpiarEmps(j.emps);S.cuentas=j.cuentas||{};S.mallas={};S.nov=j.nov||{};S.liq=j.liq||{};S.prest=j.prest||{};S.cierres=j.cierres||{};S.th=j.th||{disc:[],perm:[],dot:[]};S.hor=j.hor||{};S.asis=j.asis||{};S.pilaEd=j.pilaEd||{};S.config.listas={...structuredClone(DEF_CONFIG.listas),...(S.config.listas||{})}}
+function limpiarEmps(E){const o={};Object.entries(E||{}).forEach(([k,e])=>{if(!e||typeof e!=='object')return;const id=e.id||k;if(/^PORB$/i.test(String(e.afp||'').trim()))e.afp='PORVENIR';['ingreso','retiro','nacimiento','finContrato','finFijo'].forEach(f=>{if(f in e)e[f]=fechaISO(e[f])});o[id]={...e,id,nombre:String(e.nombre??'').trim()||'(sin nombre)',doc:e.doc==null?'':String(e.doc),cargo:e.cargo==null?'':String(e.cargo),sede:e.sede==null?'':String(e.sede),salario:+e.salario||0,...(e.salarios&&!Array.isArray(e.salarios)?{salarios:[]}:{}),...(e.benef&&!Array.isArray(e.benef)?{benef:[]}:{})}});return o}
+function cargarDatos(j){S.config={...DEF_CONFIG,...j.config,arl:{...DEF_CONFIG.arl,...((j.config||{}).arl||{})}};S.emps=limpiarEmps(j.emps);S.cuentas=j.cuentas||{};S.mallas={};S.nov=j.nov||{};S.liq=j.liq||{};S.prest=j.prest||{};S.cierres=j.cierres||{};S.th=j.th||{disc:[],perm:[],dot:[]};S.hor=j.hor||{};S.asis=j.asis||{};S.pilaEd=j.pilaEd||{};S.log=Array.isArray(j.log)?j.log:[];S.incap=j.incap||{};S.config.listas={...structuredClone(DEF_CONFIG.listas),...(S.config.listas||{})}}
 function guardadoLocal(){try{return JSON.parse(localStorage.getItem(LKEY)||'null')}catch(e){return null}}
 function saveLocal(){if(!KEY)return;clearTimeout(saveT);saveT=setTimeout(async()=>{try{const b=await cifrar(KEY,payload());escribirCaja(b);setStatus('Guardado en este dispositivo')}catch(e){toast('No se pudo guardar en este navegador. Descargue una copia de seguridad.')}},300)}
 function setStatus(t){$('#status').textContent=t}
 const firma=()=>({_por:PERM.uid||'',_en:new Date().toISOString()});
+function bitacora(txt){try{S.log=S.log||[];const u=(ME&&(ME.nombre||ME.email))||CUR.email||'';const last=S.log[S.log.length-1],now=new Date();
+  if(last&&last.u===u&&last.d===txt&&now-new Date(last.t)<120000){last.t=now.toISOString();return}
+  S.log.push({t:now.toISOString(),u,d:txt});if(S.log.length>1500)S.log.splice(0,S.log.length-1500)}catch(e){}}
 async function persist(kind,id){
+  if(kind!=='incap')bitacora(kind==='config'?'Cambió parámetros de la empresa':kind==='emp'?`Modificó el empleado ${(S.emps[id]||{}).nombre||id}`:kind==='malla'?`Modificó horarios de la semana ${id}`:kind==='nov'?`Modificó novedades del periodo ${id}`:kind==='pila'?'Modificó la planilla de seguridad social':`Cambio en ${kind}`);
   if(MODE!=='db'){if(!PERM.write){setStatus('Solo consulta: no se guardó');return}saveLocal();setStatus('Guardado en este navegador');return}
   if(!PERM.write){setStatus('Solo consulta: no se guardó');return}
   try{
@@ -540,6 +578,41 @@ function lockUI(){
 }
 /* ===================== menú principal ===================== */
 const DESC_MOD={empleados:'Fichas, ingresos, salarios y orden de la lista',afil:'Formatos y seguimiento de EPS, ARL y caja',hor:'Turnos semanales que alimentan la nómina',novedades:'Incapacidades, licencias, extras y descuentos',nomina:'Liquidar, revisar y cerrar el periodo',pila:'Aportes a seguridad social del mes',prov:'Cesantías, intereses, prima y vacaciones',vac:'Días causados, tomados y pendientes',liq:'Liquidación y documentos de retiro',cert:'Certificaciones laborales y cartas',contratos:'Contratos, otrosíes y prórrogas',th:'Periodo de prueba, evaluaciones y procesos',params:'Empresa, parámetros legales y usuarios'};
+function alertasInicio(venc){
+  const hoy=todayCO(),A=[],lista=a=>a.length>8?a.slice(0,8).join(', ')+` y ${a.length-8} más`:a.join(', '),add=(nivel,tab,titulo,det)=>A.push({nivel,tab,titulo,det});
+  try{if(venc.length)add('alta','contratos',`${venc.length} contrato${venc.length>1?'s':''} a término fijo por vencer`,'Recuerde el preaviso escrito de 30 días si no se va a prorrogar: '+venc.sort((a,b)=>a[1]<b[1]?-1:1).map(([e,f])=>`${e.nombre} (${fCorta(f)})`).join(', '))}catch(x){}
+  try{const pp=ppEnCurso().map(e=>[e,ppDe(e).venc]).filter(([,v])=>v&&v>=hoy&&v<=addDays(hoy,15));if(pp.length)add('alta','th',`${pp.length} periodo${pp.length>1?'s':''} de prueba termina${pp.length>1?'n':''} en los próximos 15 días`,'Evalúe antes del vencimiento: '+pp.map(([e,v])=>`${e.nombre} (${fCorta(v)})`).join(', '))}catch(x){}
+  try{const vv=empList().map(e=>[e,calcVac(e,hoy)]).filter(([,v])=>v&&v.pend>=15).sort((a,b)=>b[1].pend-a[1].pend);
+    const dos=vv.filter(([,v])=>v.pend>=30);if(dos.length)add('alta','vac',`${dos.length} empleado${dos.length>1?'s':''} con dos o más periodos de vacaciones acumulados`,dos.map(([e,v])=>`${e.nombre} (${Math.floor(v.pend)} días)`).join(', '));
+    const uno=vv.filter(([,v])=>v.pend<30);if(uno.length)add('media','vac',`${uno.length} empleado${uno.length>1?'s':''} con un periodo de vacaciones por disfrutar`,uno.map(([e,v])=>`${e.nombre} (${Math.floor(v.pend)} días)`).join(', '))}catch(x){}
+  try{const y=+hoy.slice(0,4);for(const [n,l,md] of ENTREGAS){const f=`${y}-${md}`;if(f>=hoy&&f<=addDays(hoy,40)){const L=thD().dot,pend=empAll().filter(e=>dotDerecho(e,y,n)&&!L.find(x=>x.empId===e.id&&x.anio===y&&x.n===n));if(pend.length)add('media','th',`Entrega de dotación hasta el ${l}: ${pend.length} pendiente${pend.length>1?'s':''}`,lista(pend.map(e=>e.nombre)))}}}catch(x){}
+  try{const m=new Date(Date.UTC(+hoy.slice(0,4),+hoy.slice(5,7)-2,1)).toISOString().slice(0,7),cs=S.cierres||{};if(+hoy.slice(8,10)>=5&&!cs[m+'_mensual']&&!cs[m+'_q2'])add('media','nomina',`La nómina de ${MESESL[+m.slice(5,7)-1].toLowerCase()} no está guardada`,'Guárdela para que cuente en provisiones, prima, cesantías y liquidaciones.')}catch(x){}
+  try{const liq=empAll().filter(e=>e.retiro&&e.activo!==false&&!Object.values(S.liq||{}).some(l=>l.empId===e.id));if(liq.length)add('alta','liq',`${liq.length} retiro${liq.length>1?'s':''} sin liquidar`,'Recuerde pagar la liquidación final para evitar la indemnización moratoria (art. 65 CST): '+liq.map(e=>`${e.nombre} (retiro ${fCorta(e.retiro)})`).join(', '))}catch(x){}
+  try{const pi=Object.values(S.incap||{}).filter(x=>x.cobrar>0&&x.estado!=='pagada');if(pi.length)add('media','novedades',`${pi.length} incapacidad${pi.length>1?'es':''} por cobrar a EPS o ARL`,'Valor pendiente: '+money(pi.reduce((a,x)=>a+(+x.cobrar||0),0)))}catch(x){}
+  if(!A.length)return `<div class="panel" style="margin:10px 0"><b>Sin alertas</b> <span class="status">No hay vencimientos ni pendientes próximos.</span></div>`;
+  const col={alta:'#c0392b',media:'#b7791f'};
+  return `<h2 style="margin:18px 0 10px">Alertas</h2><div class="ini-al">${A.sort((a,b)=>a.nivel===b.nivel?0:a.nivel==='alta'?-1:1).map(a=>`<button class="free ini-a" data-go="${a.tab}" style="border-left:4px solid ${col[a.nivel]}"><b>${esc(a.titulo)}</b><small>${esc(a.det)}</small></button>`).join('')}</div>`;
+}
+function indicadoresMes(){ // agrega las nóminas guardadas por mes (quincenas sumadas)
+  const M={};Object.entries(S.cierres||{}).forEach(([k,ci])=>{const m=k.slice(0,7);if(!/^\d{4}-\d{2}$/.test(m)||!ci||!Array.isArray(ci.filas))return;
+    const o=M[m]||(M[m]={costo:0,dev:0,neto:0,ext:0,ap:0,pr:0,dBase:0,dAus:0,emps:new Set(),sede:{}});
+    ci.filas.forEach(r=>{const cst=+r.costo||0,d=r.d||{};o.costo+=cst;o.dev+=+r.dev||0;o.neto+=+r.neto||0;o.ext+=(+r.ext||0)+(+r.recDF||0)+(+r.recNoc||0);o.ap+=+r.apTot||0;o.pr+=+r.prTot||0;
+      o.dBase+=+d.base||0;o.dAus+=(+d.ig||0)+(+d.il||0)+(+d.lnr||0);if(r.e)o.emps.add(r.e.id);const sd=(r.e&&r.e.sede)||'Sin sede';o.sede[sd]=(o.sede[sd]||0)+cst})});
+  return M}
+function indicadoresInicio(){
+  try{const M=indicadoresMes(),ms=Object.keys(M).sort().slice(-12);if(!ms.length)return '';
+    const u=ms[ms.length-1],U=M[u],pv=ms.length>1?M[ms[ms.length-2]]:null,nm=m=>MESESL[+m.slice(5,7)-1].slice(0,3)+' '+m.slice(2,4),
+      pct=(a,b)=>b?Math.round(a/b*1000)/10:0,var_=pv&&pv.costo?pct(U.costo-pv.costo,pv.costo):null,
+      y=u.slice(0,4),emps=empAll(),ret=emps.filter(e=>e.retiro&&e.retiro.slice(0,4)===y).length,ing=emps.filter(e=>e.ingreso&&e.ingreso.slice(0,4)===y).length,
+      prom=ms.filter(m=>m.slice(0,4)===y).reduce((a,m)=>a+M[m].emps.size,0)/Math.max(1,ms.filter(m=>m.slice(0,4)===y).length),
+      mx=Math.max(...ms.map(m=>M[m].costo))||1,W=640,H=170,bw=W/ms.length;
+    const t=(v,l,sub)=>`<div class="kpi ini-k ini-m"><span class="v">${v}</span><span class="k">${l}</span>${sub?`<small>${sub}</small>`:''}</div>`;
+    const bars=ms.map((m,i)=>{const h=Math.round(M[m].costo/mx*(H-34)),x=i*bw+bw*.18,w=bw*.64;return `<g><title>${nm(m)}: ${money(M[m].costo)}</title><rect x="${x}" y="${H-18-h}" width="${w}" height="${h}" rx="3" fill="var(--accent)" opacity="${m===u?1:.55}"/><text x="${x+w/2}" y="${H-4}" text-anchor="middle" font-size="10" fill="currentColor">${nm(m)}</text></g>`}).join('');
+    const sedes=Object.entries(U.sede).sort((a,b)=>b[1]-a[1]),sm=sedes[0]?sedes[0][1]:1;
+    return `<h2 style="margin:18px 0 10px">Indicadores de gerencia <span class="status" style="font-size:13px;font-weight:400">· nóminas guardadas, ${MESESL[+u.slice(5,7)-1].toLowerCase()} ${u.slice(0,4)}</span></h2>
+     <div class="ini-kpis">${t(money(U.costo),'Costo total del mes',var_===null?'':(var_>=0?'▲ ':'▼ ')+Math.abs(var_)+'% vs. mes anterior')}${t(money(U.neto),'Neto pagado a empleados',U.emps.size+' empleados en nómina')}${t(pct(U.ext,U.dev)+'%','Extras y recargos sobre devengado',money(U.ext))}${t(pct(U.dAus,U.dBase)+'%','Ausentismo (incapacidades y licencias)',U.dAus+' días')}${t(pct(ret,prom)+'%','Rotación '+y,ret+(ret===1?' retiro':' retiros')+' · '+ing+(ing===1?' ingreso':' ingresos'))}</div>
+     <div class="ini-ind"><div class="panel"><b>Costo de nómina por mes</b><span class="status"> (salarios + seguridad social + prestaciones)</span><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin-top:8px;color:var(--muted)">${bars}</svg></div>
+      <div class="panel"><b>Costo por sede · ${nm(u)}</b>${sedes.map(([n,v])=>`<div class="ini-sd"><span>${esc(n)}</span><span class="mono">${money(v)}</span><i style="width:${Math.max(2,Math.round(v/sm*100))}%"></i></div>`).join('')}</div></div>`}catch(x){console.warn(x);return ''}}
 function renderInicio(){
   const c=S.config,hoy=todayCO(),act=empList(),mesN=+hoy.slice(5,7),MES=MESESL[mesN-1]||'';
   let porLiq=0,venc=[],cumple=[];
@@ -550,7 +623,8 @@ function renderInicio(){
   const mods=[...document.querySelectorAll('nav.tabs[role=tablist] button')].filter(b=>b.dataset.tab!=='inicio'&&!b.hidden);
   $('#v-inicio').innerHTML=`<div class="bar"><h2 class="grow">Bienvenida${ME&&ME.nombre?', '+esc(ME.nombre.split(' ')[0]):''}</h2><span class="status">${esc(fechaLarga(hoy))}</span></div>
    <div class="ini-kpis">${k(act.length,'Empleados activos','empleados')}${k(porLiq,'Retiros por liquidar','liq')}${k(venc.length,'Contratos fijos vencen en 45 días','contratos')}${k(cumple.length,'Cumpleaños de '+MES,'empleados')}</div>
-   ${venc.length?`<div class="panel" style="margin:10px 0"><b>Contratos a término fijo por vencer</b> (recuerde el preaviso de 30 días): ${venc.sort((a,b)=>a[1]<b[1]?-1:1).map(([e,f])=>`${esc(e.nombre)} — ${fCorta(f)}`).join(' · ')}</div>`:''}
+   ${alertasInicio(venc)}
+   ${indicadoresInicio()}
    <h2 style="margin:18px 0 10px">Módulos</h2>
    <div class="ini-grid">${mods.map(b=>`<button class="free ini-t" data-go="${b.dataset.tab}">${b.querySelector('svg').outerHTML}<span class="ini-n">${esc(b.querySelector('.tn')?.textContent||'')}</span><b>${esc(b.querySelector('.tl').textContent)}</b><small>${esc(DESC_MOD[b.dataset.tab]||'')}</small></button>`).join('')}</div>`;
   document.querySelectorAll('#v-inicio [data-go]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.go;saveUI();render();scrollTo({top:0})});
@@ -1062,9 +1136,52 @@ function renderNov(){
   h+=`</tbody></table></div>`;
   const CI=(S.cierres||{})[P.key];
   if(CI)h=h.replace('<div class="panel scroll fija">',`<div class="alert info">La nómina de este periodo se guardó el ${fCorta(CI.fecha)}. Para cambiar novedades, reábrala en la pestaña Nómina.</div><div class="panel scroll fija">`);
-  $('#v-novedades').innerHTML=h;bindNov(P);lockUI();
+  $('#v-novedades').innerHTML=h+panelIncap();bindNov(P);bindIncap();lockUI();
   if(CI)document.querySelectorAll('#v-novedades input[data-k],#v-novedades [data-ns],#v-novedades [data-nsd],#v-novedades [data-nsdel]').forEach(i=>i.disabled=true);
   if(doc&&doc._por)nombreDe(doc._por).then(n=>{const el=$('#novPor');if(el)el.textContent=`Última modificación: ${n} · ${new Date(doc._en).toLocaleString('es-CO')}`});
+}
+/* ===== control de incapacidades y cobro a EPS / ARL ===== */
+const INC_EST={pendiente:'Por radicar',radicada:'Radicada',pagada:'Pagada',rechazada:'Rechazada'};
+function incapDetectadas(){ // incapacidades de las nóminas guardadas que aún no están en el control
+  const out=[],reg=Object.values(S.incap||{});
+  Object.entries(S.cierres||{}).forEach(([k,ci])=>{(ci&&ci.filas||[]).forEach(r=>{const d=r.d||{},id=r.e&&r.e.id;if(!id)return;
+    [['eps',+d.ig||0],['arl',+d.il||0]].forEach(([t,dias])=>{if(!dias)return;if(reg.some(x=>x.empId===id&&x.per===k&&x.tipo===t))return;
+      const pag=+r.incap||0,share=(+d.ig||0)+(+d.il||0)?dias/((+d.ig||0)+(+d.il||0)):1,val=Math.round(pag*share),cob=t==='arl'?val:dias>2?Math.round(val*(dias-2)/dias):0;
+      if(cob>0)out.push({per:k,empId:id,nombre:r.e.nombre,tipo:t,dias:Math.min(30,dias),pagado:val,cobrar:cob})})})});
+  return out.sort((a,b)=>a.per<b.per?1:-1)}
+function panelIncap(){
+  const L=Object.values(S.incap||{}).sort((a,b)=>(a.desde||a.per||'')<(b.desde||b.per||'')?1:-1),det=incapDetectadas(),pend=L.filter(x=>x.estado!=='pagada'&&x.estado!=='rechazada'),tot=pend.reduce((a,x)=>a+(+x.cobrar||0),0);
+  const ent=x=>{const e=S.emps[x.empId]||{};return x.tipo==='arl'?(S.config.arlEnt||'ARL'):(e.eps||'EPS')};
+  return `<details class="section panel" style="padding:12px 14px;margin-top:14px" id="incBox" ${UI.incOpen?'open':''}><summary><b>Control de incapacidades y cobro a EPS / ARL</b> <span class="status">· ${pend.length} por cobrar${tot?' · '+money(tot):''}</span></summary>
+   <p class="note">La empresa paga los dos primeros días de la incapacidad por enfermedad general (y no se cobran); desde el tercero la paga la EPS (art. 1 Decreto 2943 de 2013). Las de origen laboral las paga la ARL desde el primer día. Lleve aquí el radicado y el estado de cada cobro; las pendientes aparecen como alerta en el Inicio.</p>
+   ${det.length?`<div class="alert info"><b>Incapacidades encontradas en las nóminas guardadas (${det.length}):</b><div class="scroll" style="margin-top:6px"><table><thead><tr><th>Periodo</th><th>Empleado</th><th>Origen</th><th class="n">Días</th><th class="n">Pagado en nómina</th><th class="n">A cobrar (estimado)</th><th></th></tr></thead><tbody>
+     ${det.slice(0,30).map((x,i)=>`<tr><td>${esc(x.per.replace('_mensual','').replace('_',' '))}</td><td>${esc(x.nombre)}</td><td>${x.tipo==='arl'?'Laboral (ARL)':'General (EPS)'}</td><td class="n">${x.dias}</td><td class="n">${money(x.pagado)}</td><td class="n">${money(x.cobrar)}</td><td><button class="ghost" data-incadd="${i}">Agregar al control</button></td></tr>`).join('')}</tbody></table></div></div>`:''}
+   <div class="bar" style="margin:8px 0"><span class="grow"></span><button class="free" id="incNew">Registrar incapacidad</button>${L.length?'<button class="free ghost" id="incXls">Descargar Excel</button>':''}</div>
+   ${UI.incEd?formIncap(UI.incEd):''}
+   ${L.length?`<div class="scroll"><table><thead><tr><th>Empleado</th><th>Entidad</th><th>Desde</th><th>Hasta</th><th class="n">Días</th><th class="n">A cobrar</th><th>Radicado</th><th>Estado</th><th class="n">Pagado por la entidad</th><th></th></tr></thead><tbody>
+     ${L.map(x=>`<tr><td><b>${esc((S.emps[x.empId]||{}).nombre||x.nombre||'')}</b>${x.obs?`<br><span class="status">${esc(x.obs)}</span>`:''}</td><td>${esc(ent(x))}</td><td>${x.desde?fCorta(x.desde):esc((x.per||'').slice(0,7))}</td><td>${x.hasta?fCorta(x.hasta):''}</td><td class="n">${x.dias||''}</td><td class="n">${money(+x.cobrar||0)}</td><td>${esc(x.radicado||'')}${x.fechaRad?`<br><span class="status">${fCorta(x.fechaRad)}</span>`:''}</td>
+       <td><select data-incest="${x.id}">${Object.entries(INC_EST).map(([k,t])=>`<option value="${k}"${(x.estado||'pendiente')===k?' selected':''}>${t}</option>`).join('')}</select></td><td class="n">${x.valPagado?money(+x.valPagado):''}${x.fechaPago?`<br><span class="status">${fCorta(x.fechaPago)}</span>`:''}</td><td style="white-space:nowrap"><button class="ghost" data-inced="${x.id}">Editar</button><button class="ghost danger" data-incdel="${x.id}">Quitar</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="status">Aún no hay incapacidades en el control.</p>'}</details>`}
+function formIncap(id){const x=id==='nuevo'?{tipo:'eps',estado:'pendiente'}:(S.incap[id]||{}),E=empAll().slice().sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const i=(k,t,ty='text',v=x[k])=>`<label class="f">${t}<input class="free" data-incf="${k}" type="${ty}" value="${esc(v??'')}"></label>`;
+  return `<form class="panel grid-form" id="incForm" style="margin-bottom:10px"><label class="f">Empleado<select class="free" data-incf="empId" required><option value="">—</option>${E.map(e=>`<option value="${e.id}"${x.empId===e.id?' selected':''}>${esc(e.nombre)}</option>`).join('')}</select></label>
+   <label class="f">Origen<select class="free" data-incf="tipo"><option value="eps"${x.tipo!=='arl'&&x.tipo!=='lma'?' selected':''}>Enfermedad general (EPS)</option><option value="lma"${x.tipo==='lma'?' selected':''}>Licencia de maternidad o paternidad (EPS)</option><option value="arl"${x.tipo==='arl'?' selected':''}>Accidente o enfermedad laboral (ARL)</option></select></label>
+   ${i('desde','Desde','date')}${i('hasta','Hasta','date')}${i('dias','Días','number')}${i('cobrar','Valor a cobrar','number')}${i('radicado','Número de radicado')}${i('fechaRad','Fecha de radicación','date')}
+   <label class="f">Estado<select class="free" data-incf="estado">${Object.entries(INC_EST).map(([k,t])=>`<option value="${k}"${(x.estado||'pendiente')===k?' selected':''}>${t}</option>`).join('')}</select></label>${i('valPagado','Valor pagado por la entidad','number')}${i('fechaPago','Fecha de pago','date')}${i('obs','Observaciones')}
+   <div class="bar" style="grid-column:1/-1"><span class="grow"></span><button type="button" class="ghost" id="incCan">Cancelar</button><button>Guardar</button></div></form>`}
+function bindIncap(){
+  const box=$('#incBox');if(!box)return;box.ontoggle=()=>{UI.incOpen=box.open};S.incap=S.incap||{};
+  const det=incapDetectadas(),sv=()=>{persist('incap');renderNov()};
+  document.querySelectorAll('[data-incadd]').forEach(b=>b.onclick=()=>{const x=det[+b.dataset.incadd],id='inc-'+Date.now().toString(36);S.incap[id]={id,...x,estado:'pendiente'};bitacora(`Agregó al control la incapacidad de ${x.nombre} (${x.per})`);UI.incOpen=true;sv()});
+  const n=$('#incNew');if(n)n.onclick=()=>{UI.incEd='nuevo';UI.incOpen=true;renderNov()};
+  document.querySelectorAll('[data-inced]').forEach(b=>b.onclick=()=>{UI.incEd=b.dataset.inced;UI.incOpen=true;renderNov()});
+  document.querySelectorAll('[data-incdel]').forEach(b=>b.onclick=()=>{if(!confirm('¿Quitar esta incapacidad del control?'))return;delete S.incap[b.dataset.incdel];sv()});
+  document.querySelectorAll('[data-incest]').forEach(sl=>sl.onchange=()=>{const x=S.incap[sl.dataset.incest];x.estado=sl.value;if(sl.value==='pagada'&&!x.fechaPago)x.fechaPago=todayCO();if(sl.value==='radicada'&&!x.fechaRad)x.fechaRad=todayCO();bitacora(`Incapacidad de ${(S.emps[x.empId]||{}).nombre||x.nombre}: ${INC_EST[sl.value]}`);sv()});
+  const c=$('#incCan');if(c)c.onclick=()=>{UI.incEd=null;renderNov()};
+  const f=$('#incForm');if(f)f.onsubmit=ev=>{ev.preventDefault();const o={};f.querySelectorAll('[data-incf]').forEach(i=>o[i.dataset.incf]=i.type==='number'?(i.value===''?'':+i.value):i.value);if(!o.empId)return toast('Escoja el empleado');
+    if(!o.dias&&o.desde&&o.hasta)o.dias=Math.round((Date.parse(o.hasta)-Date.parse(o.desde))/864e5)+1;
+    const id=UI.incEd==='nuevo'?'inc-'+Date.now().toString(36):UI.incEd;S.incap[id]={...(S.incap[id]||{}),...o,id,nombre:(S.emps[o.empId]||{}).nombre||''};bitacora(`Guardó la incapacidad de ${S.incap[id].nombre}`);UI.incEd=null;sv()};
+  const xb=$('#incXls');if(xb)xb.onclick=()=>{if(typeof XLSX==='undefined')return toast('No se pudo cargar el generador de Excel');const rows=Object.values(S.incap).map(x=>({Empleado:(S.emps[x.empId]||{}).nombre||x.nombre,Origen:x.tipo==='arl'?'ARL':x.tipo==='lma'?'Licencia maternidad/paternidad':'EPS',Entidad:x.tipo==='arl'?S.config.arlEnt:(S.emps[x.empId]||{}).eps,Periodo:x.per||'',Desde:x.desde||'',Hasta:x.hasta||'','Días':x.dias||'','A cobrar':+x.cobrar||0,Radicado:x.radicado||'','Fecha radicación':x.fechaRad||'',Estado:INC_EST[x.estado||'pendiente'],'Pagado por la entidad':+x.valPagado||0,'Fecha pago':x.fechaPago||'',Observaciones:x.obs||''}));
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Incapacidades');XLSX.writeFile(wb,`Incapacidades_${todayCO()}.xlsx`)};
 }
 function bindNov(P){
   const aplicarSal=id=>{const v=+$('#ns-'+id).value,f=$('#nsd-'+id).value;if(!v||!f)return;if(f<P.ini||f>P.fin)return toast('La fecha debe estar dentro del periodo');const e=S.emps[id];e.salarios=(e.salarios||[]).filter(x=>x.desde!==f);e.salarios.push({desde:f,valor:v});e.salarios.sort((a,b)=>a.desde<b.desde?-1:1);persist('emp',id);toast(`Salario de ${e.nombre.split(' ')[0]}: ${money(v)} desde ${fd(f)}`);renderNov()};
@@ -1110,9 +1227,9 @@ function renderNomina(){
   $('#v-nomina').innerHTML=h;bindNom();
   document.querySelectorAll('[data-vercierre]').forEach(b=>b.onclick=()=>{const [mes,t]=b.dataset.vercierre.split('_');UI.mes=mes;UI.tipo=t;UI.det=null;saveUI();renderNomina();scrollTo({top:0})});
   const bc=$('#nCerrar');if(bc)bc.onclick=()=>{if(!UI.cAsk){UI.cAsk=true;bc.textContent='¿Confirmar? Los valores quedan fijos';setTimeout(()=>{UI.cAsk=false;const x=$('#nCerrar');if(x)x.textContent='Guardar nómina del periodo'},4000);return}
-    UI.cAsk=false;S.cierres=S.cierres||{};S.cierres[P.key]={fecha:todayCO(),por:CUR.email,filas:JSON.parse(JSON.stringify(R.map(r=>({...r,e:{id:r.e.id,nombre:r.e.nombre,doc:r.e.doc||'',cargo:r.e.cargo||'',sede:r.e.sede||'',arl:r.e.arl||'II',ingreso:r.e.ingreso||'',retiro:r.e.retiro||''}}))))};saveLocal();renderNomina();toast('Nómina guardada en el historial')};
+    UI.cAsk=false;bitacora(`Guardó (cerró) la nómina ${P.key}`);S.cierres=S.cierres||{};S.cierres[P.key]={fecha:todayCO(),por:CUR.email,filas:JSON.parse(JSON.stringify(R.map(r=>({...r,e:{id:r.e.id,nombre:r.e.nombre,doc:r.e.doc||'',cargo:r.e.cargo||'',sede:r.e.sede||'',arl:r.e.arl||'II',ingreso:r.e.ingreso||'',retiro:r.e.retiro||''}}))))};saveLocal();renderNomina();toast('Nómina guardada en el historial')};
   const br=$('#nReabrir');if(br)br.onclick=()=>{if(!UI.rAsk){UI.rAsk=true;br.textContent='¿Reabrir? Se recalcula con los datos actuales';setTimeout(()=>{UI.rAsk=false;const x=$('#nReabrir');if(x)x.textContent='Reabrir periodo'},4000);return}
-    UI.rAsk=false;delete S.cierres[P.key];saveLocal();renderNomina();toast('Periodo reabierto')};
+    UI.rAsk=false;delete S.cierres[P.key];bitacora(`Reabrió la nómina ${P.key}`);saveLocal();renderNomina();toast('Periodo reabierto')};
   if(UI.det!=null&&R[UI.det])renderDetalle(R[UI.det],P);
 }
 function renderDetalle(r,P){
@@ -1595,7 +1712,7 @@ function renderEmps(){
   document.querySelectorAll('[data-delno]').forEach(b=>b.onclick=()=>{UI.delAsk=null;renderEmps()});
   document.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>{UI.elimAsk=b.dataset.elim;UI.delAsk=null;renderEmps()});
   document.querySelectorAll('[data-elimno]').forEach(b=>b.onclick=()=>{UI.elimAsk=null;renderEmps()});
-  document.querySelectorAll('[data-elimok]').forEach(b=>b.onclick=()=>{const id=b.dataset.elimok,n=(S.emps[id]||{}).nombre||'';delete S.emps[id];delete S.cuentas[id];
+  document.querySelectorAll('[data-elimok]').forEach(b=>b.onclick=()=>{const id=b.dataset.elimok,n=(S.emps[id]||{}).nombre||'';bitacora(`Eliminó el empleado ${n}`);delete S.emps[id];delete S.cuentas[id];
     Object.values(S.nov).forEach(d=>{if(d&&d.por)delete d.por[id]});if(UI.editEmp===id)UI.editEmp=null;UI.elimAsk=null;persist('emp',id);renderEmps();toast(`${n} eliminado. Las nóminas ya guardadas no cambian.`)});
   document.querySelectorAll('[data-delok]').forEach(b=>b.onclick=()=>{const id=b.dataset.delok,x=S.emps[id];x.activo=false;if(!x.retiro)x.retiro=todayCO();persist('emp',id);UI.delAsk=null;renderEmps();toast('Empleado retirado')});
   lockUI();
@@ -2085,7 +2202,7 @@ function pilaMes(mes){
 }
 function renderPila(){
   const c=S.config;PL.mes=PL.mes||UI.mes;PL.ed=!!PERM.write;const X=pilaMes(PL.mes),[y,m]=PL.mes.split('-').map(Number);
-  let h=`<div class="bar"><h2 class="grow">Planilla de aportes (PILA) · ${MESESL[m-1]} ${y}</h2><input class="free" type="month" id="plMes" value="${PL.mes}" aria-label="Mes"><button class="free" id="plXls">Descargar Excel de la planilla</button></div>
+  let h=`<div class="bar"><h2 class="grow">Planilla de aportes (PILA) · ${MESESL[m-1]} ${y}</h2><input class="free" type="month" id="plMes" value="${PL.mes}" aria-label="Mes"><button class="free" id="plXls">Descargar Excel de la planilla</button><button class="free" id="plTxt">Archivo plano Mi Planilla</button></div>
   <p class="note">Liquidación mensual de los aportes a seguridad social y parafiscales con la nómina del mes (${X.tipos.length>1?'suma de las dos quincenas':'nómina mensual'}; si la nómina está guardada se usan los valores guardados). Los aportes se redondean al múltiplo de 100 superior y el IBC al peso, como en la PILA. Con este resumen paga en su operador (SOI, Aportes en Línea, Mi Planilla, etc.).</p>
   <div class="alert ${c.exonerado?'info':''}">${c.exonerado?`<b>Empresa exonerada de aportes (art. 114-1 E.T.):</b> no paga salud del empleador (8,5 %), SENA ni ICBF por los trabajadores que devengan menos de 10 SMMLV (${money(10*c.smmlv)} al mes). Sí paga pensión, ARL y caja de compensación.`:'<b>La empresa no está marcada como exonerada:</b> paga salud del empleador 8,5 %, SENA 2 % e ICBF 3 %.'} ${esAdmin()?'Esto se cambia en Parámetros y usuarios.':''}</div>`;
   if(!X.filas.length){$('#v-pila').innerHTML=h+`<div class="panel empty"><b>No hay nómina en este mes</b>Registre las novedades del mes y la planilla se calcula sola.</div>`;bindPila();return}
@@ -2106,17 +2223,76 @@ function renderPila(){
     ${X.filas.map(f=>{const E=(k,v,fmt)=>{const ed=f.editados.includes(k);if(!PL.ed)return `<td class="n"${ed?' style="color:var(--accent);font-weight:700" title="Valor editado a mano"':''}>${fmt(v)}${ed?' ✎':''}</td>`;const o=((S.pilaEd||{})[PL.mes]||{})[f.e.id]||{};return `<td><input class="${k==='dias'?'num':'money'}" type="number" min="0" step="${k==='dias'?1:100}" data-pe="${f.e.id}" data-pk="${k}" value="${esc(o[k]??'')}" placeholder="${esc(String(v))}" style="${ed?'border-color:var(--accent);font-weight:600':''}" aria-label="${esc(f.e.nombre)}: ${k}"></td>`};
       return `<tr><td class="sticky"><b>${esc(f.e.nombre)}</b><br><span class="status">C.C. ${esc(f.e.doc||'')}</span>${f.editados.length?`<br><span class="pill">Editada</span>${PL.ed?` <button class="ghost" style="padding:1px 6px;font-size:.72rem" data-pex="${f.e.id}">Quitar cambios</button>`:''}`:''}</td>${E('dias',f.dias,x=>x)}<td style="white-space:normal;min-width:120px">${f.nov.map(x=>`<span class="pill mute" style="margin:1px">${esc(x)}</span>`).join(' ')||'—'}</td>${E('ibc',f.ibc,money)}<td>${esc(f.e.eps||'—')}</td>${E('salud',f.ap.salud,x=>money(x)+(f.exo&&!PL.ed?'<br><span class="status">exonerada</span>':''))}${E('saludEmp',f.ap.saludEmp,money)}<td>${esc(f.e.afp||'—')}</td>${E('pension',f.ap.pension,money)}${E('penEmp',f.ap.penEmp,money)}${E('fsp',f.ap.fsp,mz)}${PL.ed?`<td><select data-pcl="${f.e.id}" aria-label="${esc(f.e.nombre)}: clase de riesgo" style="${f.editados.includes('cl')?'border-color:var(--accent);font-weight:600':''}">${['I','II','III','IV','V'].map(x=>`<option${x===f.cl?' selected':''}>${x}</option>`).join('')}</select></td>`:`<td>${esc(f.cl)}</td>`}${E('diasArl',f.diasArl,x=>x)}${E('arl',f.ap.arl,mz)}${E('ccf',f.ap.ccf,money)}${E('sena',f.ap.sena,mz)}${E('icbf',f.ap.icbf,mz)}<td class="n"><b>${money(f.ap.total)}</b></td><td class="n">${money(f.ap.empleado)}</td></tr>`}).join('')}
     <tr class="tot"><td class="sticky">TOTALES</td><td></td><td></td><td class="n">${money(X.filas.reduce((a,f)=>a+f.ibc,0))}</td><td></td><td class="n">${money(X.tot.salud)}</td><td class="n">${money(X.filas.reduce((a,f)=>a+f.ap.saludEmp,0))}</td><td></td><td class="n">${money(X.tot.pension)}</td><td class="n">${money(X.filas.reduce((a,f)=>a+f.ap.penEmp,0))}</td><td class="n">${money(X.tot.fsp)}</td><td></td><td></td><td class="n">${money(X.tot.arl)}</td><td class="n">${money(X.tot.ccf)}</td><td class="n">${money(X.tot.sena)}</td><td class="n">${money(X.tot.icbf)}</td><td class="n">${money(X.tot.total)}</td><td class="n">${money(X.tot.empleado)}</td></tr></tbody></table></div>
-    <p class="note">Novedades PILA: ING ingreso · RET retiro · VSP cambio de salario · VST variación transitoria (recargos, extras, comisiones) · SLN licencia no remunerada · IGE incapacidad general · IRL incapacidad laboral · VAC-LR vacaciones o licencia remunerada. La ARL no se liquida sobre días de vacaciones, incapacidad ni licencia. Revise siempre la planilla en su operador antes de pagar.</p></div>`;
+    ${panelPlano(X)}<p class="note">Novedades PILA: ING ingreso · RET retiro · VSP cambio de salario · VST variación transitoria (recargos, extras, comisiones) · SLN licencia no remunerada · IGE incapacidad general · IRL incapacidad laboral · VAC-LR vacaciones o licencia remunerada. La ARL no se liquida sobre días de vacaciones, incapacidad ni licencia. Revise siempre la planilla en su operador antes de pagar.</p></div>`;
   $('#v-pila').innerHTML=h;bindPila();
 }
 function bindPila(){
-  $('#plMes').onchange=e=>{if(e.target.value){PL.mes=e.target.value;renderPila()}};
+  $('#plMes').onchange=e=>{if(e.target.value){PL.mes=e.target.value;UI.plAv=null;renderPila()}};
   document.querySelectorAll('[data-pcl]').forEach(sl=>sl.onchange=()=>{S.pilaEd=S.pilaEd||{};const M=S.pilaEd[PL.mes]||(S.pilaEd[PL.mes]={}),o=M[sl.dataset.pcl]||(M[sl.dataset.pcl]={}),e=S.emps[sl.dataset.pcl]||{};if(sl.value===(e.arl||S.config.arlDef||'II'))delete o.cl;else o.cl=sl.value;if(!Object.keys(o).length)delete M[sl.dataset.pcl];persist('pila');renderPila()});
   document.querySelectorAll('[data-pe]').forEach(i=>i.onchange=()=>{S.pilaEd=S.pilaEd||{};const M=S.pilaEd[PL.mes]||(S.pilaEd[PL.mes]={}),o=M[i.dataset.pe]||(M[i.dataset.pe]={});
     if(i.value==='')delete o[i.dataset.pk];else o[i.dataset.pk]=+i.value;if(!Object.keys(o).length)delete M[i.dataset.pe];persist('pila');renderPila();const n=document.querySelector(`[data-pe="${i.dataset.pe}"][data-pk="${i.dataset.pk}"]`);if(n){const t=n.closest('td').nextElementSibling;const nx=t&&t.querySelector('input');(nx||n).focus()}});
   document.querySelectorAll('[data-pex]').forEach(b=>b.onclick=()=>{const M=(S.pilaEd||{})[PL.mes];if(M)delete M[b.dataset.pex];persist('pila');renderPila();toast('Se volvió al cálculo automático')});
-  const b=$('#plXls');if(b)b.onclick=excelPila;
+  const b=$('#plXls');if(b)b.onclick=excelPila;const bt=$('#plTxt');if(bt)bt.onclick=descargarPlano;
+  document.querySelectorAll('[data-pcd]').forEach(i=>i.onchange=()=>{const [sub,k]=i.dataset.pcd.split('|'),C=S.config.pilaCod||(S.config.pilaCod={});(C[sub]=C[sub]||{})[k]=i.value.trim().toUpperCase();persist('config');renderPila()});
+  document.querySelectorAll('[data-pcf]').forEach(i=>i.onchange=()=>{S.config[i.dataset.pcf]=i.value.trim();persist('config');renderPila()});
 }
+/* ===== archivo plano PILA (Resolución 2388 de 2016, anexo técnico 2, archivo tipo 2) para cargar en Mi Planilla ===== */
+const PILA_COD_DEF={eps:{'SALUD TOTAL':'EPS002','SANITAS':'EPS005','COMPENSAR':'EPS008','SURA':'EPS010','FAMISANAR':'EPS017','NUEVA EPS':'EPS037','NUEVA':'EPS037'},
+  afp:{'COLPENSIONES':'25-14','PROTECCION':'230201','PORVENIR':'230301','SKANDIA':'230901','COLFONDOS':'231001'},ccf:{'COLSUBSIDIO':'CCF22'},arl:{'SURA':'14-11'}};
+const pilaCodF=(v,n)=>String(v||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,n).padEnd(n,' '),pilaNom=v=>String(v||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function pilaCod(sub,nombre){const n=pilaNom(nombre).replace(/^(EPS|ARL|AFP|CAJA DE COMPENSACION|CCF) /,'').replace(/ (EPS|ARL)$/,''),C=((S.config.pilaCod||{})[sub]||{});if(C[n])return C[n];
+  const D=PILA_COD_DEF[sub]||{};for(const k in D)if(n===k||n.includes(k))return D[k];return ''}
+function pilaPlano(mes){
+  const c=S.config,X=pilaMes(mes),fin=periodo(mes,'mensual').fin,ini=mes+'-01',A=(v,n)=>pilaNom(v).slice(0,n).padEnd(n,' '),Nn=(v,n)=>String(Math.max(0,Math.round(+v||0))).slice(-n).padStart(n,'0'),
+    T=(v,n)=>(+v).toFixed(n-2),F=v=>v?String(v).slice(0,10):''.padEnd(10,' '),Fd=v=>(v||'').padEnd(10,' ');
+  const nitR=String(c.nit||''),m=nitR.match(/^\s*([\d.]+)\s*-\s*(\d)/),nit=m?m[1].replace(/\D/g,''):nitDe(c).slice(0,9),dv=m?m[2]:(nitDe(c).length>9?nitDe(c).slice(9,10):'');
+  const [yy,mm]=mes.split('-').map(Number),perS=new Date(Date.UTC(yy,mm,1)).toISOString().slice(0,7),arlC=pilaCod('arl',c.arlEnt),ccfC=pilaCod('ccf',c.ccf);
+  const dep=String(c.pilaDep||(esFarmaser()?'25':'11')).padStart(2,'0'),mun=String(c.pilaMun||(esFarmaser()?'754':'001')).padStart(3,'0'),act=String(c.pilaAct||'').replace(/\D/g,'');
+  const falt=[],avisos=[],lineas=[];let sec=0,totCcf=0;
+  if(!arlC)falt.push('código de la ARL ('+(c.arlEnt||'sin nombre')+')');if(!ccfC)falt.push('código de la caja ('+(c.ccf||'sin nombre')+')');if(!act)avisos.push('Falta el código de actividad económica para riesgos laborales (Decreto 768 de 2022). Si Mi Planilla lo pide, escríbalo en «Archivo plano para Mi Planilla» (al final de esta pantalla).');
+  X.filas.forEach(f=>{const e=f.e,ap=f.ap,nm=fuaSplit(e.nombre),eps=pilaCod('eps',e.eps),afp=pilaCod('afp',e.afp),cl=String({I:1,II:2,III:3,IV:4,V:5}[f.cl]||f.cl||2).slice(0,1);
+    if(!eps)falt.push(`EPS de ${e.nombre} (${e.eps||'vacía'})`);if(!afp&&e.afp)falt.push(`fondo de pensiones de ${e.nombre} (${e.afp})`);
+    const ing=e.ingreso&&e.ingreso>=ini&&e.ingreso<=fin,ret=e.retiro&&e.retiro>=ini&&e.retiro<=fin,vsp=(e.salarios||[]).find(x=>x.desde>ini&&x.desde<=fin),vst=f.nov.some(x=>x==='VST');
+    const vr=(e.vacReg||[]).filter(r=>r.tipo!=='compensa'&&r.desde<=fin&&(r.hasta||r.desde)>=ini).sort((a,b)=>a.desde<b.desde?-1:1),vacN=f.nov.find(x=>/^VAC-LR/.test(x)),ige=f.nov.find(x=>/^IGE/.test(x)),irl=f.nov.find(x=>/^IRL/.test(x));
+    const vIni=vr.length?(vr[0].desde<ini?ini:vr[0].desde):'',vFin=vr.length?((vr[vr.length-1].hasta||vr[vr.length-1].desde)>fin?fin:(vr[vr.length-1].hasta||vr[vr.length-1].desde)):'';
+    if(vacN&&!vIni)avisos.push(`${e.nombre}: tiene ${vacN.replace('VAC-LR','vacaciones o licencia remunerada:')} sin fechas registradas; complete las fechas en Mi Planilla («Editar planilla»).`);
+    if(ige)avisos.push(`${e.nombre}: ${ige.replace('IGE','incapacidad general de')} — escriba en Mi Planilla las fechas de inicio y fin.`);if(irl)avisos.push(`${e.nombre}: ${irl.replace('IRL','incapacidad laboral de')} — escriba en Mi Planilla las fechas de inicio y fin.`);
+    const sl=f.sln||{dias:0},penN=ap.pension-(sl.dias?sl.pension:0),salN=ap.salud-(sl.dias?sl.salud:0),fsS=ap.fsp?Math.min(ap.fsp,C100(f.ibc*.005)):0,ibcO=f.exo?0:f.ibcCcf,irlD=irl?(+irl.match(/\d+/)[0]||0):0;
+    const L=(o)=>{sec++;return ['02',Nn(sec,5),A(e.tipoDoc||'CC',2),A(String(e.doc||'').replace(/\D/g,''),16),'01','00',' ',' ',A(dep,2),A(mun,3),A(nm.ap1,20),A(nm.ap2,30),A(nm.no1,20),A(nm.no2,30),
+      o.p?(ing?'X':' '):' ',o.p?(ret?'X':' '):' ',' ',' ',' ',' ',o.p&&vsp?'X':' ',' ',o.p&&vst?'X':' ',o.sln?'X':' ',o.p&&ige?'X':' ',' ',o.p&&vacN?'X':' ',' ',' ',Nn(o.p?irlD:0,2),
+      pilaCodF(afp,6),A('',6),pilaCodF(eps,6),A('',6),pilaCodF(ccfC,6),Nn(o.dP,2),Nn(o.dS,2),Nn(o.dR,2),Nn(o.dC,2),Nn(parts0(e,mes)||e.salario,9),e.integral?'X':'F',
+      Nn(o.ibcP,9),Nn(o.ibcS,9),Nn(o.ibcR,9),Nn(o.ibcC,9),T(o.tP,7),Nn(o.pen,9),Nn(0,9),Nn(0,9),Nn(o.pen,9),Nn(o.fsS,9),Nn(o.fsB,9),Nn(0,9),T(o.tS,7),Nn(o.sal,9),Nn(0,9),A('',15),Nn(0,9),A('',15),Nn(0,9),
+      T(o.tR,9),Nn(o.ct,9),Nn(o.arl,9),T(o.tC,7),Nn(o.ccf,9),T(o.tSe,7),Nn(o.sena,9),T(o.tI,7),Nn(o.icbf,9),T(0,7),Nn(0,9),T(0,7),Nn(0,9),A('',2),A('',16),f.exo?'S':'N',pilaCodF(o.dR?arlC:'',6),o.dR?cl:' ',' ',
+      Fd(o.p&&ing?e.ingreso:''),Fd(o.p&&ret?e.retiro:''),Fd(o.p&&vsp?vsp.desde:''),Fd(''),Fd(''),Fd(''),Fd(''),Fd(''),Fd(''),Fd(o.p&&vacN?vIni:''),Fd(o.p&&vacN?vFin:''),Fd(''),Fd(''),Fd(''),Fd(''),Nn(o.ibcO,9),Nn(0,3),Fd(''),Nn(o.dR?act:0,7)].join('')};
+    const ct=String((c.pilaCT||{})[cl]||cl).replace(/\D/g,'')||cl;
+    lineas.push(L({p:true,dP:f.dias,dS:f.dias,dR:f.diasArl,dC:f.dias,ibcP:f.ibc,ibcS:f.ibc,ibcR:f.ibcArl,ibcC:f.ibcCcf,tP:.16,pen:penN,fsS,fsB:ap.fsp-fsS,tS:f.exo?.04:.125,sal:salN,tR:f.diasArl?f.tarArl/100:0,ct:f.diasArl?ct:0,arl:ap.arl,tC:(+c.caja||4)/100,ccf:ap.ccf,tSe:f.exo?0:.02,sena:ap.sena,tI:f.exo?0:.03,icbf:ap.icbf,ibcO}));
+    totCcf+=f.ibcCcf;
+    if(sl.dias)lineas.push(L({sln:true,dP:sl.dias,dS:sl.dias,dR:0,dC:0,ibcP:sl.ibc,ibcS:sl.ibc,ibcR:0,ibcC:0,tP:.12,pen:sl.pension,fsS:0,fsB:0,tS:f.exo?0:.085,sal:sl.salud,tR:0,ct:0,arl:0,tC:0,ccf:0,tSe:0,sena:0,tI:0,icbf:0,ibcO:0}));
+    if(sl.dias)avisos.push(`${e.nombre}: licencia no remunerada de ${sl.dias} día(s) en una segunda línea; escriba en Mi Planilla las fechas de inicio y fin.`)});
+  const enc=['01','1','0001',A(c.empresa,200),'NI',A(nit,16),Nn(dv,1),'E',A('',10),A('',10),'U',A('',10),A('',40),pilaCodF(arlC,6),mes,perS,Nn(0,10),A('',10),Nn(X.filas.length,5),Nn(totCcf,12),'01','00'].join('');
+  return {txt:[enc,...lineas].join('\r\n')+'\r\n',X,falt:[...new Set(falt)],avisos,lineas:lineas.length,enc}}
+function parts0(e,mes){try{return salarioEn(e,{ini:periodo(mes,'mensual').fin,fin:periodo(mes,'mensual').fin})}catch(x){return 0}}
+async function descargarPlano(){
+  const R=pilaPlano(PL.mes);if(!R.X.filas.length)return toast('No hay cotizantes en este mes');
+  if(R.falt.length&&!confirm('Faltan estos códigos y Mi Planilla rechazará esas líneas:\n· '+R.falt.join('\n· ')+'\n\nPuede escribirlos en «Archivo plano para Mi Planilla», al final de la pantalla. ¿Descargar de todas formas?'))return;
+  await guardarArchivo(`PILA_MiPlanilla_${PL.mes}.txt`,new Blob([R.txt],{type:'text/plain'}));
+  bitacora(`Descargó el archivo plano PILA de ${PL.mes}`);UI.plAv=R.avisos;renderPila();toast('Archivo plano descargado. Súbalo en Mi Planilla › Planillas › Nómina › Subir archivo.')}
+function panelPlano(X){
+  const c=S.config,C=c.pilaCod||{},usados={eps:new Set(),afp:new Set(),ccf:new Set([c.ccf||'']),arl:new Set([c.arlEnt||''])};X.filas.forEach(f=>{if(f.e.eps)usados.eps.add(f.e.eps);if(f.e.afp)usados.afp.add(f.e.afp)});
+  const tit={eps:'EPS',afp:'Fondo de pensiones',ccf:'Caja de compensación',arl:'ARL'};
+  const filas=Object.entries(usados).flatMap(([sub,set])=>[...set].filter(Boolean).map(n=>{const k=pilaNom(n).replace(/^(EPS|ARL|AFP|CAJA DE COMPENSACION|CCF) /,'').replace(/ (EPS|ARL)$/,''),v=pilaCod(sub,n);
+    return `<tr><td>${tit[sub]}</td><td><b>${esc(n)}</b></td><td><input class="free" style="width:110px${v?'':';border-color:#c0392b'}" data-pcd="${sub}|${esc(k)}" value="${esc(v)}" placeholder="Código"${PL.ed?'':' disabled'}></td></tr>`}));
+  const av=UI.plAv||[];
+  return `<details class="section panel" style="padding:12px 14px" ${av.length?'open':''}><summary><b>Archivo plano para Mi Planilla</b> <span class="status">· formato oficial de la PILA (Resolución 2388 de 2016)</span></summary>
+   <p class="note">Descargue el archivo con <b>«Archivo plano Mi Planilla»</b> y súbalo en <b>miplanilla.com › Planillas › Nómina › Subir archivo</b>; luego toque «Continuar», revise y pague cuando quede en «PAGUE AQUÍ». Las incapacidades, licencias y vacaciones sin fechas registradas se completan en Mi Planilla con «Editar planilla».</p>
+   ${av.length?`<div class="alert"><b>Revise en Mi Planilla antes de pagar:</b><br>${av.map(esc).join('<br>')}</div>`:''}
+   <div class="grid-form" style="padding:0;margin:8px 0">
+    <label class="f">Código del departamento (DANE)<input class="free" data-pcf="pilaDep" value="${esc(c.pilaDep||(esFarmaser()?'25':'11'))}"${PL.ed?'':' disabled'}></label>
+    <label class="f">Código del municipio (DANE)<input class="free" data-pcf="pilaMun" value="${esc(c.pilaMun||(esFarmaser()?'754':'001'))}"${PL.ed?'':' disabled'}></label>
+    <label class="f">Actividad económica para riesgos laborales (7 dígitos)<input class="free" data-pcf="pilaAct" value="${esc(c.pilaAct||'')}" placeholder="Aparece en el certificado de la ARL"${PL.ed?'':' disabled'}></label>
+   </div>
+   <div class="scroll"><table><thead><tr><th>Subsistema</th><th>Entidad</th><th>Código PILA</th></tr></thead><tbody>${filas.join('')}</tbody></table></div>
+   <p class="note">Los códigos de Colsubsidio, ARL Sura, las EPS y los fondos ya vienen llenos según sus planillas anteriores. Si una casilla sale en rojo, escriba el código que aparece en la planilla de su operador.</p></details>`}
 async function excelPila(){
   if(typeof ExcelJS==='undefined'){toast('No se pudo cargar el generador de Excel. Revise la conexión.');return}
   const c=S.config,X=pilaMes(PL.mes),[y,m]=PL.mes.split('-').map(Number),wb=new ExcelJS.Workbook();wb.creator=SIN_SER?(c.empresa||'Nómina'):'SER SAS';
@@ -2227,6 +2403,9 @@ function renderParams(){setTimeout(()=>ojos(),0);
   </div>
   <div class="section"><h2 style="margin-bottom:4px">Direcciones de los centros de costo</h2><p class="note" style="margin:0 0 8px">Es el lugar de trabajo que sale en los contratos y otrosíes de cada empleado según su centro de costo. Si queda vacío, se usa la dirección de la empresa${c.direccion?` (${esc(c.direccion)})`:''}.</p>
    <div class="panel grid-form">${c.sedes.map(sd=>`<label class="f">${esc(sd)}<input data-sdir="${esc(sd)}" value="${esc((c.sedeDir||{})[sd]||'')}" placeholder="${esc(c.direccion||'Dirección y ciudad')}" ${PERM.write?'':'disabled'}></label>`).join('')}</div></div>
+  <div class="section"><details class="panel"><summary style="cursor:pointer;font-weight:700">Bitácora de cambios <span class="status" style="font-weight:400">· quién cambió qué y cuándo (${(S.log||[]).length} registros)</span></summary>
+   <div class="bar" style="margin:8px 0"><input id="logQ" class="free" placeholder="Buscar por usuario o cambio" style="max-width:280px"><span class="grow"></span><button class="free" id="logX">Descargar Excel</button></div>
+   <div class="tw" style="max-height:340px;overflow:auto"><table class="dt"><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Cambio</th></tr></thead><tbody id="logB"></tbody></table></div></details></div>
   <div class="section"><h2 style="margin-bottom:8px">Festivos adicionales</h2>
   <p class="note">Los festivos nacionales se calculan solos. Agregue aquí cualquier día adicional.</p>
   <div class="bar"><input type="date" id="fxF" aria-label="Fecha"><input id="fxN" placeholder="Nombre del festivo"><button id="fxAdd">Agregar festivo</button></div>
@@ -2249,8 +2428,8 @@ function renderParams(){setTimeout(()=>ojos(),0);
   ${formCred()}${panelRec()}
   <div class="section"><h2 style="margin-bottom:8px">Copia de seguridad</h2><div class="panel imp"><p class="note" style="margin:0">Los datos se guardan cifrados en este dispositivo y navegador. La copia de seguridad es un archivo sin cifrar con la información de los trabajadores: guárdela en un lugar seguro. Descargue una copia después de cada nómina; con ella puede pasar todo a otro computador o celular, o recuperar la información si se borra el navegador.</p>
   <div class="row"><button class="free primary" id="bkD">Descargar copia de seguridad</button><label class="free" for="bkF" style="cursor:pointer"><span class="btn" style="display:inline-block;border:1px solid var(--line);border-radius:7px;padding:7px 12px;background:var(--surface)">Cargar copia de seguridad</span><input type="file" id="bkF" accept=".json,application/json" hidden></label><span class="status">${Object.keys(S.emps).length} empleados · ${Object.keys(S.nov).length} periodos con novedades · ${Object.keys(S.liq).length} liquidaciones</span></div>
-  ${UI.bkAsk?`<div class="alert">La copia «${esc(UI.bkAsk.name)}» reemplazará todos los datos de este dispositivo. <button class="danger free" id="bkOk">Reemplazar</button> <button class="ghost free" id="bkNo">Cancelar</button></div>`:''}</div></div>`;
-  $('#v-params').innerHTML=h;
+  ${UI.bkAsk?`<div class="alert">La copia «${esc(UI.bkAsk.name)}» reemplazará todos los datos de este dispositivo. <button class="danger free" id="bkOk">Reemplazar</button> <button class="ghost free" id="bkNo">Cancelar</button></div>`:''}</div></div>${panelArchivo()}`;
+  $('#v-params').innerHTML=h;bindArchivo();
 
   document.querySelectorAll('[data-t]').forEach(inp=>inp.onchange=()=>{const t=c.turnos[+inp.dataset.t],k=inp.dataset.k.split('.');let v=inp.value;if(k[0]==='code')v=v.toUpperCase().trim();
     if(k[0]==='code'&&(['D','V','I','L','X',''].includes(v)||c.turnos.some((o,j)=>o.code===v&&j!==+inp.dataset.t))){toast('Ese código ya está en uso');inp.value=t.code;return}
@@ -2272,6 +2451,8 @@ function renderParams(){setTimeout(()=>ojos(),0);
   $('#bkD').onclick=async()=>{const d=JSON.stringify({app:'nomina-escalautos',modo:MODO,version:1,fecha:new Date().toISOString(),datos:payload()});await guardarArchivo(MODO==='general'?`COPIA_NOMINA_SER_SAS_${todayCO()}.json`:`COPIA_NOMINA_${MODO==='cliente'?(nrm(S.config.empresa||'EMPRESA').replace(/[^a-z0-9]+/gi,'_').toUpperCase()):MODO.toUpperCase()}_${todayCO()}.json`,new Blob([d],{type:'application/json'}))};
   $('#bkF').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.datos||!(MODO==='general'?j.datos.empresas:j.datos.emps))throw 0;UI.bkAsk={name:f.name,datos:j.datos};renderParams()}catch(er){toast('Ese archivo no es una copia de seguridad de esta app')}};r.readAsText(f)};
   if($('#bkOk')){$('#bkOk').onclick=()=>{const d=UI.bkAsk.datos;aplicarPayload(d);UI.bkAsk=null;saveLocal();if(MODO==='general'&&!DATA.actual)renderPicker();else render();toast('Copia cargada')};$('#bkNo').onclick=()=>{UI.bkAsk=null;renderParams()}}
+  {const pint=()=>{const q=nrm($('#logQ').value||'');const L=(S.log||[]).slice().reverse().filter(x=>!q||nrm(x.u+' '+x.d).includes(q)).slice(0,300);$('#logB').innerHTML=L.map(x=>`<tr><td style="white-space:nowrap">${esc(new Date(x.t).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}))}</td><td>${esc(x.u)}</td><td>${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan="3" class="status">Sin registros todavía</td></tr>'};
+   if($('#logB')){pint();$('#logQ').oninput=pint;$('#logX').onclick=()=>{if(typeof XLSX==='undefined')return toast('No se pudo cargar el generador de Excel');const ws=XLSX.utils.aoa_to_sheet([['Fecha','Usuario','Cambio'],...(S.log||[]).map(x=>[new Date(x.t).toLocaleString('es-CO'),x.u,x.d])]);ws['!cols']=[{wch:20},{wch:30},{wch:70}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Bitácora');guardarArchivo('Bitacora de cambios.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})]))}}}
   $('#pSe').onchange=e=>{c.sedes=e.target.value.split(',').map(s=>s.trim()).filter(Boolean);saveCfg();renderParams()};
   document.querySelectorAll('[data-sdir]').forEach(i=>i.onchange=()=>{c.sedeDir=c.sedeDir||{};const v=i.value.trim();if(v)c.sedeDir[i.dataset.sdir]=v;else delete c.sedeDir[i.dataset.sdir];saveCfg();toast('Dirección guardada')});
   $('#fxAdd').onclick=()=>{const f=$('#fxF').value;if(!f){toast('Elija la fecha');return}c.festivosExtra=(c.festivosExtra||[]).concat({fecha:f,nombre:$('#fxN').value.trim()});saveCfg();renderParams()};
@@ -2806,7 +2987,7 @@ function renderLiq(){
     const sv=$('#lqS');if(sv)sv.onclick=()=>{
       if(UI.delAsk!=='liq'){UI.delAsk='liq';sv.textContent='¿Confirmar? Retira al trabajador';setTimeout(()=>{UI.delAsk=null;const b=$('#lqS');if(b)b.textContent='Guardar y registrar retiro'},4000);return}
       UI.delAsk=null;const L=LQ.L,id=`${e.id}_${LQ.f.retiro}`;
-      S.liq[id]={id,empId:e.id,nombre:e.nombre,retiro:LQ.f.retiro,f:{...LQ.f},dev:L.dev,neto:L.neto,_en:new Date().toISOString()};
+      bitacora(`Guardó la liquidación de ${e.nombre}`);S.liq[id]={id,empId:e.id,nombre:e.nombre,retiro:LQ.f.retiro,f:{...LQ.f},dev:L.dev,neto:L.neto,_en:new Date().toISOString()};
       e.retiro=LQ.f.retiro;e.activo=false;e.motivoRetiro=MOTIVOS[LQ.f.motivo];saveLocal();toast('Liquidación guardada y retiro registrado');renderLiq()};
   }
   document.querySelectorAll('[data-lqv]').forEach(b=>b.onclick=()=>{const l=S.liq[b.dataset.lqv];LQ.eid=l.empId;LQ.f={...l.f};renderLiq();scrollTo({top:0})});
@@ -4009,7 +4190,7 @@ $('#app').insertAdjacentHTML('beforeend','<p class="credito">Creado por Evelyn G
 $('#kImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let j;try{j=JSON.parse(r.result)}catch(er){}
   const cj=j&&j.caja;if(!cj||cj.v!==2||!cj.ct||!Array.isArray(cj.users))return $('#kE').textContent='Ese archivo no es una copia cifrada de esta app.';
   if(j.modo&&j.modo!==MODO)return $('#kE').textContent='Esa copia es de otra versión de la app.';
-  const poner=()=>{try{localStorage.setItem(LKEY,JSON.stringify(cj))}catch(er){return $('#kE').textContent='No se pudo guardar en este navegador.'}location.reload()};
+  const poner=()=>{try{localStorage.setItem(LKEY,JSON.stringify(cj));if(j.fecha)localStorage.setItem(LKEY+'.fsT',j.fecha)}catch(er){return $('#kE').textContent='No se pudo guardar en este navegador.'}location.reload()};
   if((guardadoLocal()||{}).ct){$('#kImpAsk').innerHTML='<p class="err" style="margin:8px 0">Este computador ya tiene datos de la app. Si continúa, se reemplazan por los de la copia.</p><button type="button" class="danger" id="kImpOk">Reemplazar</button> <button type="button" class="ghost" id="kImpNo">Cancelar</button>';$('#kImpOk').onclick=poner;$('#kImpNo').onclick=()=>{$('#kImpAsk').innerHTML='';e.target.value=''}}
   else poner()};r.readAsText(f)};
 
@@ -4042,7 +4223,7 @@ function migrar(){
   if(MODO!=='escalautos'||S.config.mig1)return;['emp-1016945282','emp-1022931960'].forEach(id=>{delete S.emps[id];delete S.cuentas[id];Object.values(S.nov).forEach(n=>{if(n.por)delete n.por[id]})});S.config.mig1=true;saveLocal()}
 function abrirApp(){migrar();if(MODO!=='general'){if(sembrarHor(S))saveLocal()}else if(DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(sembrarHor(em))ch=true});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}if(!esAdmin()&&UI.tab==='params')UI.tab='';if(MODO==='cliente'&&!S.config.empresa){UI.tab='params';setTimeout(()=>toast('Escriba la razón social y el NIT, y suba el logo de la empresa'),400)}$('#lock').hidden=true;$('#kP').value='';if(MODO==='general'&&!esAdmin()&&(ME.empresas||[]).length===1&&DATA.empresas[ME.empresas[0]]){DATA.actual=ME.empresas[0];cargarDatos(DATA.empresas[DATA.actual])}
   if(MODO==='general'&&DATA.actual&&!esAdmin()&&(ME.empresas||[]).length&&!ME.empresas.includes(DATA.actual)){DATA.actual=null}
-  setTimeout(avisoRec,600);UI.tab='inicio';if(MODO==='general'&&!DATA.actual){renderPicker();return}$('#picker').hidden=true;$('#app').hidden=false;render();setStatus('Datos abiertos en este dispositivo')}
+  setTimeout(avisoRec,600);UI.tab='inicio';if(MODO==='general'&&!DATA.actual){renderPicker();return}$('#picker').hidden=true;$('#app').hidden=false;render();setStatus('Datos abiertos en este dispositivo');fsIniciar()}
 /* código de recuperación automático: si el administrador no tiene uno, se crea y se le pide enviarlo a su correo */
 async function avisoRec(){if(!ME||ME.rol!=='admin'||REC||!DEKRAW||document.getElementById('recAviso'))return;
   const c=nuevoCodigo();REC={...await envolver(REC_ID,normCod(c),DEKRAW),admin:ME.email,fecha:new Date().toISOString()};RECUI.cod=c;try{escribirCaja(await cifrar(KEY,payload()))}catch(e){}
