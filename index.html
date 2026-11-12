@@ -1005,7 +1005,7 @@ function leerTurnos(){
 }
 /* ---------- acciones ---------- */
 /* ===== registro fácil de horarios: se escribe la hora de entrada y salida; domingos y festivos solo el número de horas ===== */
-const LETRAS_H={D:'D',DESCANSO:'D',V:'V',VAC:'V',VACACIONES:'V',I:'I',INC:'I',INCAPACIDAD:'I',IL:'IL',L:'L',LIC:'L',LICENCIA:'L',PERMISO:'L',X:'X',AUS:'X',AUSENCIA:'X',S:'S',SUSP:'S'};
+const LETRAS_H={D:'D',DESCANSO:'D',V:'V',VAC:'V',VACACIONES:'V',I:'I',INC:'I',INCAPACIDAD:'I',IL:'IL',L:'L',LIC:'L',LICENCIA:'L',PERMISO:'L',X:'X',AUS:'X',AUSENCIA:'X',S:'S',SUSP:'S',TRABAJA:'T',T:'T'};
 function hhParse(t,dom){ // texto libre -> código interno ('' vacío, null = no se entendió)
   let v=String(t??'').trim().toUpperCase().replace(/\s+/g,' ');if(!v||v==='-'||v==='—')return '';
   const vl=v.replace(/\./g,'');if(LETRAS_H[vl])return LETRAS_H[vl];
@@ -1018,25 +1018,76 @@ function hhParse(t,dom){ // texto libre -> código interno ('' vacío, null = no
   else if(a1&&!a2&&h2<=h1&&h2<12&&h2+12>h1)h2+=12;
   if(h1>23||h2>24||m1>59||m2>59)return null;h2=h2%24;
   return String(h1).padStart(2,'0')+':'+String(m1).padStart(2,'0')+'-'+String(h2).padStart(2,'0')+':'+String(m2).padStart(2,'0')}
-function hhVer(code){if(!code)return '';if(esHCod(code))return code;const hn=RX_HN.exec(code);if(hn)return hn[1].replace('.',',');const r=hRango(code);if(!r)return code;const f=t=>{let [h,mi]=t.split(':').map(Number);return h+(mi?':'+String(mi).padStart(2,'0'):'')};return `${f(r.i)}-${f(r.f)}`}
+function hhVer(code,fe){if(!code)return '';if(code==='T')return 'TRABAJA';if(esHCod(code))return code;const hn=RX_HN.exec(code);if(hn)return hn[1].replace('.',',');const r=hRango(code,fe||todayCO());if(!r)return code;const f=t=>{let [h,mi]=t.split(':').map(Number);return h+(mi?':'+String(mi).padStart(2,'0'):'')};return `${f(r.i)}-${f(r.f)}`}
 function horFacil(){
   const L=UI.hw,dias=[0,1,2,3,4,5,6].map(i=>addDays(L,i)),emps=hEmps(L),w=S.hor[L]||{asig:{}},c=S.config;
-  let h=`<div class="bar"><div class="weeknav"><button class="free" id="hPrev" aria-label="Semana anterior">←</button><span class="lbl">Lun ${fd(dias[0])} – Dom ${fd(dias[6])} ${dias[6].slice(0,4)}</span><button class="free" id="hNext" aria-label="Semana siguiente">→</button><button class="ghost free" id="hHoy">Esta semana</button></div>${sedeSelect('hSede')}<span class="grow"></span><button class="free" id="hfCopy">Copiar semana anterior</button><button class="free primary" id="hfPaste">Pegar horario enviado</button><button class="free ghost" id="hXlsS">Descargar Excel de la semana</button></div>
+  let h=`<div class="bar"><div class="weeknav"><button class="free" id="hPrev" aria-label="Semana anterior">←</button><span class="lbl">Lun ${fd(dias[0])} – Dom ${fd(dias[6])} ${dias[6].slice(0,4)}</span><button class="free" id="hNext" aria-label="Semana siguiente">→</button><button class="ghost free" id="hHoy">Esta semana</button></div>${sedeSelect('hSede')}<span class="grow"></span><button class="free" id="hfCopy">Copiar semana anterior</button><button class="free primary" id="hfPaste">Pegar o subir horario enviado</button><button class="free ghost" id="hXlsS">Descargar Excel de la semana</button></div>
    <p class="note">Escriba en cada día la hora de entrada y de salida, como le llegó: <b>8-5</b>, <b>8:00-17:00</b>, <b>7am-4pm</b>, <b>2 a 10</b> (en formato de 24 horas: <b>14-22</b>). En <b>domingos y festivos</b> escriba solo el <b>número de horas</b> trabajadas (por ejemplo <b>6</b>). Letras: <b>D</b> descanso, <b>V</b> vacaciones, <b>I</b> incapacidad, <b>L</b> licencia, <b>X</b> ausencia. La app calcula las horas trabajadas, las extras (más de ${c.jornada||42} h a la semana o ${c.topeDia||9} h al día), las horas nocturnas (${c.nocheIni}–${c.nocheFin}) y las dominicales y festivas. En jornadas de más de 5 horas descuenta el almuerzo (60 minutos, o lo que escriba en la columna «Almuerzo»).</p>`;
-  if(UI.hfPaste)h+=`<div class="panel" style="padding:12px 14px;margin-bottom:12px"><b>Pegar horario enviado</b><p class="note" style="margin:4px 0 8px">Copie la tabla desde Excel, Google Sheets o un mensaje y péguela aquí. Una fila por empleado: el <b>nombre</b> y luego <b>lunes a domingo</b>, separados por tabulación (como sale de Excel), punto y coma o barra vertical. Si la primera fila trae los días como títulos, se ignora. El nombre puede venir incompleto (por ejemplo «Laura Martínez»).</p>
-    <textarea id="hfTxt" rows="7" style="width:100%;font-family:var(--mono);font-size:.82rem" placeholder="Laura Martínez&#9;8-5&#9;8-5&#9;8-5&#9;8-5&#9;8-5&#9;9-1&#9;D&#10;Kevin Barrera; 10-7; 10-7; D; 10-7; 10-7; 10-7; 6">${esc(UI.hfTxt||'')}</textarea>
-    <div class="bar" style="margin-top:6px"><button class="free primary" id="hfLoad">Cargar en la semana</button><button class="free ghost" id="hfCan">Cerrar</button><span class="grow"></span></div>${UI.hfRes?`<div class="alert info" style="margin-top:6px">${UI.hfRes}</div>`:''}</div>`;
+  if(UI.hfPaste)h+=`<div class="panel" style="padding:12px 14px;margin-bottom:12px"><b>Pegar o subir el horario enviado</b><p class="note" style="margin:4px 0 8px">Seleccione en Excel la tabla completa <b>con los títulos</b> (SEDE, CARGO, EMPLEADO, TURNO, ALMUERZO, DÍA DE DESCANSO y los días con sus fechas), cópiela y péguela aquí, o suba el archivo de Excel. La app toma la fecha de cada columna (aunque la semana empiece en domingo o abarque dos semanas), el almuerzo de cada empleado, «DESCANSO», «VACACIONES» y los horarios como «9:00am - 6:00pm» u «08:00 am-4:00pm PASEO». Los domingos y festivos marcados «TRABAJA» quedan en amarillo para que escriba las horas.</p>
+    <textarea id="hfTxt" rows="7" style="width:100%;font-family:var(--mono);font-size:.82rem" placeholder="Pegue aquí la tabla copiada de Excel (con los títulos y las fechas)">${esc(UI.hfTxt||'')}</textarea>
+    <div class="bar" style="margin-top:6px"><button class="free primary" id="hfLoad">Cargar lo pegado</button><label class="free" style="cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:6px 10px">Subir el Excel<input type="file" id="hfFile" accept=".xlsx,.xls,.ods,.csv" hidden></label><button class="free ghost" id="hfCan">Cerrar</button><span class="grow"></span></div>${UI.hfRes?`<div class="alert info" style="margin-top:6px">${UI.hfRes}</div>`:''}</div>`;
   if(!emps.length)return h+`<div class="panel empty"><b>No hay empleados${UI.sede?' en este centro de costo':''}</b>Agréguelos en la pestaña Empleados.</div>`;
   h+=`<div class="panel scroll fija"><table class="malla hfac"><thead><tr><th class="sticky">Empleado</th>${dias.map((f,i)=>{const fe=festivo(f),df=i===6||fe;return `<th class="day${i===6?' dom':''}${fe?' fest':''}">${DIASL[i]}<span class="d">${fd(f)}</span>${fe?`<span class="tag" title="${esc(fe)}">Festivo</span>`:''}${df?'<span class="d">N.º horas</span>':''}</th>`}).join('')}<th>Almuerzo (min)</th><th class="n">Horas</th><th class="n">Domin. / fest.</th><th class="n">Nocturnas</th><th class="n">Extras</th></tr></thead><tbody>`;
   const T={min:0,df:0,noc:0,ext:0};
   emps.forEach(e=>{const fila=(w.asig&&w.asig[e.id])||{c:['','','','','','','']},o=valorSemana(e,L);T.min+=o.min;T.df+=e.sinRecDF?0:o.df;T.noc+=o.noc;T.ext+=o.ext;
     h+=`<tr><td class="emp sticky"><b>${esc(e.nombre)}</b><span>${esc(e.cargo||'')}${e.sede?' · '+esc(e.sede):''}</span></td>`;
-    dias.forEach((f,i)=>{const code=(fila.c||[])[i]||'',df=i===6||!!festivo(f),bad=code&&!esHCod(code)&&!hRango(code,f);
-      h+=`<td class="cell" style="padding:3px"><input class="hfin" data-hfe="${e.id}" data-hfi="${i}" data-df="${df?1:0}" value="${esc(hhVer(code))}" placeholder="${df?'h':''}" title="${esc(hTexto(code,f))}" style="width:100%;min-width:${df?58:92}px;text-align:center;${bad?'border-color:var(--bad);':''}${code==='D'?'background:var(--paper);':esHCod(code)?'background:var(--accent-soft);':''}"${df?' inputmode="decimal"':''}></td>`});
-    h+=`<td><input class="hfin" data-hfa="${e.id}" type="number" min="0" step="15" value="${esc(fila.almMin??'')}" placeholder="${esc(c.almDef??60)}" style="width:68px;text-align:center"></td><td class="n">${o.min?hrs(o.min):'—'}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.noc?hrs(o.noc):'—'}</td><td class="n">${o.ext?`<span class="pill warn">${hrs(o.ext)}</span>`:'—'}</td></tr>`});
+    dias.forEach((f,i)=>{const code=(fila.c||[])[i]||'',df=i===6||!!festivo(f),bad=code&&code!=='T'&&!esHCod(code)&&!hRango(code,f);
+      h+=`<td class="cell" style="padding:3px"><input class="hfin" data-hfe="${e.id}" data-hfi="${i}" data-df="${df?1:0}" value="${code==='T'?'':esc(hhVer(code,f))}" placeholder="${code==='T'?'¿horas?':df?'h':''}" title="${code==='T'?'Trabaja: escriba el número de horas':esc(hTexto(code,f))}" style="width:100%;min-width:${df?58:92}px;text-align:center;${code==='T'?'background:#fff3a6;border-color:var(--bad);color:#111;':''}${bad?'border-color:var(--bad);':''}${code==='D'?'background:var(--paper);':esHCod(code)?'background:var(--accent-soft);':''}"${df?' inputmode="decimal"':''}></td>`});
+    h+=`<td><input class="hfin" data-hfa="${e.id}" type="number" min="0" step="15" value="${esc(fila.almMin??'')}" placeholder="${esc(c.almDef??60)}" style="width:68px;text-align:center"></td><td class="n">${o.min?hrs(o.min):'—'}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.noc?hrs(o.noc):'—'}</td><td class="n">${o.ext?`<span class="pill warn">${hrs(o.ext)}</span>`:'—'}${(fila.c||[]).includes('T')?'<br><span class="pill bad">Faltan horas</span>':''}</td></tr>`});
   h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="8"></td><td class="n"><b>${hrs(T.min)}</b></td><td class="n"><b>${hrs(T.df)}</b></td><td class="n"><b>${hrs(T.noc)}</b></td><td class="n"><b>${hrs(T.ext)}</b></td></tr></tfoot></table></div>
    <p class="note">Estas horas pasan solas a <b>Novedades</b> y a la <b>Nómina</b> del periodo, igual que con la vista por turnos. Con Enter o Tab pasa a la siguiente casilla.</p>`;
   return h}
+/* ===== lectura de la tabla de horarios tal como la envían (Excel copiado o archivo) ===== */
+function tsvParse(t){ // TSV con celdas entre comillas que traen saltos de línea (así copia Excel)
+  const rows=[];let row=[],cell='',q=false,i=0;t=String(t||'').replace(/\r\n?/g,'\n');
+  const sep=t.includes('\t')?'\t':t.includes(';')?';':t.includes('|')?'|':null;
+  if(!sep)return t.split('\n').filter(l=>l.trim()).map(l=>l.trim().split(/\s{2,}/));
+  while(i<t.length){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){cell+='"';i+=2;continue}q=false;i++;continue}cell+=ch;i++;continue}
+    if(ch==='"'&&cell===''){q=true;i++;continue}
+    if(ch===sep){row.push(cell);cell='';i++;continue}
+    if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';i++;continue}
+    cell+=ch;i++}
+  if(cell!==''||row.length){row.push(cell);rows.push(row)}
+  return rows.filter(r=>r.some(c=>String(c).trim()))}
+const DIAS_RX=[/^lun/i,/^mar/i,/^mi[eé]/i,/^jue/i,/^vie/i,/^s[aá]b/i,/^dom/i];
+function celdaFecha(v){if(v==null||v==='')return '';if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate())).toISOString().slice(0,10);
+  if(typeof v==='number'&&v>40000&&v<60000){return new Date(Date.UTC(1899,11,30)+v*864e5).toISOString().slice(0,10)}
+  const s=String(v).trim();let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){const y=+m[3]<100?2000+(+m[3]):+m[3];return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`}
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:''}
+function almParse(v){const m=String(v||'').toUpperCase().replace(/\s+/g,'').match(/(\d{1,2})(?::(\d{2}))?(AM|PM)?-(\d{1,2})(?::(\d{2}))?(AM|PM)?/);if(!m)return '';
+  const fx=(h,ap)=>{h=+h;if(ap==='PM'&&h<12)h+=12;else if(!ap&&h<8)h+=12;return h};const a=fx(m[1],m[3]),b=fx(m[4],m[6]||m[3]);
+  return `${String(a).padStart(2,'0')}:${m[2]||'00'}-${String(b).padStart(2,'0')}:${m[5]||'00'}`}
+function horValor(v,df){ // celda del Excel -> código
+  let s=String(v??'').trim();if(!s)return '';const u=nrm(s).toUpperCase();
+  if(/^TRABAJ/.test(u))return 'T';if(/^DESCAN/.test(u))return 'D';if(/^VACACI/.test(u))return 'V';if(/^INCAP/.test(u))return /ARL|LABORAL/.test(u)?'IL':'I';if(/^(LICEN|PERMIS)/.test(u))return /NO REM/.test(u)?'X':'L';if(/^(AUSEN|NO ASIS|FALTA)/.test(u))return 'X';if(/^SUSPEN/.test(u))return 'S';
+  s=s.replace(/\(.*?\)/g,' ').replace(/\n/g,' ');
+  const m=s.toUpperCase().match(/\d{1,2}(?::\d{2})?\s*(?:A\.?M\.?|P\.?M\.?)?\s*(?:-|–|—|A\s|HASTA)\s*\d{1,2}(?::\d{2})?\s*(?:A\.?M\.?|P\.?M\.?)?/);
+  if(m)return hhParse(m[0],false);return hhParse(s,df)}
+function nomFuzzy(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1||a.length<5)return false;let i=0,j=0,d=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++d>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++}}return d+(a.length-i)+(b.length-j)<=1}
+function hfMatch2(nombre,emps){const t=nrm(nombre).replace(/[^a-zñ ]/g,' ').split(/\s+/).filter(x=>x.length>1);if(!t.length)return null;
+  let best=null,bs=0,dup=false;emps.forEach(e=>{const n=nrm(e.nombre).split(/\s+/),sc=t.filter(x=>n.some(y=>nomFuzzy(x,y))).length;if(sc>bs){bs=sc;best=e;dup=false}else if(sc===bs&&sc>0)dup=true});
+  return best&&bs>=Math.min(2,t.length)&&!dup?best:null}
+function cargarTablaHorario(rows){
+  rows=rows.map(r=>r.map(c=>c instanceof Date||typeof c==='number'?c:String(c??'').trim()));
+  const hi=rows.findIndex(r=>r.some(c=>typeof c==='string'&&/^(empleado|nombre|trabajador|colaborador)/i.test(c)));
+  const R={ok:new Set(),no:[],err:[],faltan:[],semanas:new Set(),celdas:0};
+  if(hi<0){ // sin títulos: nombre y lunes a domingo de la semana en pantalla
+    rows.forEach(p=>{const e=hfMatch2(p[0],empAll());if(!e){if(p[0])R.no.push(p[0]);return}for(let i=0;i<7;i++){if(p[i+1]===undefined)continue;guardarCeldaH(e,addDays(UI.hw,i),p[i+1],R)}R.ok.add(e.nombre)});return R}
+  const H=rows[hi],cE=H.findIndex(c=>typeof c==='string'&&/^(empleado|nombre|trabajador|colaborador)/i.test(c)),cA=H.findIndex(c=>typeof c==='string'&&/almuerzo/i.test(c)),cD=H.findIndex(c=>typeof c==='string'&&/descanso/i.test(c));
+  const nH=[hi,hi+1,hi+2].filter(k=>rows[k]&&(k===hi||rows[k].some(c=>celdaFecha(c)||DIAS_RX.some(rx=>typeof c==='string'&&rx.test(c))))&&(k===hi||!hfMatch2(rows[k][cE]||'',empAll())));
+  const ncol=Math.max(...rows.map(r=>r.length)),col=[];
+  for(let j=0;j<ncol;j++){if(j===cE||j===cA||j===cD)continue;let dn=-1,fe='';nH.forEach(k=>{const c=rows[k][j];const f=celdaFecha(c);if(f)fe=f;else if(typeof c==='string'){const x=DIAS_RX.findIndex(rx=>rx.test(c));if(x>=0)dn=x}});if(fe||dn>=0)col.push({j,dn,fe})}
+  // si solo hay nombres de días, se usa la semana en pantalla
+  col.forEach(c=>{if(!c.fe)c.fe=addDays(UI.hw,c.dn)});
+  const ini=Math.max(...nH)+1;
+  for(let k=ini;k<rows.length;k++){const r=rows[k],nm=r[cE];if(!nm||typeof nm!=='string')continue;const e=hfMatch2(nm,empAll());if(!e){R.no.push(nm);continue}
+    const al=cA>=0?almParse(r[cA]):'';col.forEach(c=>{const v=r[c.j];if(v===undefined||v==='')return;guardarCeldaH(e,c.fe,v,R,al)});R.ok.add(e.nombre)}
+  return R}
+function guardarCeldaH(e,f,v,R,al){const L=lunesDe(f),i=Math.round((Date.parse(f)-Date.parse(L))/864e5),df=i===6||!!festivo(f),cd=horValor(v,df);
+  if(cd===null){R.err.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}: «${String(v).replace(/\s+/g,' ')}»`);return}
+  const fila=hSet(L,e.id);fila.t='';fila.c[i]=cd;if(cd==='D')fila.dd=i;if(al)fila.alm=al;if(cd==='T')R.faltan.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}`);R.semanas.add(L);R.celdas++;hGuardar(L)}
+function resumenCarga(R){const sem=[...R.semanas].sort();return `<b>${R.ok.size} empleado${R.ok.size===1?'':'s'} cargado${R.ok.size===1?'':'s'}</b> (${R.celdas} días${sem.length?`, semana${sem.length>1?'s':''} del ${sem.map(x=>fCorta(x)).join(' y del ')}`:''}).${R.faltan.length?` <b>Faltan las horas</b> de ${R.faltan.length} domingo${R.faltan.length>1?'s':''} o festivo${R.faltan.length>1?'s':''} marcados «TRABAJA»: escríbalas en las casillas amarillas (${R.faltan.slice(0,8).join(', ')}${R.faltan.length>8?'…':''}).`:''}${R.no.length?` No encontré: ${R.no.map(esc).join(', ')}.`:''}${R.err.length?` Revise: ${R.err.slice(0,6).map(esc).join('; ')}.`:''}`}
 function hfMatch(nombre,emps){const t=nrm(nombre).replace(/[^a-zñ ]/g,' ').split(/\s+/).filter(x=>x.length>1);if(!t.length)return null;
   let best=null,bs=0,dup=false;emps.forEach(e=>{const n=nrm(e.nombre).split(/\s+/),sc=t.filter(x=>n.includes(x)).length;if(sc>bs){bs=sc;best=e;dup=false}else if(sc===bs&&sc>0)dup=true});
   return best&&bs>=Math.min(2,t.length)&&!dup?best:null}
@@ -1054,14 +1105,12 @@ function bindHorFacil(re){const L=UI.hw;
     hGuardar(L);re();toast(`Semana copiada (${n} empleados). Revise los festivos.`)};
   $('#hfPaste').onclick=()=>{UI.hfPaste=!UI.hfPaste;UI.hfRes='';re();const t=$('#hfTxt');if(t)t.focus()};
   const cn=$('#hfCan');if(cn)cn.onclick=()=>{UI.hfPaste=false;UI.hfRes='';re()};
-  const ld=$('#hfLoad');if(ld)ld.onclick=()=>{const txt=$('#hfTxt').value;UI.hfTxt=txt;const emps=hEmps(L),ok=[],no=[],err=[];
-    txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{let p=l.includes('\t')?l.split('\t'):l.includes(';')?l.split(';'):l.includes('|')?l.split('|'):l.split(/\s{2,}/);p=p.map(x=>x.trim());
-      if(/^(nombre|empleado|trabajador|colaborador)/i.test(p[0])||p.slice(1).some(x=>/^(lun|mar|mi[eé]|jue|vie|s[aá]b|dom)/i.test(x)))return;
-      while(p.length>8&&/^\d[\d.,]*$/.test(p[1]))p.splice(1,1); // columna de cédula
-      const e=hfMatch(p[0],emps);if(!e){no.push(esc(p[0]));return}const f=hSet(L,e.id);f.t='';
-      for(let i=0;i<7;i++){const v=p[i+1];if(v===undefined)continue;const fe=addDays(L,i),df=i===6||!!festivo(fe),cd=hhParse(v,df);if(cd===null){err.push(`${esc(e.nombre.split(' ')[0])} ${DIASL[i]}: «${esc(v)}»`);continue}f.c[i]=cd;if(cd==='D')f.dd=i}
-      ok.push(e.nombre)});
-    hGuardar(L);UI.hfRes=`<b>${ok.length} empleado${ok.length===1?'':'s'} cargado${ok.length===1?'':'s'}.</b>${no.length?` No encontré: ${no.join(', ')}.`:''}${err.length?` Revise: ${err.slice(0,8).join('; ')}.`:''}`;re();toast(`Horario cargado para ${ok.length} empleados`)};
+  const fin=R=>{const sem=[...R.semanas].sort();if(sem.length&&!sem.includes(UI.hw))UI.hw=sem[0];UI.hfRes=resumenCarga(R);saveUI();re();toast(`Horario cargado para ${R.ok.size} empleados`);bitacora('Cargó el horario enviado ('+R.ok.size+' empleados)')};
+  const ld=$('#hfLoad');if(ld)ld.onclick=()=>{const txt=$('#hfTxt').value;UI.hfTxt=txt;if(!txt.trim())return toast('Pegue primero la tabla');fin(cargarTablaHorario(tsvParse(txt)))};
+  const ff=$('#hfFile');if(ff)ff.onchange=async()=>{const f=ff.files[0];if(!f)return;if(typeof XLSX==='undefined')return toast('No se pudo cargar el lector de Excel. Revise la conexión.');
+    try{const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});const R={ok:new Set(),no:[],err:[],faltan:[],semanas:new Set(),celdas:0};
+      wb.SheetNames.forEach(n=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''});const r=cargarTablaHorario(rows);r.ok.forEach(x=>R.ok.add(x));r.semanas.forEach(x=>R.semanas.add(x));R.no.push(...r.no.filter(x=>!R.no.includes(x)));R.err.push(...r.err);R.faltan.push(...r.faltan);R.celdas+=r.celdas});
+      R.no=R.no.filter(x=>!/^(sede|cargo|total)/i.test(x));fin(R)}catch(er){console.error(er);toast('No se pudo leer el archivo: '+(er.message||er))}};
   const xs=$('#hXlsS');if(xs)xs.onclick=excelSemana}
 function bindHor(){
   const re=()=>renderHor();
