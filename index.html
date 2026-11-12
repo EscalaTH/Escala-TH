@@ -66,21 +66,21 @@ nav.tabs button:hover{color:var(--ink)}
 .ini-n{position:absolute;top:12px;right:14px;font-size:.75rem;font-weight:700;color:var(--muted)}
 @media (min-width:1000px){
   #app{max-width:none;margin:0 0 0 240px;padding-left:26px}
-  nav.tabs{position:fixed;left:0;top:0;bottom:0;width:240px;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:22px 12px 18px;background:var(--accent);overflow-y:auto;z-index:30;box-shadow:2px 0 14px rgba(20,10,60,.12)}
-  nav.tabs::before{content:"Menú";color:rgba(255,255,255,.7);font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:0 12px 10px}
-  nav.tabs button{color:#fff;font-weight:700;font-size:.93rem;padding:10px 12px;border-radius:10px;justify-content:flex-start;width:100%;gap:13px;border-color:transparent;text-align:left}
-  nav.tabs button:hover{background:rgba(255,255,255,.14);color:#fff}
-  nav.tabs button[aria-selected="true"]{background:rgba(255,255,255,.24);color:#fff;border-color:transparent;box-shadow:inset 3px 0 0 #fff}
-  nav.tabs .ti{width:22px;height:22px;stroke:#fff;fill:rgba(255,255,255,.3);stroke-width:2;opacity:1}
+  nav.tabs{position:fixed;left:0;top:0;bottom:0;width:240px;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:22px 12px 18px;background:var(--nav-bg,var(--accent));overflow-y:auto;z-index:30;box-shadow:2px 0 14px rgba(20,10,60,.12)}
+  nav.tabs::before{content:"Menú";color:var(--nav-ink,#fff);opacity:.7;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:0 12px 10px}
+  nav.tabs button{color:var(--nav-ink,#fff);font-weight:700;font-size:.93rem;padding:10px 12px;border-radius:10px;justify-content:flex-start;width:100%;gap:13px;border-color:transparent;text-align:left}
+  nav.tabs button:hover{background:var(--nav-hov,rgba(255,255,255,.14));color:var(--nav-ink,#fff)}
+  nav.tabs button[aria-selected="true"]{background:var(--nav-sel,rgba(255,255,255,.24));color:var(--nav-ink,#fff);border-color:transparent;box-shadow:inset 3px 0 0 var(--nav-ink,#fff)}
+  nav.tabs .ti{width:22px;height:22px;stroke:var(--nav-ink,#fff);fill:var(--nav-fill,rgba(255,255,255,.3));stroke-width:2;opacity:1}
   nav.tabs button[aria-selected="true"] .ti{stroke-width:2.2;fill:rgba(255,255,255,.45)}
-  nav.tabs .tn{order:3;margin-left:auto;background:transparent;border:0;color:rgba(255,255,255,.65);min-width:auto}
-  nav.tabs button[aria-selected="true"] .tn{background:transparent;color:#fff;border:0}
+  nav.tabs .tn{order:3;margin-left:auto;background:transparent;border:0;color:var(--nav-ink,#fff);opacity:.65;min-width:auto}
+  nav.tabs button[aria-selected="true"] .tn{background:transparent;color:var(--nav-ink,#fff);border:0;opacity:1}
   nav.tabs .tl{line-height:1.2}
   .stbar{margin:6px 0 10px!important}
   header.top{flex-wrap:wrap;row-gap:8px}
   header.top .hright{margin-left:auto;align-items:flex-end;text-align:right}
   nav.tabs button[data-tab="liq"]{margin-top:10px;position:relative}
-  nav.tabs button[data-tab="liq"]::before{content:"";position:absolute;left:8px;right:8px;top:-7px;border-top:1px solid rgba(255,255,255,.3)}
+  nav.tabs button[data-tab="liq"]::before{content:"";position:absolute;left:8px;right:8px;top:-7px;border-top:1px solid var(--nav-ink,#fff);opacity:.3}
 }
 @media print{nav.tabs{display:none!important}#app{margin:0!important;padding:0!important}}
 h2{font-family:var(--f-display);font-weight:800;font-size:1.18rem;margin:0;text-wrap:balance;letter-spacing:-.005em}
@@ -551,9 +551,51 @@ const empFilt=()=>empList().filter(e=>!UI.sede||e.sede===UI.sede);
 function liqPagaPeriodo(e,P){return Object.values(S.liq||{}).some(l=>l.empId===e.id&&l.retiro>=P.ini&&l.retiro<=P.fin&&+(l.f||{}).diasSal>0)}
 function empPeriodo(P){return empAll().filter(e=>!liqPagaPeriodo(e,P)&&(!UI.sede||e.sede===UI.sede)&&(!e.ingreso||e.ingreso<=P.fin)&&(!e.retiro||e.retiro>=P.ini)&&(e.activo!==false||(e.retiro&&e.retiro>=P.ini)))}
 
-function aplicarMarca(){if(MODO!=='cliente')return;const c=S.config,lg=c.logo||LOGO_NEUTRO;
+/* ===== colores de cada empresa ===== */
+const hx=h=>{h=String(h||'').replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return isNaN(n)||h.length!==6?null:[n>>16&255,n>>8&255,n&255]};
+const hxS=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const mezcla=(a,b,t)=>{const A=hx(a),B=hx(b);return A&&B?hxS(A.map((v,i)=>v+(B[i]-v)*t)):a};
+const lumin=h=>{const a=hx(h);if(!a)return 0;const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(a[0])+.7152*f(a[1])+.0722*f(a[2])};
+const tinta=h=>lumin(h)>.42?'#14171f':'#ffffff';
+const TEMAS=[['Azul SER','#1f4fd1','#1f4fd1'],['Morado Escalautos','#6f00ff','#5a00cf'],['Verde farmacia','#0f8a5f','#0b6b4a'],['Rojo corporativo','#c62828','#9e1f1f'],['Naranja','#e8710a','#c25a00'],['Azul petróleo','#0e6e8c','#0b4f66'],['Grafito','#2f3a4a','#1f2733'],['Vino','#8e1b4f','#6d143c']];
+function colorApp(c){c=c||S.config;return c.colorApp||(MODO==='cliente'?c.colorDoc:'')||'#1f4fd1'}
+function aplicarTema(){const c=S.config||{},a=colorApp(c),nav=c.colorNav||a,ni=tinta(nav),claro=ni==='#14171f',st=document.getElementById('temaEmp')||document.head.appendChild(Object.assign(document.createElement('style'),{id:'temaEmp'}));
+  const aD=lumin(a)<.18?mezcla(a,'#ffffff',.38):a,navD=mezcla(nav,'#000000',.35);
+  const nv=(n,ink)=>`--nav-bg:${n};--nav-ink:${ink};--nav-hov:${ink==='#ffffff'?'rgba(255,255,255,.14)':'rgba(0,0,0,.07)'};--nav-sel:${ink==='#ffffff'?'rgba(255,255,255,.24)':'rgba(0,0,0,.1)'};--nav-fill:${ink==='#ffffff'?'rgba(255,255,255,.3)':'rgba(0,0,0,.12)'};`;
+  const L=`--accent:${a};--accent-ink:${tinta(a)};--accent-soft:${mezcla(a,'#ffffff',.87)};${nv(nav,ni)}`,D=`--accent:${aD};--accent-ink:${tinta(aD)};--accent-soft:${mezcla(a,'#171a22',.72)};${nv(navD,tinta(navD))}`;
+  document.documentElement.style.removeProperty('--accent');st.textContent=`html:root{${L}}@media (prefers-color-scheme: dark){html:root:not([data-theme="light"]){${D}}}html:root[data-theme="dark"]{${D}}`;
+  const t=c.tema||'auto';if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=nav;void claro}
+function panelColores(){const c=S.config,a=colorApp(c),nav=c.colorNav||a,doc=c.colorDoc||'#1d3f99';
+  const sw=(k,t,v,help)=>`<label class="f">${t}<span style="display:flex;gap:8px;align-items:center"><input type="color" data-col="${k}" value="${esc(v)}" style="width:56px;height:36px;padding:2px"><input class="free mono" data-colt="${k}" value="${esc(v)}" style="width:96px"></span>${help?`<small class="status">${help}</small>`:''}</label>`;
+  return `<div class="section"><h2 style="margin-bottom:8px">Colores de la empresa</h2><div class="panel" style="padding:14px 16px">
+   <p class="note" style="margin:0 0 10px">Cada empresa tiene sus propios colores. El cambio se ve de inmediato en el menú, los botones, los títulos y, si quiere, en los Excel y documentos.</p>
+   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${TEMAS.map(([n,x,y])=>`<button class="free ghost" data-temap="${x}|${y}" title="${n}" style="display:flex;align-items:center;gap:6px;padding:5px 10px"><span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,${x} 50%,${y} 50%);border:1px solid var(--line)"></span>${n}</button>`).join('')}
+    ${c.logo||MODO!=='cliente'?`<button class="free" id="colLogo">Tomar colores del logo</button>`:''}</div>
+   <div class="grid-form" style="padding:0">
+    ${sw('colorApp','Color principal',a,'Botones, títulos, números y selección')}
+    ${sw('colorNav','Color del menú lateral',nav,'El texto del menú se pone blanco u oscuro según el fondo')}
+    ${sw('colorDoc','Color de Excel y documentos',doc,'Encabezados de tablas en Excel, Word y PDF')}
+    <label class="f">Apariencia<select class="free" id="colTema"><option value="auto"${(c.tema||'auto')==='auto'?' selected':''}>Según el computador</option><option value="light"${c.tema==='light'?' selected':''}>Siempre clara</option><option value="dark"${c.tema==='dark'?' selected':''}>Siempre oscura</option></select></label>
+   </div>
+   <div class="bar" style="margin-top:10px"><button class="free ghost" id="colDocIg">Usar el color principal en Excel y documentos</button><button class="free ghost" id="colReset">Volver a los colores originales</button><span class="grow"></span>
+    <span style="display:flex;gap:6px;align-items:center"><span class="status">Vista previa:</span><span style="background:${esc(nav)};color:${tinta(nav)};padding:5px 10px;border-radius:8px;font-weight:700">Menú</span><span style="background:var(--accent);color:var(--accent-ink);padding:5px 10px;border-radius:8px;font-weight:700">Botón</span><span style="background:${esc(doc)};color:${tinta(doc)};padding:5px 10px;border-radius:8px;font-weight:700">Excel</span></span></div>
+  </div></div>`}
+function coloresLogo(src){return new Promise(ok=>{const im=new Image();im.onload=()=>{try{const W=72,H=Math.max(1,Math.round(72*im.height/im.width)),cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.drawImage(im,0,0,W,H);const d=x.getImageData(0,0,W,H).data,B={};
+    for(let i=0;i<d.length;i+=4){if(d[i+3]<200)continue;const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);if(mx-mn<45||mx<40||mn>225)continue;const k=[r,g,b].map(v=>v>>4).join(',');(B[k]=B[k]||{n:0,s:[0,0,0]}).n++;B[k].s[0]+=r;B[k].s[1]+=g;B[k].s[2]+=b}
+    const L=Object.values(B).sort((p,q)=>q.n-p.n).map(o=>hxS(o.s.map(v=>v/o.n)));const out=[];L.forEach(h=>{if(out.length<2&&!out.some(o=>{const A=hx(o),C=hx(h);return Math.abs(A[0]-C[0])+Math.abs(A[1]-C[1])+Math.abs(A[2]-C[2])<120}))out.push(h)});ok(out)}catch(e){ok([])}};im.onerror=()=>ok([]);im.src=src})}
+function bindColores(){const sv=()=>{persist('config');aplicarTema();render()};
+  document.querySelectorAll('[data-col]').forEach(i=>i.oninput=()=>{S.config[i.dataset.col]=i.value;const t=document.querySelector(`[data-colt="${i.dataset.col}"]`);if(t)t.value=i.value;aplicarTema()});
+  document.querySelectorAll('[data-col]').forEach(i=>i.onchange=sv);
+  document.querySelectorAll('[data-colt]').forEach(i=>i.onchange=()=>{let v=i.value.trim();if(!v.startsWith('#'))v='#'+v;if(!hx(v))return toast('Escriba un color como #1f4fd1');S.config[i.dataset.colt]=hxS(hx(v));sv()});
+  document.querySelectorAll('[data-temap]').forEach(b=>b.onclick=()=>{const [x,y]=b.dataset.temap.split('|');S.config.colorApp=x;S.config.colorNav=y;sv()});
+  const t=$('#colTema');if(t)t.onchange=()=>{S.config.tema=t.value;sv()};
+  const di=$('#colDocIg');if(di)di.onclick=()=>{S.config.colorDoc=colorApp();sv();toast('Excel y documentos usarán el color principal')};
+  const rs=$('#colReset');if(rs)rs.onclick=()=>{delete S.config.colorApp;delete S.config.colorNav;delete S.config.tema;sv()};
+  const lg=$('#colLogo');if(lg)lg.onclick=async()=>{const src=S.config.logo||(document.querySelector('header .serLogo, .brand img')||{}).src;if(!src)return toast('Primero cargue el logo de la empresa');const L=await coloresLogo(src);if(!L.length)return toast('No se encontraron colores en el logo');
+    S.config.colorApp=L[0];S.config.colorNav=lumin(L[0])>.35?mezcla(L[0],'#000000',.35):(L[1]&&lumin(L[1])<.35?L[1]:mezcla(L[0],'#000000',.18));sv();toast('Colores tomados del logo')}}
+function aplicarMarca(){aplicarTema();if(MODO!=='cliente')return;const c=S.config,lg=c.logo||LOGO_NEUTRO;
   document.querySelectorAll('.serLogo').forEach(i=>{i.src=lg;i.alt=c.empresa||'Logo';i.classList.add('cliLogo')});document.title='Gestor Talento Humano'+(c.empresa?' · '+c.empresa:'');
-  if(c.colorDoc)document.documentElement.style.setProperty('--accent',c.colorDoc);
   try{localStorage.setItem(LKEY+'.marca',JSON.stringify({n:c.empresa||'',l:c.logo||'',k:c.colorDoc||''}))}catch(e){}}
 function renderLegal(){
   const c=S.config;aplicarMarca();
@@ -2426,10 +2468,10 @@ function renderParams(){setTimeout(()=>ojos(),0);
       <div class="row" style="margin-top:6px"><input id="ln-${k}" placeholder="Agregar a ${t.toLowerCase()}"><button type="button" data-ladd="${k}">Agregar</button></div></div>`).join('')}
   </div></div>
   ${formCred()}${panelRec()}
-  <div class="section"><h2 style="margin-bottom:8px">Copia de seguridad</h2><div class="panel imp"><p class="note" style="margin:0">Los datos se guardan cifrados en este dispositivo y navegador. La copia de seguridad es un archivo sin cifrar con la información de los trabajadores: guárdela en un lugar seguro. Descargue una copia después de cada nómina; con ella puede pasar todo a otro computador o celular, o recuperar la información si se borra el navegador.</p>
+  ${panelColores()}<div class="section"><h2 style="margin-bottom:8px">Copia de seguridad</h2><div class="panel imp"><p class="note" style="margin:0">Los datos se guardan cifrados en este dispositivo y navegador. La copia de seguridad es un archivo sin cifrar con la información de los trabajadores: guárdela en un lugar seguro. Descargue una copia después de cada nómina; con ella puede pasar todo a otro computador o celular, o recuperar la información si se borra el navegador.</p>
   <div class="row"><button class="free primary" id="bkD">Descargar copia de seguridad</button><label class="free" for="bkF" style="cursor:pointer"><span class="btn" style="display:inline-block;border:1px solid var(--line);border-radius:7px;padding:7px 12px;background:var(--surface)">Cargar copia de seguridad</span><input type="file" id="bkF" accept=".json,application/json" hidden></label><span class="status">${Object.keys(S.emps).length} empleados · ${Object.keys(S.nov).length} periodos con novedades · ${Object.keys(S.liq).length} liquidaciones</span></div>
   ${UI.bkAsk?`<div class="alert">La copia «${esc(UI.bkAsk.name)}» reemplazará todos los datos de este dispositivo. <button class="danger free" id="bkOk">Reemplazar</button> <button class="ghost free" id="bkNo">Cancelar</button></div>`:''}</div></div>${panelArchivo()}`;
-  $('#v-params').innerHTML=h;bindArchivo();
+  $('#v-params').innerHTML=h;bindArchivo();bindColores();
 
   document.querySelectorAll('[data-t]').forEach(inp=>inp.onchange=()=>{const t=c.turnos[+inp.dataset.t],k=inp.dataset.k.split('.');let v=inp.value;if(k[0]==='code')v=v.toUpperCase().trim();
     if(k[0]==='code'&&(['D','V','I','L','X',''].includes(v)||c.turnos.some((o,j)=>o.code===v&&j!==+inp.dataset.t))){toast('Ese código ya está en uso');inp.value=t.code;return}
@@ -2590,7 +2632,7 @@ function panelDisenos(){
   <div class="panel" style="padding:14px;margin-top:12px"><b style="display:block;margin-bottom:8px">Tipo de letra de los documentos de Word</b><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">
     ${[['cert','Certificación laboral'],['liq','Liquidación de contrato'],['desp','Desprendibles de nómina'],['ctr','Contratos y documentos de talento humano']].map(([k,t])=>`<label class="f">${t}<select data-fnt="${k}" style="font-family:'${fuenteDe(k)}'">${FUENTES.map(f=>`<option value="${f}" style="font-family:'${f}'"${fuenteDe(k)===f?' selected':''}>${f}</option>`).join('')}</select><span style="font-family:'${fuenteDe(k)}';font-size:1rem;text-transform:none;letter-spacing:0;color:var(--ink)">Así se ve: Certifica que labora…</span></label>`).join('')}</div>
     <div class="bar" style="margin-top:10px"><button type="button" class="ghost" id="fntAll">Usar la letra de la certificación en todos</button><span class="status grow">La letra debe estar instalada en el computador donde se abra el Word; si no está, Word la cambia por una parecida.</span></div></div>
-  <div class="bar" style="margin-top:10px"><label class="f">${MODO==='cliente'?'Color de la empresa (app, Excel y documentos)':'Color de títulos y tablas'}<input type="color" data-p="colorDoc" id="pCol" value="${esc(c.colorDoc||'#1d3f99')}" style="width:70px;height:34px;padding:2px"></label></div></div>`;
+  <p class="status" style="margin-top:10px">El color de títulos y tablas se cambia en «Colores de la empresa», en Parámetros.</p></div>`;
 }
 function bindDisenos(){
   const c=S.config;c.disenos=c.disenos||{};c.disArch=c.disArch||{};
@@ -4174,7 +4216,7 @@ async function wordCert0(F){
 /* ===================== arranque ===================== */
 MODE='local';PERM.write=true;PERM.admin=true;PERM.cuentas=true;
 document.querySelectorAll('.serLogo').forEach(i=>i.src=LOGO_SER);
-if(MODO==='cliente'){let m=null;try{m=JSON.parse(localStorage.getItem(LKEY+'.marca')||'null')}catch(e){}document.querySelectorAll('.serLogo').forEach(i=>{i.src=(m&&m.l)||LOGO_NEUTRO;i.alt=(m&&m.n)||'Logo';i.classList.add('cliLogo')});if(m&&m.n){document.title=m.n+' · Nómina';$('#kTit').textContent=m.n}if(m&&m.k)document.documentElement.style.setProperty('--accent',m.k)}
+if(MODO==='cliente'){let m=null;try{m=JSON.parse(localStorage.getItem(LKEY+'.marca')||'null')}catch(e){}document.querySelectorAll('.serLogo').forEach(i=>{i.src=(m&&m.l)||LOGO_NEUTRO;i.alt=(m&&m.n)||'Logo';i.classList.add('cliLogo')});if(m&&m.n){document.title='Gestor Talento Humano · '+m.n;$('#kTit').textContent=m.n}if(m&&m.k)document.documentElement.style.setProperty('--accent',m.k)}
 if(SIN_SER)document.querySelectorAll('.ser').forEach(d=>d.remove());
 if(MODO==='farmaser'&&DEF_CONFIG.logo){document.querySelectorAll('.serLogo').forEach(i=>{i.src=DEF_CONFIG.logo;i.alt='Farmaser de Colombia';i.classList.add('cliLogo')})}
 if(MODO==='escalautos'&&LOGO_ESC){document.querySelectorAll('.serLogo').forEach(i=>{i.src=LOGO_ESC;i.alt='Escalautos';i.classList.add('cliLogo')});document.querySelectorAll('.ser').forEach(d=>d.remove())}
