@@ -1022,19 +1022,21 @@ function hhVer(code,fe){if(!code)return '';if(code==='T')return 'TRABAJA';if(esH
 function horFacil(){
   const L=UI.hw,dias=[0,1,2,3,4,5,6].map(i=>addDays(L,i)),emps=hEmps(L),w=S.hor[L]||{asig:{}},c=S.config;
   let h=`<div class="bar"><div class="weeknav"><button class="free" id="hPrev" aria-label="Semana anterior">←</button><span class="lbl">Lun ${fd(dias[0])} – Dom ${fd(dias[6])} ${dias[6].slice(0,4)}</span><button class="free" id="hNext" aria-label="Semana siguiente">→</button><button class="ghost free" id="hHoy">Esta semana</button></div>${sedeSelect('hSede')}<span class="grow"></span><button class="free" id="hfCopy">Copiar semana anterior</button><button class="free primary" id="hfPaste">Pegar o subir horario enviado</button><button class="free ghost" id="hXlsS">Descargar Excel de la semana</button></div>
+   <div class="alert info" style="margin-bottom:8px"><b>Lo más rápido:</b> escriba el horario de cada empleado en la columna azul <b>«Horario lunes a sábado»</b> (por ejemplo <b>9-6</b>) y escoja su <b>día de descanso</b>: la app llena toda la semana. Luego corrija solo los días distintos y escriba las <b>horas</b> de los domingos y festivos que trabaje.</div>
    <p class="note">Escriba en cada día la hora de entrada y de salida, como le llegó: <b>8-5</b>, <b>8:00-17:00</b>, <b>7am-4pm</b>, <b>2 a 10</b> (en formato de 24 horas: <b>14-22</b>). En <b>domingos y festivos</b> escriba solo el <b>número de horas</b> trabajadas (por ejemplo <b>6</b>). Letras: <b>D</b> descanso, <b>V</b> vacaciones, <b>I</b> incapacidad, <b>L</b> licencia, <b>X</b> ausencia. La app calcula las horas trabajadas, las extras (más de ${c.jornada||42} h a la semana o ${c.topeDia||9} h al día), las horas nocturnas (${c.nocheIni}–${c.nocheFin}) y las dominicales y festivas. En jornadas de más de 5 horas descuenta el almuerzo (60 minutos, o lo que escriba en la columna «Almuerzo»).</p>`;
   if(UI.hfPaste)h+=`<div class="panel" style="padding:12px 14px;margin-bottom:12px"><b>Pegar o subir el horario enviado</b><p class="note" style="margin:4px 0 8px">Seleccione en Excel la tabla completa <b>con los títulos</b> (SEDE, CARGO, EMPLEADO, TURNO, ALMUERZO, DÍA DE DESCANSO y los días con sus fechas), cópiela y péguela aquí, o suba el archivo de Excel. La app toma la fecha de cada columna (aunque la semana empiece en domingo o abarque dos semanas), el almuerzo de cada empleado, «DESCANSO», «VACACIONES» y los horarios como «9:00am - 6:00pm» u «08:00 am-4:00pm PASEO». Los domingos y festivos marcados «TRABAJA» quedan en amarillo para que escriba las horas.</p>
     <textarea id="hfTxt" rows="7" style="width:100%;font-family:var(--mono);font-size:.82rem" placeholder="Pegue aquí la tabla copiada de Excel (con los títulos y las fechas)">${esc(UI.hfTxt||'')}</textarea>
     <div class="bar" style="margin-top:6px"><button class="free primary" id="hfLoad">Cargar lo pegado</button><label class="free" style="cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:6px 10px">Subir el Excel<input type="file" id="hfFile" accept=".xlsx,.xls,.ods,.csv" hidden></label><button class="free ghost" id="hfCan">Cerrar</button><span class="grow"></span></div>${UI.hfRes?`<div class="alert info" style="margin-top:6px">${UI.hfRes}</div>`:''}</div>`;
   if(!emps.length)return h+`<div class="panel empty"><b>No hay empleados${UI.sede?' en este centro de costo':''}</b>Agréguelos en la pestaña Empleados.</div>`;
-  h+=`<div class="panel scroll fija"><table class="malla hfac"><thead><tr><th class="sticky">Empleado</th>${dias.map((f,i)=>{const fe=festivo(f),df=i===6||fe;return `<th class="day${i===6?' dom':''}${fe?' fest':''}">${DIASL[i]}<span class="d">${fd(f)}</span>${fe?`<span class="tag" title="${esc(fe)}">Festivo</span>`:''}${df?'<span class="d">N.º horas</span>':''}</th>`}).join('')}<th>Almuerzo (min)</th><th class="n">Horas</th><th class="n">Domin. / fest.</th><th class="n">Nocturnas</th><th class="n">Extras</th></tr></thead><tbody>`;
+  h+=`<div class="panel scroll fija"><table class="malla hfac"><thead><tr><th class="sticky">Empleado</th><th title="Se copia a todos los días de lunes a sábado" style="background:var(--accent-soft)">Horario<br><span class="d">lunes a sábado</span></th><th style="background:var(--accent-soft)">Descanso</th>${dias.map((f,i)=>{const fe=festivo(f),df=i===6||fe;return `<th class="day${i===6?' dom':''}${fe?' fest':''}">${DIASL[i]}<span class="d">${fd(f)}</span>${fe?`<span class="tag" title="${esc(fe)}">Festivo</span>`:''}${df?'<span class="d">N.º horas</span>':''}</th>`}).join('')}<th>Almuerzo (min)</th><th class="n">Horas</th><th class="n">Domin. / fest.</th><th class="n">Nocturnas</th><th class="n">Extras</th></tr></thead><tbody>`;
   const T={min:0,df:0,noc:0,ext:0};
   emps.forEach(e=>{const fila=(w.asig&&w.asig[e.id])||{c:['','','','','','','']},o=valorSemana(e,L);T.min+=o.min;T.df+=e.sinRecDF?0:o.df;T.noc+=o.noc;T.ext+=o.ext;
-    h+=`<tr><td class="emp sticky"><b>${esc(e.nombre)}</b><span>${esc(e.cargo||'')}${e.sede?' · '+esc(e.sede):''}</span></td>`;
+    const dd=(fila.c||[]).findIndex(x=>x==='D');
+    h+=`<tr><td class="emp sticky"><b>${esc(e.nombre)}</b><span>${esc(e.cargo||'')}${e.sede?' · '+esc(e.sede):''}</span></td><td class="cell" style="padding:3px;background:var(--accent-soft)"><input class="hfin" data-hfb="${e.id}" value="${esc(fila.base?hhVer(fila.base,L):'')}" placeholder="" style="width:96px;text-align:center"></td><td class="cell" style="padding:3px;background:var(--accent-soft)"><select data-hfd="${e.id}" style="min-width:70px"><option value="">—</option>${DIASL.map((dn,i)=>`<option value="${i}"${dd===i?' selected':''}>${dn.slice(0,3)}</option>`).join('')}</select></td>`;
     dias.forEach((f,i)=>{const code=(fila.c||[])[i]||'',df=i===6||!!festivo(f),bad=code&&code!=='T'&&!esHCod(code)&&!hRango(code,f);
       h+=`<td class="cell" style="padding:3px"><input class="hfin" data-hfe="${e.id}" data-hfi="${i}" data-df="${df?1:0}" value="${code==='T'?'':esc(hhVer(code,f))}" placeholder="${code==='T'?'¿horas?':df?'h':''}" title="${code==='T'?'Trabaja: escriba el número de horas':esc(hTexto(code,f))}" style="width:100%;min-width:${df?58:92}px;text-align:center;${code==='T'?'background:#fff3a6;border-color:var(--bad);color:#111;':''}${bad?'border-color:var(--bad);':''}${code==='D'?'background:var(--paper);':esHCod(code)?'background:var(--accent-soft);':''}"${df?' inputmode="decimal"':''}></td>`});
     h+=`<td><input class="hfin" data-hfa="${e.id}" type="number" min="0" step="15" value="${esc(fila.almMin??'')}" placeholder="${esc(c.almDef??60)}" style="width:68px;text-align:center"></td><td class="n">${o.min?hrs(o.min):'—'}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.noc?hrs(o.noc):'—'}</td><td class="n">${o.ext?`<span class="pill warn">${hrs(o.ext)}</span>`:'—'}${(fila.c||[]).includes('T')?'<br><span class="pill bad">Faltan horas</span>':''}</td></tr>`});
-  h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="8"></td><td class="n"><b>${hrs(T.min)}</b></td><td class="n"><b>${hrs(T.df)}</b></td><td class="n"><b>${hrs(T.noc)}</b></td><td class="n"><b>${hrs(T.ext)}</b></td></tr></tfoot></table></div>
+  h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="10"></td><td class="n"><b>${hrs(T.min)}</b></td><td class="n"><b>${hrs(T.df)}</b></td><td class="n"><b>${hrs(T.noc)}</b></td><td class="n"><b>${hrs(T.ext)}</b></td></tr></tfoot></table></div>
    <p class="note">Estas horas pasan solas a <b>Novedades</b> y a la <b>Nómina</b> del periodo, igual que con la vista por turnos. Con Enter o Tab pasa a la siguiente casilla.</p>`;
   return h}
 /* ===== lectura de la tabla de horarios tal como la envían (Excel copiado o archivo) ===== */
@@ -1098,6 +1100,10 @@ function bindHorFacil(re){const L=UI.hw;
       f.c[i]=cd;if(cd==='D')f.dd=i;else if(f.dd===i)f.dd=-1;f.t='';hGuardar(L);const id=x.dataset.hfe;re();if(i<6){const nx=document.querySelector(`[data-hfe="${id}"][data-hfi="${i+1}"]`);if(nx){nx.focus();nx.select()}}};
     x.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();x.blur()}}});
   document.querySelectorAll('[data-hfa]').forEach(x=>x.onchange=()=>{const f=hSet(L,x.dataset.hfa);f.almMin=x.value===''?'':+x.value;hGuardar(L);re()});
+  const NOV_H=['V','I','IL','L','X','S'];
+  document.querySelectorAll('[data-hfb]').forEach(x=>{x.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();x.blur()}};x.onchange=()=>{const cd=hhParse(x.value,false);if(cd===null||(cd&&!RX_HH.test(cd))){toast('Escriba un horario como 9-6, 8:00-17:00 o 7am-4pm');x.style.borderColor='var(--bad)';return}
+    const f=hSet(L,x.dataset.hfb);f.base=cd;f.t='';for(let i=0;i<6;i++){const d=addDays(L,i);if(festivo(d))continue;if(NOV_H.includes(f.c[i])||f.c[i]==='D')continue;f.c[i]=cd}hGuardar(L);const id=x.dataset.hfb;re();const nx=document.querySelector(`[data-hfd="${id}"]`);if(nx)nx.focus()}});
+  document.querySelectorAll('[data-hfd]').forEach(x=>x.onchange=()=>{const f=hSet(L,x.dataset.hfd),v=x.value;f.c=f.c.map((cd,i)=>{if(cd!=='D')return cd;const d=addDays(L,i);return i<6&&!festivo(d)&&f.base?f.base:''});if(v!==''){f.c[+v]='D';f.dd=+v}else f.dd=-1;f.t='';hGuardar(L);re()});
   $('#hfCopy').onclick=()=>{const pw=S.hor[addDays(L,-7)];if(!pw||!pw.asig)return toast('La semana anterior no tiene horario');let n=0;
     hEmps(L).forEach(e=>{const p=pw.asig[e.id];if(!(p&&p.c&&p.c.some(x=>x)))return;const r=structuredClone(p);
       r.c=r.c.map((cd,i)=>{const f=addDays(L,i),df=i===6||!!festivo(f);if(esHCod(cd)&&cd!=='D')return '';if(df&&cd&&!esHCod(cd)&&!RX_HN.test(cd)){const mm=hMin(r,f,cd).length;return mm?'H'+Math.round(mm/60*100)/100:''}if(!df&&RX_HN.test(cd))return '';return cd});
@@ -1969,6 +1975,8 @@ function renderNomina(){
   const hist=Object.entries(S.cierres||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   h+=`<div class="section"><h2 style="margin-bottom:10px">Nóminas guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Periodo</th><th>Guardada</th><th class="n">Empleados</th><th class="n">Devengado</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(([k,c])=>{const [mes,t]=k.split('_'),pp=periodo(mes,t),sm=f=>c.filas.reduce((a,r)=>a+(r[f]||0),0);return `<tr><td>${tituloP(pp)}</td><td>${fCorta(c.fecha)}</td><td class="n">${c.filas.length}</td><td class="n">${money(sm('dev'))}</td><td class="n">${money(sm('neto'))}</td><td><button class="ghost free" data-vercierre="${k}">Ver</button></td></tr>`}).join('')}</tbody></table></div>`:'<p class="note">Todavía no hay nóminas guardadas. Al terminar cada periodo, use «Guardar nómina del periodo».</p>'}</div>`;
   h+=`<div id="detalle"></div>`;
+  if(!CI){const fT=[];emps.forEach(e=>{for(let L=lunesDe(P.ini);L<=P.fin;L=addDays(L,7)){const fl=hFila(e.id,L);if(fl&&fl.c)fl.c.forEach((cd,i)=>{const f=addDays(L,i);if(cd==='T'&&f>=P.ini&&f<=P.fin)fT.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}`)})}});
+    if(fT.length)h=h.replace('</div>','</div><div class="alert">Hay domingos o festivos marcados «TRABAJA» sin horas ('+fT.slice(0,10).join(', ')+(fT.length>10?'…':'')+'). Escriba las horas en Horarios › Registro fácil; sin ellas no se paga el recargo.</div>')}
   $('#v-nomina').innerHTML=h;bindNom();
   document.querySelectorAll('[data-vercierre]').forEach(b=>b.onclick=()=>{const [mes,t]=b.dataset.vercierre.split('_');UI.mes=mes;UI.tipo=t;UI.det=null;saveUI();renderNomina();scrollTo({top:0})});
   const bc=$('#nCerrar');if(bc)bc.onclick=()=>{if(!UI.cAsk){UI.cAsk=true;bc.textContent='¿Confirmar? Los valores quedan fijos';setTimeout(()=>{UI.cAsk=false;const x=$('#nCerrar');if(x)x.textContent='Guardar nómina del periodo'},4000);return}
@@ -3512,6 +3520,14 @@ function sugerencias(e,retiro){const ms=mesesHasta(e,retiro);let tv=0,n=0,td=0,t
   let tc=0;ms.forEach(m=>{const d=datosMes(e,m);if(d.has)tc+=d.com});
   let lnrT=0;if(e.ingreso){let [yy,mm]=e.ingreso.split('-').map(Number);for(let i=0;i<240;i++){const mes=`${yy}-${String(mm).padStart(2,'0')}`;if(mes>retiro.slice(0,7))break;lnrT+=datosMes(e,mes).lnr||0;mm++;if(mm>12){mm=1;yy++}}}
   return {prom:td?Math.round(tv/td*30):0,promVac:td?Math.round(tc/td*30):0,meses:n,lnrA,lnrS,lnrT}} // promedio por días efectivamente laborados
+function recargosHorario(e,ini,fin){ // recargos y extras del horario entre dos fechas (días que paga la liquidación)
+  const c=S.config,sal=salarioEn(e,{ini:fin}),vh=sal/((+c.jornada||42)*5),R={df:0,noc:0,hed:0,hen:0,hedf:0,hendf:0,vDF:0,vNoc:0,vExt:0,faltan:[]};if(!ini||!fin||ini>fin)return R;
+  for(let L=lunesDe(ini);L<=fin;L=addDays(L,7)){const fila=hFila(e.id,L);if(fila&&fila.c)fila.c.forEach((cd,i)=>{const f=addDays(L,i);if(cd==='T'&&f>=ini&&f<=fin)R.faltan.push(f)});
+    hSemana(e.id,L).forEach(x=>{if(x.f<ini||x.f>fin)return;const h=1/60;
+      if(!x.ext){if(x.df){R.df+=h;if(!e.sinRecDF)R.vDF+=vh*h*factorDF(x.f)}if(x.noc){R.noc+=h;R.vNoc+=vh*h*c.pNoc/100}}
+      else{const base=x.noc?c.pHEN/100:c.pHED/100;R.vExt+=vh*h*(1+base+(x.df&&!e.sinRecDF?rateDF(x.f):0));if(x.df){x.noc?R.hendf+=h:R.hedf+=h}else{x.noc?R.hen+=h:R.hed+=h}}})}
+  return R}
+const hTx=h=>{const m=Math.round(h*60);return `${Math.floor(m/60)}${m%60?':'+String(m%60).padStart(2,'0'):''} h`};
 function calcLiq(e,F){
   const c=S.config,sal=salarioEn(e,{ini:F.retiro}),aux=(e.aux!==false&&sal<=2*c.smmlv)?c.aux:0,prom=+F.prom||0;
   const ing=e.ingreso||F.retiro,y=F.retiro.slice(0,4),sem=F.retiro.slice(5,7)<='06'?`${y}-01-01`:`${y}-07-01`;
@@ -3531,13 +3547,17 @@ function calcLiq(e,F){
   const ds=+F.diasSal||0;let salP=0;
   L.diasSal=ds;
   if(ds){const per=F.salIni?` (${fCorta(F.salIni)} al ${fCorta(F.retiro)})`:'';salP=C100(sal/30*ds);it('Salario días laborados'+per,sal,30,ds,salP);if(aux)it('Auxilio de transporte días laborados',aux,30,ds,C100(aux/30*ds))}
-  const rp=+F.recPend||0;if(rp)it(F.recC||'Recargos dominicales / festivos','','','',rp);
+  let recH=0;if(ds&&F.salIni&&F.recAuto!==false){const r=recargosHorario(e,F.salIni,F.retiro);L.recH=r;
+    if(r.vDF){const v=C100(r.vDF);recH+=v;it(`Recargo dominical y festivo (${hTx(r.df)} según el horario)`,'','','',v)}
+    if(r.vNoc){const v=C100(r.vNoc);recH+=v;it(`Recargo nocturno (${hTx(r.noc)} según el horario)`,'','','',v)}
+    const he=r.hed+r.hen+r.hedf+r.hendf;if(r.vExt){const v=C100(r.vExt);recH+=v;it(`Horas extra (${hTx(he)} según el horario)`,'','','',v)}}
+  const rp=+F.recPend||0;if(rp)it(F.recC||'Recargos u otros devengos pendientes','','','',rp);
   if(F.motivo==='sinjusta'){const vd=L.baseInd/30;let dd,n;
     if(F.tipo==='fijo'){const falt=F.finFijo&&F.finFijo>F.retiro?d360(addDays(F.retiro,1),F.finFijo):0;dd=Math.max(15,falt);n='Días faltantes del plazo (mínimo 15)'}
     else{const a=dT/360,alto=L.baseInd>=10*c.smmlv,p1=alto?20:30,pa=alto?15:20;dd=a<=1?p1:p1+pa*(a-1);n=`${p1} días el primer año${a>1?` + ${pa} por año adicional`:''}`}
     it('Indemnización art. 64 CST',L.baseInd,30,Math.round(dd*100)/100,C100(vd*dd),n)}
   L.dev=L.items.reduce((a,i)=>a+i.v,0);
-  const bSS=salP+rp;if(bSS){L.ded.push({c:'Descuento salud',b:bSS,p:'4 %',v:C100(bSS*c.salud/100)},{c:'Descuento pensión',b:bSS,p:'4 %',v:C100(bSS*c.pension/100)})}
+  const bSS=salP+rp+recH;if(bSS){L.ded.push({c:'Descuento salud',b:bSS,p:'4 %',v:C100(bSS*c.salud/100)},{c:'Descuento pensión',b:bSS,p:'4 %',v:C100(bSS*c.pension/100)})}
   if(+F.desc)L.ded.push({c:'Otros descuentos al empleado'+(F.descC?': '+F.descC:''),v:+F.desc});
   (F.descs||[]).forEach(d=>{if(+d.v)L.ded.push({c:(DESC_TIPOS[d.t]||'Descuento')+(d.c?': '+d.c:''),v:+d.v})});
   L.totDed=L.ded.reduce((a,i)=>a+i.v,0);L.neto=L.dev-L.totDed;L.letras=numLetras(L.neto);
@@ -3688,8 +3708,9 @@ function renderLiq(){
       ${inp('lqN','Ausencias en días (cesantías)',F.lnrA)}
       ${inp('lqNs','Ausencias que descuentan prima (normalmente 0)',F.lnrS||0)}
       ${inp('lqV','Días de vacaciones tomados',F.vacDisf,'number','step="0.5"')}
+      ${L.recH&&L.recH.faltan.length?`<div class="alert" style="grid-column:1/-1">El horario dice «TRABAJA» sin horas el ${L.recH.faltan.map(x=>fCorta(x)).join(', ')}. Escriba las horas en Horarios › Registro fácil para que el recargo se sume a la liquidación.</div>`:''}${L.recH&&(L.recH.df||L.recH.noc)?`<div class="alert info" style="grid-column:1/-1">Del horario del ${fCorta(F.salIni)} al ${fCorta(F.retiro)} se suman: ${L.recH.df?hTx(L.recH.df)+' dominicales y festivas':''}${L.recH.df&&L.recH.noc?' · ':''}${L.recH.noc?hTx(L.recH.noc)+' nocturnas':''}${L.recH.hed+L.recH.hen+L.recH.hedf+L.recH.hendf?' · '+hTx(L.recH.hed+L.recH.hen+L.recH.hedf+L.recH.hendf)+' extra':''}. <label style="display:inline-flex;gap:6px;align-items:center;margin-left:8px"><input type="checkbox" id="lqRa" checked> Incluir en la liquidación</label></div>`:F.recAuto===false?`<div class="note" style="grid-column:1/-1"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="lqRa"> Incluir los recargos del horario</label></div>`:''}
       <label class="f">Días laborados del último periodo${F.salNota?` <span style="text-transform:none;letter-spacing:0">(${esc(F.salNota)})</span>`:''}<input id="lqDs" type="number" min="0" max="30" value="${esc(F.diasSal||0)}"></label>
-      ${inp('lqRp','Recargos u otros devengos pendientes ($)',F.recPend||'','number','step="1"')}
+      ${inp('lqRp','Otros devengos pendientes ($) — los recargos del horario se suman solos',F.recPend||'','number','step="1"')}
       ${inp('lqRc','Concepto de esos recargos',F.recC||'','text','placeholder="Recargo dominical 4 y 12 oct"')}
       <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px"><legend class="status">Descuentos al empleado</legend>
         ${(F.descs||[]).map((d,k)=>`<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end"><label class="f">Tipo<select data-dk="${k}" data-df="t">${Object.entries(DESC_TIPOS).map(([x,t])=>`<option value="${x}"${d.t===x?' selected':''}>${t}</option>`).join('')}</select></label><label class="f" style="flex:1;min-width:160px">Detalle<input data-dk="${k}" data-df="c" value="${esc(d.c||'')}" placeholder="Ej.: saldo préstamo de septiembre"></label><label class="f">Valor<input data-dk="${k}" data-df="v" type="number" min="0" step="1000" value="${esc(d.v||'')}"></label><button type="button" class="ghost danger" data-ddel="${k}">Quitar</button></div>`).join('')||'<span class="status">Sin descuentos.</span>'}
@@ -3723,6 +3744,7 @@ function renderLiq(){
   if(e){
     const on=(id,k,fn)=>{const x=$(id);if(x)x.onchange=ev=>{LQ.f[k]=fn?fn(ev.target):ev.target.value;renderLiq()}};
     const num=t=>+t.value||0;
+    const ra=$('#lqRa');if(ra)ra.onchange=()=>{LQ.f.recAuto=ra.checked;renderLiq()};
     on('#lqM','motivo');on('#lqT','tipo');on('#lqFin','finFijo');on('#lqCg','cargo');on('#lqP','prom',num);on('#lqPv','promVac',num);on('#lqN','lnrA',num);on('#lqNs','lnrS',num);on('#lqV','vacDisf',num);on('#lqDs','diasSal',t=>{LQ.f.salNota='editado a mano';return +t.value||0});on('#lqRp','recPend',num);on('#lqRc','recC');on('#lqO','obs');on('#lqPr','primaPagada',t=>t.checked);on('#lqCa','cesAnt',t=>t.checked);
     document.querySelectorAll('[data-dk]').forEach(x=>x.onchange=()=>{const d=LQ.f.descs[+x.dataset.dk];d[x.dataset.df]=x.dataset.df==='v'?+x.value||0:x.value;renderLiq()});
     document.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=()=>{LQ.f.descs.splice(+b.dataset.ddel,1);renderLiq()});
