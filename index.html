@@ -3554,14 +3554,15 @@ function sugerencias(e,retiro){const ms=mesesHasta(e,retiro);let tv=0,n=0,td=0,t
   let tc=0;ms.forEach(m=>{const d=datosMes(e,m);if(d.has)tc+=d.com});
   let lnrT=0;if(e.ingreso){let [yy,mm]=e.ingreso.split('-').map(Number);for(let i=0;i<240;i++){const mes=`${yy}-${String(mm).padStart(2,'0')}`;if(mes>retiro.slice(0,7))break;lnrT+=datosMes(e,mes).lnr||0;mm++;if(mm>12){mm=1;yy++}}}
   return {prom:td?Math.round(tv/td*30):0,promVac:td?Math.round(tc/td*30):0,meses:n,lnrA,lnrS,lnrT}} // promedio por días efectivamente laborados
-function recargosHorario(e,ini,fin){ // recargos y extras del horario entre dos fechas (días que paga la liquidación)
+function recargosHorario(e,ini,fin,op={}){ // recargos y extras del horario entre dos fechas (días que paga la liquidación)
   const c=S.config,sal=salarioEn(e,{ini:fin}),vh=sal/((+c.jornada||42)*5),R={df:0,noc:0,hed:0,hen:0,hedf:0,hendf:0,vDF:0,vNoc:0,vExt:0,faltan:[]};if(!ini||!fin||ini>fin)return R;
   for(let L=lunesDe(ini);L<=fin;L=addDays(L,7)){const fila=hFila(e.id,L);if(fila&&fila.c)fila.c.forEach((cd,i)=>{const f=addDays(L,i);if(cd==='T'&&f>=ini&&f<=fin)R.faltan.push(f)});
     hSemana(e.id,L).forEach(x=>{if(x.f<ini||x.f>fin)return;const h=1/60;
-      if(!x.ext){if(x.df){R.df+=h;if(!e.sinRecDF)R.vDF+=vh*h*factorDF(x.f)}if(x.noc){R.noc+=h;R.vNoc+=vh*h*c.pNoc/100}}
+      if(!x.ext||op.sinExt){if(x.df){R.df+=h;if(!e.sinRecDF)R.vDF+=vh*h*factorDF(x.f)}if(x.noc){R.noc+=h;R.vNoc+=vh*h*c.pNoc/100}}
       else{const base=x.noc?c.pHEN/100:c.pHED/100;R.vExt+=vh*h*(1+base+(x.df&&!e.sinRecDF?rateDF(x.f):0));if(x.df){x.noc?R.hendf+=h:R.hedf+=h}else{x.noc?R.hen+=h:R.hed+=h}}})}
   return R}
 const hTx=h=>{const m=Math.round(h*60);return `${Math.floor(m/60)}${m%60?':'+String(m%60).padStart(2,'0'):''} h`};
+function liqRecOp(e,F){const no=F.recAuto===false;return {df:!no&&F.recDF!==false&&!e.sinRecDF,noc:!no&&F.recNoc!==false,ext:!no&&(F.recExt!==undefined?F.recExt!==false:!(e.excluido||e.sinExt||S.config.domOrdinario))}}
 function calcLiq(e,F){
   const c=S.config,sal=salarioEn(e,{ini:F.retiro}),aux=(e.aux!==false&&sal<=2*c.smmlv)?c.aux:0,prom=+F.prom||0;
   const ing=e.ingreso||F.retiro,y=F.retiro.slice(0,4),sem=F.retiro.slice(5,7)<='06'?`${y}-01-01`:`${y}-07-01`;
@@ -3581,10 +3582,10 @@ function calcLiq(e,F){
   const ds=+F.diasSal||0;let salP=0;
   L.diasSal=ds;
   if(ds){const per=F.salIni?` (${fCorta(F.salIni)} al ${fCorta(F.retiro)})`:'';salP=C100(sal/30*ds);it('Salario días laborados'+per,sal,30,ds,salP);if(aux)it('Auxilio de transporte días laborados',aux,30,ds,C100(aux/30*ds))}
-  let recH=0;if(ds&&F.salIni&&F.recAuto!==false){const r=recargosHorario(e,F.salIni,F.retiro);L.recH=r;
-    if(r.vDF){const v=C100(r.vDF);recH+=v;it(`Recargo dominical y festivo (${hTx(r.df)} según el horario)`,'','','',v)}
-    if(r.vNoc){const v=C100(r.vNoc);recH+=v;it(`Recargo nocturno (${hTx(r.noc)} según el horario)`,'','','',v)}
-    const he=r.hed+r.hen+r.hedf+r.hendf;if(r.vExt){const v=C100(r.vExt);recH+=v;it(`Horas extra (${hTx(he)} según el horario)`,'','','',v)}}
+  let recH=0;if(ds&&F.salIni){const op=liqRecOp(e,F),r=recargosHorario(e,F.salIni,F.retiro,{sinExt:!op.ext});L.recH=r;L.recOp=op;
+    if(op.df&&r.vDF){const v=C100(r.vDF);recH+=v;it(`Recargo dominical y festivo (${hTx(r.df)} según el horario)`,'','','',v)}
+    if(op.noc&&r.vNoc){const v=C100(r.vNoc);recH+=v;it(`Recargo nocturno (${hTx(r.noc)} según el horario)`,'','','',v)}
+    const he=r.hed+r.hen+r.hedf+r.hendf;if(op.ext&&r.vExt){const v=C100(r.vExt);recH+=v;it(`Horas extra (${hTx(he)} según el horario)`,'','','',v)}}
   const rp=+F.recPend||0;if(rp)it(F.recC||'Recargos u otros devengos pendientes','','','',rp);
   if(F.motivo==='sinjusta'){const vd=L.baseInd/30;let dd,n;
     if(F.tipo==='fijo'){const falt=F.finFijo&&F.finFijo>F.retiro?d360(addDays(F.retiro,1),F.finFijo):0;dd=Math.max(15,falt);n='Días faltantes del plazo (mínimo 15)'}
@@ -3742,7 +3743,8 @@ function renderLiq(){
       ${inp('lqN','Ausencias en días (cesantías)',F.lnrA)}
       ${inp('lqNs','Ausencias que descuentan prima (normalmente 0)',F.lnrS||0)}
       ${inp('lqV','Días de vacaciones tomados',F.vacDisf,'number','step="0.5"')}
-      ${L.recH&&L.recH.faltan.length?`<div class="alert" style="grid-column:1/-1">El horario dice «TRABAJA» sin horas el ${L.recH.faltan.map(x=>fCorta(x)).join(', ')}. Escriba las horas en Horarios › Registro fácil para que el recargo se sume a la liquidación.</div>`:''}${L.recH&&(L.recH.df||L.recH.noc)?`<div class="alert info" style="grid-column:1/-1">Del horario del ${fCorta(F.salIni)} al ${fCorta(F.retiro)} se suman: ${L.recH.df?hTx(L.recH.df)+' dominicales y festivas':''}${L.recH.df&&L.recH.noc?' · ':''}${L.recH.noc?hTx(L.recH.noc)+' nocturnas':''}${L.recH.hed+L.recH.hen+L.recH.hedf+L.recH.hendf?' · '+hTx(L.recH.hed+L.recH.hen+L.recH.hedf+L.recH.hendf)+' extra':''}. <label style="display:inline-flex;gap:6px;align-items:center;margin-left:8px"><input type="checkbox" id="lqRa" checked> Incluir en la liquidación</label></div>`:F.recAuto===false?`<div class="note" style="grid-column:1/-1"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="lqRa"> Incluir los recargos del horario</label></div>`:''}
+      ${L.recH&&L.recH.faltan.length?`<div class="alert" style="grid-column:1/-1">El horario dice «TRABAJA» sin horas el ${L.recH.faltan.map(x=>fCorta(x)).join(', ')}. Escriba las horas en Horarios › Registro fácil para que el recargo se sume a la liquidación.</div>`:''}${L.recH?(()=>{const r=L.recH,o=L.recOp,he=r.hed+r.hen+r.hedf+r.hendf,ck=(id,on,t,dis)=>`<label style="display:inline-flex;gap:6px;align-items:center;margin-right:16px${dis?';opacity:.5':''}"><input type="checkbox" id="${id}"${on?' checked':''}${dis?' disabled':''}> ${t}</label>`;
+        return `<div class="panel" style="grid-column:1/-1;padding:10px 12px;background:var(--accent-soft)"><b>Recargos y horas extra del horario</b> <span class="status">(${fCorta(F.salIni)} al ${fCorta(F.retiro)})</span><div style="margin-top:6px">${ck('lqRdf',o.df,`Recargo dominical y festivo · ${hTx(r.df)}`,e.sinRecDF)}${ck('lqRno',o.noc,`Recargo nocturno · ${hTx(r.noc)}`)}${ck('lqRex',o.ext,`Horas extra · ${o.ext?hTx(he):(()=>{const q=recargosHorario(e,F.salIni,F.retiro);const x=q.hed+q.hen+q.hedf+q.hendf;return x?hTx(x)+' (no se pagan)':'0 h'})()}`)}</div><p class="note" style="margin:6px 0 0">Desmarque las horas extra para quienes trabajan de domingo a domingo o no tienen jornada máxima (dirección y confianza): esas horas se toman como ordinarias y solo se pagan sus recargos.${e.sinRecDF?' Este empleado no tiene recargo dominical ni festivo en su ficha.':''}</p></div>`})():''}
       <label class="f">Días laborados del último periodo${F.salNota?` <span style="text-transform:none;letter-spacing:0">(${esc(F.salNota)})</span>`:''}<input id="lqDs" type="number" min="0" max="30" value="${esc(F.diasSal||0)}"></label>
       ${inp('lqRp','Otros devengos pendientes ($) — los recargos del horario se suman solos',F.recPend||'','number','step="1"')}
       ${inp('lqRc','Concepto de esos recargos',F.recC||'','text','placeholder="Recargo dominical 4 y 12 oct"')}
@@ -3778,7 +3780,7 @@ function renderLiq(){
   if(e){
     const on=(id,k,fn)=>{const x=$(id);if(x)x.onchange=ev=>{LQ.f[k]=fn?fn(ev.target):ev.target.value;renderLiq()}};
     const num=t=>+t.value||0;
-    const ra=$('#lqRa');if(ra)ra.onchange=()=>{LQ.f.recAuto=ra.checked;renderLiq()};
+    [['#lqRdf','recDF'],['#lqRno','recNoc'],['#lqRex','recExt']].forEach(([id,k])=>{const x=$(id);if(x)x.onchange=()=>{LQ.f[k]=x.checked;LQ.f.recAuto=true;renderLiq()}});
     on('#lqM','motivo');on('#lqT','tipo');on('#lqFin','finFijo');on('#lqCg','cargo');on('#lqP','prom',num);on('#lqPv','promVac',num);on('#lqN','lnrA',num);on('#lqNs','lnrS',num);on('#lqV','vacDisf',num);on('#lqDs','diasSal',t=>{LQ.f.salNota='editado a mano';return +t.value||0});on('#lqRp','recPend',num);on('#lqRc','recC');on('#lqO','obs');on('#lqPr','primaPagada',t=>t.checked);on('#lqCa','cesAnt',t=>t.checked);
     document.querySelectorAll('[data-dk]').forEach(x=>x.onchange=()=>{const d=LQ.f.descs[+x.dataset.dk];d[x.dataset.df]=x.dataset.df==='v'?+x.value||0:x.value;renderLiq()});
     document.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=()=>{LQ.f.descs.splice(+b.dataset.ddel,1);renderLiq()});
