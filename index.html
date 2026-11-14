@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='14/11/2026 15:52';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='14/11/2026 16:08';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -219,7 +219,7 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
    <button type="button" class="danger" id="rReset" style="width:100%">Empezar con los datos originales del archivo</button></details>
   <button type="button" class="ghost" id="rX" style="font-size:.82rem;padding:4px">Volver</button></form>
   <div id="kResp" hidden style="text-align:center"><button type="button" class="ghost" id="kRespB" style="font-size:.82rem;padding:4px;text-decoration:underline">Volver a los datos anteriores (si recordó esa contraseña)</button></div>
-  <p class="status" style="text-align:center;margin:0">Los datos están cifrados y solo se abren con la contraseña.</p><div style="text-align:center"><label style="cursor:pointer"><input type="file" id="kImp" accept=".json,application/json" hidden><span class="status" style="text-decoration:underline">Abrir una copia cifrada que le enviaron</span></label><div id="kImpAsk"></div></div><p class="credito" style="margin:0">Creado por Evelyn Gallego</p></div></div>
+  <p class="status" style="text-align:center;margin:0">Los datos están cifrados y solo se abren con la contraseña.</p><div style="text-align:center"><label style="cursor:pointer"><input type="file" id="kImp" accept=".json,application/json" hidden><span class="status" style="text-decoration:underline">Abrir una copia cifrada que le enviaron</span></label><div id="kImpAsk"></div><div id="kNube" style="margin-top:6px"></div></div><p class="credito" style="margin:0">Creado por Evelyn Gallego</p></div></div>
 <div class="wrap" id="picker" hidden></div>
 <div class="wrap" id="app" hidden>
   <header class="top">
@@ -361,7 +361,118 @@ async function envolver(email,pw,raw){const salt=toB64(crypto.getRandomValues(ne
   return {salt,wiv:toB64(iv),wct:toB64(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,raw))}}
 async function desenvolver(u,pw){const k=await derivar(u.email,pw,u.salt);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(u.wiv)},k,fromB64(u.wct)))}
 function caja(b){return {v:2,users:USERS.map(({email,nombre,rol,perm,empresas,salt,wiv,wct})=>({email,nombre,rol,perm:perm||{},empresas:empresas||[],salt,wiv,wct})),...(REC?{rec:REC}:{}),...(MAESTRA?{maestra:MAESTRA}:{}),...b}}
-function escribirCaja(b){localStorage.setItem(LKEY,JSON.stringify(caja(b)));fsProgramar(b)}
+function escribirCaja(b){localStorage.setItem(LKEY,JSON.stringify(caja(b)));fsProgramar(b);nubeProgramar()}
+/* ===== nube: los datos cifrados se guardan en el Google Drive de la administradora (Apps Script) ===== */
+var NUBE_GS="// Gestor Talento Humano: guarda en su Google Drive los datos CIFRADOS de la app\n// para abrirla en varios computadores y trabajar al mismo tiempo con sus clientes.\n// Google solo ve texto cifrado: sin la contrase\u00f1a de la app nadie puede leer los datos.\nconst CARPETA = 'Gestor Talento Humano - datos cifrados';\nfunction carpeta_() { const it = DriveApp.getFoldersByName(CARPETA); return it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA); }\nfunction sub_(nombre) { const c = carpeta_(), it = c.getFoldersByName(nombre); return it.hasNext() ? it.next() : c.createFolder(nombre); }\nfunction limpio_(w) { return String(w || '').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 90); }\nfunction archivo_(c, n) { const it = c.getFilesByName(n); return it.hasNext() ? it.next() : null; }\nfunction salida_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }\nfunction hash_(t) { return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t || ''))); }\nfunction escribir_(c, n, txt) { const f = archivo_(c, n); if (f) f.setTrashed(true); c.createFile(Utilities.newBlob(txt, 'text/plain', n)); }\n\nfunction doGet(e) {\n  try {\n    const p = e.parameter || {}, w = limpio_(p.w);\n    if (!w) return salida_({ ok: true, app: 'gth', ver: 0 });\n    const P = PropertiesService.getScriptProperties(), ver = +(P.getProperty('v_' + w) || 0);\n    if (p.op === 'ver') return salida_({ ok: true, ver: ver });\n    if (p.op === 'getdoc') { const f = archivo_(sub_('docs_' + w), limpio_(p.n)); return salida_({ ok: true, doc: f ? f.getBlob().getDataAsString() : null }); }\n    const f = archivo_(carpeta_(), w + '.json');\n    return salida_({ ok: true, ver: ver, caja: f ? f.getBlob().getDataAsString() : null });\n  } catch (err) { return salida_({ ok: false, error: String(err) }); }\n}\n\nfunction doPost(e) {\n  const L = LockService.getScriptLock(); L.waitLock(25000);\n  try {\n    const b = JSON.parse(e.postData.contents), w = limpio_(b.w);\n    if (!w) return salida_({ ok: false, error: 'sin espacio' });\n    const P = PropertiesService.getScriptProperties(), ver = +(P.getProperty('v_' + w) || 0), th = P.getProperty('t_' + w), h = hash_(b.tok);\n    if (!b.tok || (th && th !== h)) return salida_({ ok: false, error: 'auth' });\n    if (b.op === 'putdoc') { escribir_(sub_('docs_' + w), limpio_(b.n), b.doc); if (!th) P.setProperty('t_' + w, h); return salida_({ ok: true }); }\n    if (b.op === 'deldoc') { const f = archivo_(sub_('docs_' + w), limpio_(b.n)); if (f) f.setTrashed(true); return salida_({ ok: true }); }\n    if (+b.base !== ver) { const f = archivo_(carpeta_(), w + '.json'); return salida_({ ok: false, conflict: true, ver: ver, caja: f ? f.getBlob().getDataAsString() : null }); }\n    const c = carpeta_(), f = archivo_(c, w + '.json');\n    const hoy = Utilities.formatDate(new Date(), 'America/Bogota', 'yyyy-MM-dd');\n    if (f && P.getProperty('d_' + w) !== hoy) { // una copia por d\u00eda, se guardan las \u00faltimas 60\n      const r = sub_('copias_' + w); f.makeCopy(w + '_' + hoy + '.json', r); P.setProperty('d_' + w, hoy);\n      const fs = [], it = r.getFiles(); while (it.hasNext()) fs.push(it.next());\n      fs.sort(function (a, z) { return z.getDateCreated() - a.getDateCreated(); }); fs.slice(60).forEach(function (x) { x.setTrashed(true); });\n    }\n    if (f) { try { f.setContent(b.caja); } catch (x) { escribir_(c, w + '.json', b.caja); } } else c.createFile(Utilities.newBlob(b.caja, 'text/plain', w + '.json'));\n    P.setProperty('v_' + w, String(ver + 1)); if (!th) P.setProperty('t_' + w, h);\n    return salida_({ ok: true, ver: ver + 1 });\n  } catch (err) { return salida_({ ok: false, error: String(err) }); }\n  finally { L.releaseLock(); }\n}\n";
+var NUBE=window.NUBE||{url:'',ver:0,ocup:false,pend:false,err:'',t:null,iv:null,tecla:0,elegir:null,llave:false,conf:0,docPend:[]};
+const NB_K=LKEY+'.nube',NB_URL=/^https:\/\/script\.google\.com\/macros\/s\/[\w-]{20,}\/exec$/;
+try{NUBE.url=localStorage.getItem(NB_K)||''}catch(e){}
+try{NUBE.docPend=JSON.parse(localStorage.getItem(NB_K+'.docs')||'[]')}catch(e){}
+(function(){const m=String(location.hash||'').match(/nube=([^&]+)/);if(!m)return;try{const u=decodeURIComponent(m[1]).trim();if(NB_URL.test(u)){NUBE.url=u;localStorage.setItem(NB_K,u)}}catch(e){}try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}})();
+addEventListener('keydown',()=>{NUBE.tecla=Date.now()},true);
+async function nubeFetch(op,body,url,n){const u=url||NUBE.url;if(!u)throw 'sin nube';let r;
+  if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow'});
+  else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow'});
+  if(!r.ok)throw 'HTTP '+r.status;return r.json()}
+async function nubeTok(){const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array([...DEKRAW,...new TextEncoder().encode('|nube|'+LKEY)])));return [...h].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const esObjN=v=>v&&typeof v==='object'&&!Array.isArray(v);
+function deepEq(a,b){if(a===b)return true;if(typeof a!==typeof b||a===null||b===null||typeof a!=='object')return a===b||(a==null&&b==null);
+  if(Array.isArray(a)!==Array.isArray(b))return false;if(Array.isArray(a)){if(a.length!==b.length)return false;for(let i=0;i<a.length;i++)if(!deepEq(a[i],b[i]))return false;return true}
+  const ka=Object.keys(a).filter(k=>a[k]!==undefined),kb=Object.keys(b).filter(k=>b[k]!==undefined);if(ka.length!==kb.length)return false;for(const k of ka)if(!deepEq(a[k],b[k]))return false;return true}
+function merge3(b,l,r,k){ // b: lo último que se vio de la nube; l: este computador; r: la nube ahora
+  if(deepEq(l,r))return l;if(b!==undefined&&deepEq(l,b))return r;if(b!==undefined&&deepEq(r,b))return l;
+  if(k==='log'&&Array.isArray(l)&&Array.isArray(r)){const m=new Map();[...r,...l].forEach(x=>m.set((x&&x.t)+'|'+(x&&x.u)+'|'+(x&&x.d),x));return [...m.values()].sort((x,y)=>String(x.t).localeCompare(String(y.t))).slice(-1500)}
+  if(esObjN(l)&&esObjN(r)){const bb=esObjN(b)?b:{},o={};new Set([...Object.keys(l),...Object.keys(r)]).forEach(x=>{const lv=l[x],rv=r[x],bv=bb[x];
+      if(lv===undefined){if(bv!==undefined&&deepEq(rv,bv))return;if(rv!==undefined)o[x]=rv;return} // borrado aquí y sin cambios allá: se borra
+      if(rv===undefined){if(bv!==undefined&&deepEq(lv,bv))return;o[x]=lv;return}
+      o[x]=merge3(bv,lv,rv,x)});return o}
+  NUBE.conf++;return l} // los dos cambiaron lo mismo: queda lo de este computador
+const metaDeCaja=cj=>{const u={};(cj.users||[]).forEach(x=>{u[normEmail(x.email)]=x});return {users:u,rec:cj.rec||null,maestra:cj.maestra||null}};
+const metaLocal=()=>metaDeCaja(caja({}));
+const cajaDe=(box,m)=>({v:2,users:Object.values(m.users||{}),...(m.rec?{rec:m.rec}:{}),...(m.maestra?{maestra:m.maestra}:{}),...box});
+const nbBase=()=>sesOp('get',LKEY+'.nb').catch(()=>null);
+const editando=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'&&a.type!=='file')||Date.now()-NUBE.tecla<6000};
+function nubeAplicar(res,loc){
+  if(!deepEq(res.m,loc.m)){USERS=Object.values(res.m.users).map(x=>({...x}));REC=res.m.rec||null;MAESTRA=res.m.maestra||null;ME=USERS.find(x=>normEmail(x.email)===normEmail(CUR.email))||ME}
+  if(!deepEq(res.d,loc.d)){const d=JSON.parse(JSON.stringify(res.d));if(MODO==='general'){d.actual=DATA.actual;if(d.actual&&!(d.empresas||{})[d.actual])d.actual=null}aplicarPayload(d);
+    if(!$('#app').hidden){try{render()}catch(e){}}else if(MODO==='general'&&!$('#picker').hidden){try{renderPicker()}catch(e){}}
+    toast('Se recibieron cambios hechos en otro computador')}}
+async function nubeSync(forzar){
+  if(!NUBE.url||!KEY||!DEKRAW||NUBE.elegir||NUBE.llave)return;if(NUBE.ocup){NUBE.pend=true;return}NUBE.ocup=true;
+  try{const tok=await nubeTok();
+    for(let i=0;i<5;i++){
+      const loc={d:JSON.parse(JSON.stringify(payload())),m:metaLocal()},br=await nbBase();let base;
+      if(br&&br.box){try{base=await descifrar(KEY,br.box)}catch(e){}}
+      const bver=base?br.ver:-1,v=await nubeFetch('ver');if(!v.ok)throw v.error||'sin respuesta';
+      if(base&&v.ver===bver&&deepEq(loc,base)){NUBE.ver=bver;break} // nada cambió en ningún lado
+      let rem=null,rver=v.ver;
+      if(base&&v.ver===bver)rem=base;
+      else if(v.ver>0){const g=await nubeFetch('get');if(!g.ok)throw g.error;rver=g.ver;if(g.caja){const cj=JSON.parse(g.caja);try{rem={d:await descifrar(KEY,cj),m:metaDeCaja(cj)}}catch(e){NUBE.llave=cj;nubeBarra();return}}}
+      if(rem&&!base){let deNube=null;try{deNube=localStorage.getItem(LKEY+'.deNube')}catch(e){}
+        if(deNube!==null||deepEq(loc.d,rem.d)){base=rem;try{localStorage.removeItem(LKEY+'.deNube')}catch(e){}}
+        else if(!NUBE.modo){NUBE.elegir={rem,rver};nubeBarra();return}}
+      if(rem&&!base&&NUBE.modo==='nube')base=loc; // usar lo de la nube: se toma todo lo de allá
+      const res=!rem?loc:merge3(base||{},loc,rem,'');NUBE.modo=null;
+      if(!deepEq(res,loc)){if(editando()&&!forzar){NUBE.pend=true;break}nubeAplicar(res,loc);try{const b=await cifrar(KEY,payload());localStorage.setItem(LKEY,JSON.stringify(caja(b)))}catch(e){}}
+      if(!rem||!deepEq(res,rem)){const box=await cifrar(KEY,res.d),p=await nubeFetch('put',{base:rver,caja:JSON.stringify(cajaDe(box,res.m)),tok});
+        if(p.conflict)continue;if(!p.ok)throw p.error==='auth'?'auth':(p.error||'no se pudo guardar');rver=p.ver}
+      await sesOp('put',LKEY+'.nb',{ver:rver,box:await cifrar(KEY,res)});NUBE.ver=rver;break}
+    NUBE.t=new Date();NUBE.err='';nubeDocsPend();
+  }catch(e){NUBE.err=e==='auth'?'La nube no aceptó este equipo (la clave de los datos es distinta)':'Sin conexión con la nube: los cambios quedan en este computador y se suben al volver la conexión'}
+  finally{NUBE.ocup=false;nubeBarra();if(NUBE.pend){NUBE.pend=false;clearTimeout(NUBE.tp);NUBE.tp=setTimeout(nubeSync,4000)}}}
+function nubeProgramar(){if(!NUBE.url||!KEY)return;clearTimeout(NUBE.tp);NUBE.tp=setTimeout(nubeSync,2500)}
+function nubeIniciar(){if(!NUBE.url)return;clearInterval(NUBE.iv);NUBE.iv=setInterval(()=>{if(!document.hidden)nubeSync()},20000);setTimeout(nubeSync,300)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&KEY)nubeSync()});
+/* documentos adjuntos: también se guardan cifrados en la nube */
+async function nubeNombre(k){const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k)));return [...h].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function nubeDocPut(k,v){if(!NUBE.url||!DEKRAW)return;try{const p=await nubeFetch('putdoc',{n:await nubeNombre(k),doc:JSON.stringify({iv:toB64(new Uint8Array(v.iv)),ct:toB64(new Uint8Array(v.ct))}),tok:await nubeTok()});if(!p.ok)throw 0;NUBE.docPend=NUBE.docPend.filter(x=>x!==k)}catch(e){if(!NUBE.docPend.includes(k))NUBE.docPend.push(k)}try{localStorage.setItem(NB_K+'.docs',JSON.stringify(NUBE.docPend))}catch(e){}}
+async function nubeDocGet(k){if(!NUBE.url)return null;try{const g=await nubeFetch('getdoc',null,null,await nubeNombre(k));if(!g.ok||!g.doc)return null;const j=JSON.parse(g.doc);return {iv:fromB64(j.iv),ct:fromB64(j.ct)}}catch(e){return null}}
+async function nubeDocDel(k){if(!NUBE.url||!DEKRAW)return;try{await nubeFetch('deldoc',{n:await nubeNombre(k),tok:await nubeTok()})}catch(e){}}
+async function nubeDocsPend(){const l=[...NUBE.docPend];for(const k of l){try{const v=await idbGetLocal(k);if(v)await nubeDocPut(k,v);else{NUBE.docPend=NUBE.docPend.filter(x=>x!==k)}}catch(e){}}}
+async function nubeCambiarLlave(pw){const cj=NUBE.llave,em=normEmail(CUR.email);let raw=null;const u=(cj.users||[]).find(x=>normEmail(x.email)===em);
+  if(u){try{raw=await desenvolver(u,pw)}catch(e){}}if(!raw&&cj.maestra&&normEmail(cj.maestra.email)===em){try{raw=await desenvolver(cj.maestra,pw)}catch(e){}}
+  if(!raw)throw 'Esa contraseña no abre los datos de la nube para '+CUR.email+'.';
+  const nk=await importDek(raw),ok=KEY;await descifrar(nk,cj); // comprueba
+  try{const db=await idb(),ks=await new Promise(r=>{const q=db.transaction('f').objectStore('f').getAllKeys();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>r([])});
+    for(const k of ks){if(!String(k).startsWith(LKEY+'|'))continue;const v=await idbGetLocal(k);if(!v)continue;try{const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:v.iv},ok,v.ct),iv=crypto.getRandomValues(new Uint8Array(12));await idbPutLocal(k,{iv,ct:await crypto.subtle.encrypt({name:'AES-GCM',iv},nk,pt)});if(!NUBE.docPend.includes(k))NUBE.docPend.push(k)}catch(e){}}
+    localStorage.setItem(NB_K+'.docs',JSON.stringify(NUBE.docPend))}catch(e){}
+  DEKRAW=raw;KEY=nk;USERS=(cj.users||[]).map(x=>({...x}));REC=cj.rec||null;MAESTRA=cj.maestra||null;ME=USERS.find(x=>normEmail(x.email)===em)||USERS.find(x=>x.rol==='admin')||ME;
+  try{const b=await cifrar(KEY,payload());localStorage.setItem(LKEY,JSON.stringify(caja(b)))}catch(e){}
+  await sesOp('del',LKEY+'.nb').catch(()=>{});NUBE.llave=false;try{if((await sesOp('get',LKEY)))await sesGuardar(CUR.email,'')}catch(e){}
+  bitacora('Unió los datos de este computador con la nube');nubeBarra();await nubeSync(true)}
+function nubeBarra(){let el=$('#nbBar');if(!el){const st=document.querySelector('.stbar');if(!st)return;st.insertAdjacentHTML('afterend','<div id="nbBar"></div>');el=$('#nbBar')}
+  if(NUBE.elegir){el.innerHTML=`<div class="alert" style="margin:6px 0"><b>La nube ya tiene datos</b> y no son iguales a los de este computador. ¿Qué hago? <button class="free primary" id="nbUsar">Usar los de la nube</button> <button class="free" id="nbUnir">Unir: agregar lo de este computador</button><div class="note" style="margin-top:4px">«Usar los de la nube» es lo indicado en un computador nuevo. «Unir» conserva lo de los dos y, si un mismo dato es distinto, deja el de este computador.</div></div>`;
+    $('#nbUsar').onclick=()=>{NUBE.modo='nube';NUBE.elegir=null;nubeSync(true)};$('#nbUnir').onclick=()=>{NUBE.modo='unir';NUBE.elegir=null;nubeSync(true)};return}
+  if(NUBE.llave){el.innerHTML=`<div class="alert" style="margin:6px 0"><b>La nube tiene datos guardados con otra clave</b> (vienen de otro computador). Escriba la contraseña con la que entra en ese computador para unir los datos. <span style="display:inline-flex;gap:6px;flex-wrap:wrap"><input type="password" id="nbPw" placeholder="Contraseña" autocomplete="current-password" style="width:200px"><button class="free primary" id="nbLlOk">Unir con la nube</button></span><div class="note" id="nbLlE" style="margin-top:4px"></div></div>`;
+    $('#nbLlOk').onclick=async()=>{const bt=$('#nbLlOk'),pw=$('#nbPw').value;bt.disabled=true;$('#nbLlE').textContent='Revisando…';try{await nubeCambiarLlave(pw)}catch(e){bt.disabled=false;$('#nbLlE').textContent=typeof e==='string'?e:'No se pudo unir: '+(e&&e.message||e)}};return}
+  el.innerHTML=NUBE.url&&NUBE.err?`<div class="alert info" style="margin:6px 0">${esc(NUBE.err)}</div>`:'';
+  const s=$('#nbEst');if(s)s.innerHTML=nubeEstado()}
+function nubeEstado(){return !NUBE.url?'<span class="pill">Sin conectar</span>':NUBE.err?`<span class="pill bad">Con problemas</span> <span class="status">${esc(NUBE.err)}</span>`:NUBE.t?`<span class="pill good">Conectada</span> <span class="status">Sincronizado a las ${NUBE.t.toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})}</span>`:'<span class="pill">Conectando…</span>'}
+function nubeEnlace(){const web=/^https:/.test(location.protocol)&&!/claude|anthropic/.test(location.host)?location.origin+location.pathname:(LKEY==='nomina.escalautos.cifrada.v1'?'https://escalath.github.io/Escala-TH/':'');return web?web+'#nube='+encodeURIComponent(NUBE.url):''}
+function panelNube(){const enl=NUBE.url?nubeEnlace():'';
+  return `<div class="section"><h2 style="margin-bottom:8px">Trabajar en varios computadores (nube en Google Drive)</h2><div class="panel imp">
+   <p class="note" style="margin:0 0 8px">Con la nube, usted y sus clientes trabajan al mismo tiempo desde cualquier computador y los cambios de cada uno les aparecen a los demás en unos segundos. Los datos se guardan <b>cifrados</b> en <b>su</b> Google Drive (carpeta «Gestor Talento Humano - datos cifrados»), con una copia diaria. Google no puede leerlos: se abren solo con el usuario y la contraseña de la app.</p>
+   <div class="row" style="margin-bottom:8px">Estado: <span id="nbEst">${nubeEstado()}</span></div>
+   ${esAdmin()?`<div class="row"><input id="nbUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(NUBE.url)}" style="flex:1;min-width:260px"><button class="free primary" id="nbCon">${NUBE.url?'Guardar':'Conectar'}</button>${NUBE.url?'<button class="free" id="nbYa">Sincronizar ahora</button><button class="free ghost" id="nbOff">Desconectar este computador</button>':''}</div>
+   ${enl?`<div class="row" style="margin-top:8px"><b>Enlace para sus clientes y otros computadores:</b> <input readonly value="${esc(enl)}" style="flex:1;min-width:260px" id="nbEnl"><button class="free" id="nbCop">Copiar</button></div><p class="note" style="margin:4px 0 0">Al abrir ese enlace, la app queda conectada a la nube y pide el usuario y la contraseña. Cree a cada cliente su usuario en «Usuarios y permisos».</p>`:NUBE.url?'<p class="note" style="margin:6px 0 0">En otro computador: abra la app y, en la pantalla de ingreso, use «Conectar con la nube» y pegue la dirección de arriba.</p>':''}
+   <details style="margin-top:10px"><summary style="cursor:pointer"><b>Cómo crear la nube (una sola vez, 5 minutos)</b></summary><ol class="note" style="margin:8px 0 0;padding-left:20px;line-height:1.6">
+    <li>Entre a <b>script.google.com</b> con su cuenta de Google y presione <b>Nuevo proyecto</b>.</li>
+    <li>Borre lo que aparece, pegue el código (botón de abajo) y guarde con el ícono del disquete. Póngale de nombre «Gestor Talento Humano nube».</li>
+    <li>Arriba a la derecha: <b>Implementar → Nueva implementación</b>. En el engranaje elija <b>Aplicación web</b>.</li>
+    <li>«Ejecutar como»: <b>Yo</b>. «Quién tiene acceso»: <b>Cualquier usuario</b>. Presione <b>Implementar</b> y autorice con su cuenta (si sale «Google no verificó esta app», use <i>Configuración avanzada → Ir a…</i>: es su propio código).</li>
+    <li>Copie la <b>URL de la aplicación web</b> (termina en <code>/exec</code>), péguela arriba y presione <b>Conectar</b>.</li></ol>
+    <div class="row" style="margin-top:8px"><button class="free" id="nbGs">Copiar el código</button><button class="free ghost" id="nbGsD">Descargar el código</button></div></details>`
+   :`<p class="note" style="margin:0">${NUBE.url?'Este computador está conectado a la nube de la empresa.':'La administradora todavía no ha conectado la nube.'}</p>`}
+  </div></div>`}
+function bindNube(){const c=$('#nbCon');if(c)c.onclick=async()=>{const u=$('#nbUrl').value.trim();if(!NB_URL.test(u))return toast('La dirección debe ser la de la aplicación web de Apps Script y terminar en /exec');
+    c.disabled=true;c.textContent='Probando…';try{const t=await nubeFetch('ver',null,u);if(!t||!t.ok)throw 0}catch(e){c.disabled=false;c.textContent='Conectar';return toast('No respondió esa dirección. Revise que la implementación diga «Cualquier usuario» y vuelva a copiar la URL.')}
+    const nueva=u!==NUBE.url;NUBE.url=u;try{localStorage.setItem(NB_K,u)}catch(e){}if(nueva){await sesOp('del',LKEY+'.nb').catch(()=>{});NUBE.elegir=null;NUBE.llave=false}bitacora('Conectó la app a la nube de Google Drive');nubeIniciar();render();toast('Conectada a la nube')};
+  const y=$('#nbYa');if(y)y.onclick=()=>nubeSync(true);
+  const o=$('#nbOff');if(o)o.onclick=async()=>{clearInterval(NUBE.iv);NUBE.url='';NUBE.err='';NUBE.t=null;try{localStorage.removeItem(NB_K)}catch(e){}await sesOp('del',LKEY+'.nb').catch(()=>{});nubeBarra();render();toast('Este computador ya no se sincroniza con la nube')};
+  const cp=$('#nbCop');if(cp)cp.onclick=()=>{navigator.clipboard.writeText($('#nbEnl').value).then(()=>toast('Enlace copiado'),()=>{$('#nbEnl').select()})};
+  const g=$('#nbGs');if(g)g.onclick=()=>navigator.clipboard.writeText(NUBE_GS).then(()=>toast('Código copiado: péguelo en Apps Script'),()=>toast('No se pudo copiar: use «Descargar el código»'));
+  const gd=$('#nbGsD');if(gd)gd.onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([NUBE_GS],{type:'text/plain'}));a.download='Gestor_Talento_Humano_nube.gs';a.click()}}
+
 /* ===== guardado automático en un archivo del computador (p. ej. carpeta de Google Drive) ===== */
 const FS={h:null,ok:false,t:null,err:'',sup:typeof window.showSaveFilePicker==='function'},FS_K=LKEY+'.fsT';
 function fsDB(){return new Promise((ok,no)=>{const r=indexedDB.open('escala-archivo',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -3215,8 +3326,8 @@ function renderParams(){setTimeout(()=>ojos(),0);
   ${formCred()}${panelRec()}
   ${panelColores()}<div class="section"><h2 style="margin-bottom:8px">Copia de seguridad</h2><div class="panel imp"><p class="note" style="margin:0">Los datos se guardan cifrados en este dispositivo y navegador. La copia de seguridad es un archivo sin cifrar con la información de los trabajadores: guárdela en un lugar seguro. Descargue una copia después de cada nómina; con ella puede pasar todo a otro computador o celular, o recuperar la información si se borra el navegador.</p>
   <div class="row"><button class="free primary" id="bkD">Descargar copia de seguridad</button><label class="free" for="bkF" style="cursor:pointer"><span class="btn" style="display:inline-block;border:1px solid var(--line);border-radius:7px;padding:7px 12px;background:var(--surface)">Cargar copia de seguridad</span><input type="file" id="bkF" accept=".json,application/json" hidden></label><span class="status">${Object.keys(S.emps).length} empleados · ${Object.keys(S.nov).length} periodos con novedades · ${Object.keys(S.liq).length} liquidaciones</span></div>
-  ${UI.bkAsk?`<div class="alert">La copia «${esc(UI.bkAsk.name)}» reemplazará todos los datos de este dispositivo. <button class="danger free" id="bkOk">Reemplazar</button> <button class="ghost free" id="bkNo">Cancelar</button></div>`:''}</div></div>${panelArchivo()}`;
-  $('#v-params').innerHTML=h;bindArchivo();bindColores();
+  ${UI.bkAsk?`<div class="alert">La copia «${esc(UI.bkAsk.name)}» reemplazará todos los datos de este dispositivo. <button class="danger free" id="bkOk">Reemplazar</button> <button class="ghost free" id="bkNo">Cancelar</button></div>`:''}</div></div>${panelNube()}${panelArchivo()}`;
+  $('#v-params').innerHTML=h;bindArchivo();bindNube();bindColores();
 
   document.querySelectorAll('[data-t]').forEach(inp=>inp.onchange=()=>{const t=c.turnos[+inp.dataset.t],k=inp.dataset.k.split('.');let v=inp.value;if(k[0]==='code')v=v.toUpperCase().trim();
     if(k[0]==='code'&&(['D','V','I','L','X',''].includes(v)||c.turnos.some((o,j)=>o.code===v&&j!==+inp.dataset.t))){toast('Ese código ya está en uso');inp.value=t.code;return}
@@ -4798,13 +4909,16 @@ function bindDot(){const c=S.config,hoy=todayCO(),anio=TH.dotAnio||+hoy.slice(0,
 const DOCS_ING=['Hoja de vida','Copia de la cédula','Certificados de estudio','Certificaciones laborales anteriores','Antecedentes (Procuraduría, Contraloría, Policía)','Examen médico de ingreso','Afiliación EPS','Afiliación fondo de pensiones','Afiliación ARL','Afiliación caja de compensación','Certificación bancaria','Contrato de trabajo firmado','Manual de funciones firmado','Autorización de tratamiento de datos personales','Entrega del Reglamento Interno de Trabajo','Inducción en seguridad y salud en el trabajo','Evaluación del periodo de prueba'];
 const IDB={db:null};
 function idb(){return IDB.db?Promise.resolve(IDB.db):new Promise((ok,no)=>{try{const r=indexedDB.open('nomina-docs',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>{IDB.db=r.result;ok(IDB.db)};r.onerror=()=>no(r.error)}catch(e){no(e)}})}
-async function idbPut(k,v){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('f','readwrite');t.objectStore('f').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
-async function idbGet(k){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('f','readonly'),r=t.objectStore('f').get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-async function idbDel(k){const db=await idb();return new Promise(ok=>{const t=db.transaction('f','readwrite');t.objectStore('f').delete(k);t.oncomplete=()=>ok();t.onerror=()=>ok()})}
+async function idbPut(k,v){await idbPutLocal(k,v);if(String(k).startsWith(LKEY+'|'))nubeDocPut(k,v)}
+async function idbPutLocal(k,v){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('f','readwrite');t.objectStore('f').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
+async function idbGet(k){let v=await idbGetLocal(k);if(v||!String(k).startsWith(LKEY+'|'))return v;v=await nubeDocGet(k);if(v){try{await idbPutLocal(k,v)}catch(e){}}return v}
+async function idbGetLocal(k){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('f','readonly'),r=t.objectStore('f').get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function idbDel(k){if(String(k).startsWith(LKEY+'|'))nubeDocDel(k);return idbDelLocal(k)}
+async function idbDelLocal(k){const db=await idb();return new Promise(ok=>{const t=db.transaction('f','readwrite');t.objectStore('f').delete(k);t.oncomplete=()=>ok();t.onerror=()=>ok()})}
 const docKey=(eid,id)=>`${LKEY}|${MODO==='general'?DATA.actual+'|':''}${eid}|${id}`;
 async function guardarDocEmp(e,tipo,file){if(file.size>15e6)throw 'El archivo pesa más de 15 MB';const buf=new Uint8Array(await file.arrayBuffer()),iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,buf);
   const id=uid();await idbPut(docKey(e.id,id),{iv,ct});e.docsIng=[...(e.docsIng||[]),{id,tipo,nombre:file.name,mime:file.type||'application/octet-stream',size:file.size,fecha:todayCO()}];persist('emp',e.id)}
-async function leerDocEmp(e,d){const v=await idbGet(docKey(e.id,d.id));if(!v)throw 'No se encontró el archivo en este computador';const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:v.iv},KEY,v.ct);return new Blob([pt],{type:d.mime})}
+async function leerDocEmp(e,d){const v=await idbGet(docKey(e.id,d.id));if(!v)throw 'No se encontró el archivo en este computador ni en la nube';const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:v.iv},KEY,v.ct);return new Blob([pt],{type:d.mime})}
 function renderExp(){
   const emps=empAll().filter(e=>e.activo!==false||e.retiro),e=TH.expE?S.emps[TH.expE]:null,lista=S.config.docsIng||DOCS_ING;
   let h=`<div class="bar"><label class="f" style="min-width:320px">Empleado<select id="exE"><option value="">Elija…</option>${emps.map(x=>{const ds=x.docsIng||[],ok=lista.filter(t=>ds.some(d=>d.tipo===t)).length;return `<option value="${x.id}"${TH.expE===x.id?' selected':''}>${esc(x.nombre)} · ${ok}/${lista.length} documentos</option>`}).join('')}</select></label><span class="grow"></span>${e?'<button class="free" id="exZip">Descargar carpeta completa (.zip)</button>':''}</div>
@@ -4987,7 +5101,17 @@ function ojos(root=document){root.querySelectorAll('input[type=password]:not([da
 ojos();
 const PRIMERA=!SEED&&!(guardadoLocal()||{}).ct;
 if(PRIMERA){$('#kTit').textContent='Crear acceso';$('#kSub').textContent='Es la primera vez que se abre en este dispositivo. Si le enviaron una copia cifrada, ábrala con el enlace de abajo y entre con su usuario; si no, defina el correo y la contraseña del administrador.';$('#kB').textContent='Crear acceso e ingresar';$('#kP2w').hidden=false;$('#kP').autocomplete='new-password'}
+function kNubeUI(){const el=$('#kNube');if(!el)return;
+  el.innerHTML=NUBE.url?'<span class="status">☁ Conectada a la nube · <button type="button" class="ghost" id="kNubeX" style="font-size:.78rem;padding:2px 4px">quitar</button></span>':'<button type="button" class="ghost" id="kNubeB" style="font-size:.82rem;padding:4px;text-decoration:underline">Conectar con la nube</button><div id="kNubeW" hidden style="display:flex;gap:6px;margin-top:6px"><input id="kNubeU" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;font-size:.8rem"><button type="button" class="primary" id="kNubeOk" style="padding:4px 10px">Conectar</button></div>';
+  const bb=$('#kNubeB');if(bb)bb.onclick=()=>{$('#kNubeW').hidden=false;$('#kNubeU').focus()};
+  const ok=$('#kNubeOk');if(ok)ok.onclick=async()=>{const u=$('#kNubeU').value.trim();if(!NB_URL.test(u))return $('#kE').textContent='Pegue la dirección de la nube que le dieron (termina en /exec).';
+    ok.disabled=true;try{const t=await nubeFetch('ver',null,u);if(!t||!t.ok)throw 0}catch(e){ok.disabled=false;return $('#kE').textContent='Esa dirección no respondió. Revise el internet o pida la dirección otra vez.'}
+    try{localStorage.setItem(NB_K,u);sessionStorage.removeItem(LKEY+'.nbTry')}catch(e){}location.reload()};
+  const x=$('#kNubeX');if(x)x.onclick=()=>{try{localStorage.removeItem(NB_K)}catch(e){}NUBE.url='';sesOp('del',LKEY+'.nb').catch(()=>{});kNubeUI()}}
 (function(){const g=guardadoLocal();const m=$('#kM');let u='';try{u=localStorage.getItem(LKEY+'.ultimo')||''}catch(e){}m.value=u||(g&&g.email)||'';(m.value?$('#kP'):m).focus();
+  kNubeUI();if(NUBE.url&&!(guardadoLocal()||{}).ct&&!sessionStorage.getItem(LKEY+'.nbTry')){const b=$('#kB'),t=b.textContent;b.textContent='Trayendo los datos de la nube…';b.disabled=true;try{sessionStorage.setItem(LKEY+'.nbTry','1')}catch(e){}
+    nubeFetch('get').then(g=>{if(g&&g.ok&&g.caja){localStorage.setItem(LKEY,g.caja);localStorage.setItem(LKEY+'.deNube','1');location.reload()}else{b.textContent=t;b.disabled=false}}).catch(()=>{b.textContent=t;b.disabled=false;$('#kE').textContent='No se pudo conectar con la nube. Revise el internet y recargue la página.'});return}
+  try{sessionStorage.removeItem(LKEY+'.nbTry')}catch(e){}
   if(!PRIMERA){const b=$('#kB'),t=b.textContent;b.textContent='Abriendo…';b.disabled=true;setTimeout(()=>sesRestaurar().then(ok=>{if(!ok){b.textContent=t;b.disabled=false;(m.value?$('#kP'):m).focus()}}),0)}})();
 let intentos=0,bloq=0;
 $('#app').insertAdjacentHTML('beforeend','<p class="credito">Creado por Evelyn Gallego</p>');
@@ -5034,7 +5158,7 @@ function migrar(){
   if(MODO==='farmaser'&&!S.config.mig4){const d=S.config.disenos||{};if(d.desp&&d.desp.id==='memb')delete d.desp;S.config.mig4=true;saveLocal()}
   // Eliana Solórzano y Jeisson Pinilla se liquidaron por aparte: se retiran de la base de Escalautos
   if(MODO!=='escalautos'||S.config.mig1)return;['emp-1016945282','emp-1022931960'].forEach(id=>{delete S.emps[id];delete S.cuentas[id];Object.values(S.nov).forEach(n=>{if(n.por)delete n.por[id]})});S.config.mig1=true;saveLocal()}
-function abrirApp(){migrar();if(MODO!=='general'){if(sembrarHor(S))saveLocal()}else if(DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(sembrarHor(em))ch=true});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}if(!esAdmin()&&UI.tab==='params')UI.tab='';if(MODO==='cliente'&&!S.config.empresa){UI.tab='params';setTimeout(()=>toast('Escriba la razón social y el NIT, y suba el logo de la empresa'),400)}$('#lock').hidden=true;$('#kP').value='';if(MODO==='general'&&!esAdmin()&&(ME.empresas||[]).length===1&&DATA.empresas[ME.empresas[0]]){DATA.actual=ME.empresas[0];cargarDatos(DATA.empresas[DATA.actual])}
+function abrirApp(){migrar();if(MODO!=='general'){if(sembrarHor(S))saveLocal()}else if(DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(sembrarHor(em))ch=true});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}if(!esAdmin()&&UI.tab==='params')UI.tab='';if(MODO==='cliente'&&!S.config.empresa){UI.tab='params';setTimeout(()=>toast('Escriba la razón social y el NIT, y suba el logo de la empresa'),400)}$('#lock').hidden=true;$('#kP').value='';nubeIniciar();if(MODO==='general'&&!esAdmin()&&(ME.empresas||[]).length===1&&DATA.empresas[ME.empresas[0]]){DATA.actual=ME.empresas[0];cargarDatos(DATA.empresas[DATA.actual])}
   if(MODO==='general'&&DATA.actual&&!esAdmin()&&(ME.empresas||[]).length&&!ME.empresas.includes(DATA.actual)){DATA.actual=null}
   setTimeout(avisoRec,600);UI.tab='inicio';if(MODO==='general'&&!DATA.actual){renderPicker();return}$('#picker').hidden=true;$('#app').hidden=false;render();setStatus('Datos abiertos en este dispositivo');fsIniciar()}
 /* código de recuperación automático: si el administrador no tiene uno, se crea y se le pide enviarlo a su correo */
