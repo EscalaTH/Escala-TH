@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='14/11/2026 15:52';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
