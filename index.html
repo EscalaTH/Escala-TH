@@ -212,7 +212,7 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
 </style>
 
 <div id="lock"><div class="lockbox"><img class="serLogo" alt="SER SAS" style="width:120px;height:120px;margin:0 auto"><div style="text-align:center"><div class="ser">SER SAS · Servicios Empresariales de Recursos Humanos</div><h2 id="kTit">Gestor Talento Humano</h2><p class="status" id="kSub" style="margin:4px 0 0">Ingrese sus credenciales para continuar</p></div>
-  <form id="fLock" style="display:flex;flex-direction:column;gap:12px"><label class="f">Correo electrónico<input id="kM" type="email" required autocomplete="username" placeholder="tu@empresa.com"></label><label class="f">Contraseña<input id="kP" type="password" required autocomplete="current-password"></label><label class="f" id="kP2w" hidden>Repita la contraseña<input id="kP2" type="password" autocomplete="new-password"></label><p class="err" id="kE"></p><button class="primary" type="submit" id="kB">Ingresar</button><button type="button" class="ghost" id="kOlv" style="font-size:.82rem;padding:4px">¿Olvidó su contraseña?</button></form>
+  <form id="fLock" style="display:flex;flex-direction:column;gap:12px"><label class="f">Correo electrónico<input id="kM" type="email" required autocomplete="username" placeholder="tu@empresa.com"></label><label class="f">Contraseña<input id="kP" type="password" required autocomplete="current-password"></label><label class="f" id="kP2w" hidden>Repita la contraseña<input id="kP2" type="password" autocomplete="new-password"></label><label style="display:flex;gap:8px;align-items:center;font-size:.85rem;cursor:pointer"><input type="checkbox" id="kRec" checked style="width:auto"> Mantener la sesión abierta en este computador</label><p class="err" id="kE"></p><button class="primary" type="submit" id="kB">Ingresar</button><button type="button" class="ghost" id="kOlv" style="font-size:.82rem;padding:4px">¿Olvidó su contraseña?</button></form>
   <form id="fRec" hidden style="display:flex;flex-direction:column;gap:12px"><p class="status" style="margin:0">Escriba el correo del administrador y el <b>código de recuperación</b> que guardó o se envió al correo, y defina una contraseña nueva.</p><label class="f">Correo del administrador<input id="rM" type="email" required autocomplete="username"></label><label class="f">Código de recuperación<input id="rC" required autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="text-transform:uppercase;font-family:var(--f-mono)"></label><label class="f">Nueva contraseña (mínimo 10)<input id="rP" type="password" required minlength="10" autocomplete="new-password"></label><label class="f">Repita la nueva contraseña<input id="rP2" type="password" required autocomplete="new-password"></label><p class="err" id="rE"></p><button class="primary" type="submit" id="rB">Cambiar contraseña e ingresar</button>
   <details id="rSin" style="font-size:.85rem"><summary style="cursor:pointer">No tengo código de recuperación</summary>
    <p class="status" style="margin:8px 0">Sin la contraseña ni el código, nadie puede abrir los datos guardados: están cifrados para protegerlos. Puede empezar otra vez con los datos que trae este archivo; los datos actuales <b>no se borran</b>: quedan guardados aparte y se descarga una copia, para recuperarlos si después recuerda la contraseña.</p>
@@ -606,7 +606,7 @@ function renderLegal(){
 }
 function renderWho(){$('#who').innerHTML=`<span class="status">${esc((ME&&ME.nombre)||CUR.email)} ${esAdmin()?'<span class="pill good">Administrador</span>':'<span class="pill">Usuario</span>'} · <button class="ghost free" style="padding:2px 6px" id="wBk">${esAdmin()?'Copia de seguridad':'Mi contraseña'}</button><button class="ghost free" style="padding:2px 6px" id="wOut">Cerrar sesión</button></span>`;
   if(MODO==='general'){const x=document.createElement('button');x.className='ghost free';x.style.padding='2px 6px';x.textContent='Cambiar empresa';x.onclick=()=>{sync();saveLocal();renderPicker()};$('#who .status').prepend(x)}
-  $('#wBk').onclick=()=>{UI.tab='params';saveUI();render()};$('#wOut').onclick=()=>{clearTimeout(saveT);(KEY?cifrar(KEY,payload()).then(b=>{try{escribirCaja(b)}catch(e){}}):Promise.resolve()).then(()=>{KEY=null;DEKRAW=null;ME=null;cargarDatos({config:DEF_CONFIG});$('#app').hidden=true;$('#lock').hidden=false;$('#kM').value=CUR.email;$('#kP').focus()})};$('#roBanner').innerHTML='';return;
+  $('#wBk').onclick=()=>{UI.tab='params';saveUI();render()};$('#wOut').onclick=()=>{sesBorrar();clearTimeout(saveT);(KEY?cifrar(KEY,payload()).then(b=>{try{escribirCaja(b)}catch(e){}}):Promise.resolve()).then(()=>{KEY=null;DEKRAW=null;ME=null;cargarDatos({config:DEF_CONFIG});$('#app').hidden=true;$('#lock').hidden=false;$('#kM').value=CUR.email;$('#kP').focus()})};$('#roBanner').innerHTML='';return;
   const w=$('#who');
   if(MODE!=='db'){w.innerHTML='<span class="status">Sin sesión: los datos se guardan solo en este navegador</span>';return}
   const n=(PERM.me&&PERM.me.name)||'Usuario',ini=n.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
@@ -4987,7 +4987,8 @@ function ojos(root=document){root.querySelectorAll('input[type=password]:not([da
 ojos();
 const PRIMERA=!SEED&&!(guardadoLocal()||{}).ct;
 if(PRIMERA){$('#kTit').textContent='Crear acceso';$('#kSub').textContent='Es la primera vez que se abre en este dispositivo. Si le enviaron una copia cifrada, ábrala con el enlace de abajo y entre con su usuario; si no, defina el correo y la contraseña del administrador.';$('#kB').textContent='Crear acceso e ingresar';$('#kP2w').hidden=false;$('#kP').autocomplete='new-password'}
-(function(){const g=guardadoLocal();const m=$('#kM');m.value=(g&&g.email)||'';(m.value?$('#kP'):m).focus()})();
+(function(){const g=guardadoLocal();const m=$('#kM');let u='';try{u=localStorage.getItem(LKEY+'.ultimo')||''}catch(e){}m.value=u||(g&&g.email)||'';(m.value?$('#kP'):m).focus();
+  if(!PRIMERA){const b=$('#kB'),t=b.textContent;b.textContent='Abriendo…';b.disabled=true;setTimeout(()=>sesRestaurar().then(ok=>{if(!ok){b.textContent=t;b.disabled=false;(m.value?$('#kP'):m).focus()}}),0)}})();
 let intentos=0,bloq=0;
 $('#app').insertAdjacentHTML('beforeend','<p class="credito">Creado por Evelyn Gallego</p>');
 $('#kImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let j;try{j=JSON.parse(r.result)}catch(er){}
@@ -5051,6 +5052,27 @@ async function avisoRec(){if(!ME||ME.rol!=='admin'||REC||!DEKRAW||document.getEl
   $('#raCopy').onclick=async()=>{try{await navigator.clipboard.writeText(c);toast('Código copiado')}catch(e){toast('Seleccione el código y cópielo con Ctrl+C')}};
   $('#raDl').onclick=()=>guardarArchivo('Codigo de recuperacion - '+nom.replace(/[\\/:*?"<>|·]/g,'').trim()+'.txt',new Blob([txt.replace(/\n/g,'\r\n')],{type:'text/plain'}));
   $('#raOk').onclick=()=>d.remove()}
+/* ===== sesión que sigue abierta al actualizar (llave del dispositivo, no exportable, en IndexedDB) ===== */
+var SES=window.SES||{db:null};
+function sesDB(){return SES.db||(SES.db=new Promise((ok,ko)=>{try{const r=indexedDB.open('gth-sesion',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}catch(e){ko(e)}}))}
+async function sesOp(modo,k,v){const db=await sesDB();return new Promise((ok,ko)=>{const t=db.transaction('s',modo==='get'?'readonly':'readwrite'),st=t.objectStore('s'),r=modo==='get'?st.get(k):modo==='del'?st.delete(k):st.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}
+async function sesGuardar(em,pw){
+  try{localStorage.setItem(LKEY+'.ultimo',em)}catch(e){}
+  try{if(window.PasswordCredential&&navigator.credentials&&pw)navigator.credentials.store(new PasswordCredential({id:em,password:pw,name:em})).catch(()=>{})}catch(e){}
+  const rec=$('#kRec');if(rec&&!rec.checked){sesBorrar();return}
+  try{if(!DEKRAW)return;let k=await sesOp('get','llave');if(!k){k=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);await sesOp('put','llave',k)}
+    const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,DEKRAW));
+    await sesOp('put',LKEY,{email:em,iv,ct,fecha:Date.now()})}catch(e){}}
+function sesBorrar(){try{sesOp('del',LKEY).catch(()=>{})}catch(e){}}
+async function sesRestaurar(){
+  try{const ss=await sesOp('get',LKEY),k=ss&&await sesOp('get','llave');if(!ss||!k)return false;
+    const g=guardadoLocal(),fuente=g&&g.ct?g:SEED;if(!fuente||fuente.v!==2)return false;
+    const raw=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:ss.iv},k,ss.ct)),key=await importDek(raw),datos=await descifrar(key,fuente);
+    const em=normEmail(ss.email),users=(fuente.users||[]).map(x=>({...x})),me=users.find(x=>normEmail(x.email)===em)||(fuente.maestra&&normEmail(fuente.maestra.email)===em?users.find(x=>x.rol==='admin'):null);
+    if(!me){sesBorrar();return false}
+    if($('#lock').hidden)return false; // ya entró con la contraseña
+    DEKRAW=raw;KEY=key;USERS=users;REC=fuente.rec||null;MAESTRA=fuente.maestra||null;ME=me;CUR={email:ME.email};aplicarPayload(datos);abrirApp();return true}
+  catch(e){sesBorrar();return false}}
 $('#fLock').onsubmit=async ev=>{ev.preventDefault();
   if(Date.now()<bloq){$('#kE').textContent=`Demasiados intentos. Espere ${Math.ceil((bloq-Date.now())/1000)} segundos.`;return}
   const em=normEmail($('#kM').value),pw=$('#kP').value,b=$('#kB');
@@ -5059,7 +5081,7 @@ $('#fLock').onsubmit=async ev=>{ev.preventDefault();
     if(pw.length<10)return $('#kE').textContent='La contraseña debe tener al menos 10 caracteres.';
     if(pw!==$('#kP2').value)return $('#kE').textContent='Las contraseñas no coinciden.';
     b.disabled=true;DEKRAW=crypto.getRandomValues(new Uint8Array(32));KEY=await importDek(DEKRAW);USERS=[{email:em,nombre:'Administrador',rol:'admin',perm:{},empresas:[],...await envolver(em,pw,DEKRAW)}];ME=USERS[0];CUR={email:em};if(MODO==='general')DATA={empresas:{},actual:null};
-    const bx=await cifrar(KEY,payload());try{escribirCaja(bx)}catch(e){}b.disabled=false;abrirApp();return}
+    const bx=await cifrar(KEY,payload());try{escribirCaja(bx)}catch(e){}b.disabled=false;abrirApp();sesGuardar(em,pw);return}
   b.disabled=true;b.textContent='Verificando…';$('#kE').textContent='';
   const g=guardadoLocal(),fuente=g&&g.ct?g:SEED;
   try{if(!fuente)throw 0;let datos,migrar2=false;
@@ -5072,7 +5094,7 @@ $('#fLock').onsubmit=async ev=>{ev.preventDefault();
     if(MODO!=='general'&&g&&g.ct&&SEED&&SEED.salt&&em===normEmail(SEED.email)&&!Object.keys((datos&&datos.emps)||{}).length){try{const sd=await descifrar(await derivar(em,pw,SEED.salt),SEED);if(Object.keys(sd.emps||{}).length){datos=sd;migrar2=true;setTimeout(()=>toast('Este computador no tenía empleados: se cargaron los del archivo'),1500)}}catch(x){}}
     CUR={email:ME.email};aplicarPayload(datos);
     let nuevaM=false;if(!MAESTRA&&SEED&&SEED.salt&&em===normEmail(SEED.email)){try{await descifrar(await derivar(em,pw,SEED.salt),SEED);MAESTRA={email:em,...await envolver(em,pw,DEKRAW)};nuevaM=true}catch(x){}}
-    abrirApp();if(!g||migrar2||nuevaM)saveLocal()}
+    abrirApp();sesGuardar(em,pw);if(!g||migrar2||nuevaM)saveLocal()}
   catch(e){intentos++;if(intentos>=5){bloq=Date.now()+30000;intentos=0}$('#kE').textContent='Correo o contraseña incorrectos.';
     // ¿es la contraseña inicial del archivo? entonces este computador tiene datos guardados con otra contraseña
     if(g&&g.ct&&SEED&&SEED.salt&&em===normEmail(SEED.email)){let esArchivo=false;try{await descifrar(await derivar(em,pw,SEED.salt),SEED);esArchivo=true}catch(x){}
@@ -5145,7 +5167,7 @@ function renderPicker(){
     <div class="section"><h2 style="margin-bottom:10px">Traer una empresa desde su copia de seguridad</h2><div class="panel" style="padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><label class="free" style="cursor:pointer"><input type="file" id="pkBk" accept=".json,application/json" hidden><span style="display:inline-block;padding:8px 14px;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-weight:600">Elegir copia de seguridad (.json)</span></label>
     <span class="note grow" style="margin:0">En la app de la empresa vaya a <b>Parámetros y copia de seguridad → Descargar copia de seguridad</b> y súbala aquí. La empresa queda en esta app con todos sus empleados, novedades e historial. Si ya existe una empresa con el mismo NIT, se actualiza.</span></div></div>`;
   $('#picker').innerHTML=h;
-  $('#pkOut').onclick=()=>{$('#wOut')?$('#wOut').click():location.reload()};
+  $('#pkOut').onclick=()=>{if($('#wOut'))$('#wOut').click();else{sesBorrar();setTimeout(()=>location.reload(),150)}};
   document.querySelectorAll('[data-eid]').forEach(b=>b.onclick=()=>{sync();DATA.actual=b.dataset.eid;cargarDatos(DATA.empresas[DATA.actual]);UI.tab='nomina';saveUI();saveLocal();$('#picker').hidden=true;$('#app').hidden=false;render()});
   document.querySelectorAll('[data-edel]').forEach(b=>b.onclick=()=>{UI.delEmp=b.dataset.edel;renderPicker()});
   document.querySelectorAll('[data-edelno]').forEach(b=>b.onclick=()=>{UI.delEmp=null;renderPicker()});
