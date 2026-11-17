@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='17/11/2026 10:26';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='17/11/2026 10:42';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -785,6 +785,13 @@ function renderInicio(){
    <div class="ini-grid">${mods.map(b=>`<button class="free ini-t" data-go="${b.dataset.tab}">${b.querySelector('svg').outerHTML}<span class="ini-n">${esc(b.querySelector('.tn')?.textContent||'')}</span><b>${esc(b.querySelector('.tl').textContent)}</b><small>${esc(DESC_MOD[b.dataset.tab]||'')}</small></button>`).join('')}</div>`;
   document.querySelectorAll('#v-inicio [data-go]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.go;saveUI();render();scrollTo({top:0})});
 }
+/* al volver a pintar una pestaña se conserva dónde iba (desplazamiento y casilla activa) */
+function conservarVista(id,fn){const v=$('#'+id);if(!v)return fn();const y=scrollY,x=scrollX,sc=[],els=v.querySelectorAll('*');
+  for(let i=0;i<els.length;i++){const el=els[i];if(el.scrollTop||el.scrollLeft)sc.push([i,el.scrollTop,el.scrollLeft])}
+  const a=document.activeElement;let foco=null;if(a&&v.contains(a)&&a!==document.body){const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));if(at.length)foco=a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join('')}
+  const r=fn();const n=v.querySelectorAll('*');sc.forEach(([i,t,l])=>{const el=n[i];if(el){el.scrollTop=t;el.scrollLeft=l}});
+  scrollTo(x,y);if(foco){try{const f=v.querySelector(foco);if(f)f.focus({preventScroll:true})}catch(e){}}return r}
+let RENDER_TAB=null;
 function render(){
   renderLegal();renderWho();
   if(!['inicio','hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','sst','params'].includes(UI.tab)||!puedeVer(UI.tab))UI.tab=(['inicio','nomina','hor','novedades','prov','empleados','afil','pila','vac','liq','cert','contratos','th','sst'].find(puedeVer))||'params';
@@ -792,7 +799,7 @@ function render(){
   document.querySelectorAll('nav.tabs[role=tablist] button').forEach(b=>{b.hidden=!puedeVer(b.dataset.tab);if(b.dataset.tab==='params')b.querySelector('.tl').textContent=esAdmin()?'Parámetros y usuarios':'Mi contraseña';b.setAttribute('aria-selected',b.dataset.tab===UI.tab)});
   {const gh=$('#goHome');if(gh){gh.hidden=UI.tab==='inicio';gh.onclick=()=>{UI.tab='inicio';saveUI();render();scrollTo({top:0})}}}
   ['inicio','hor','novedades','nomina','prov','empleados','afil','pila','vac','liq','cert','contratos','th','sst','params'].forEach(t=>$('#v-'+t).hidden=t!==UI.tab);
-  setTimeout(()=>ojos(),0);const RV=({inicio:renderInicio,afil:renderAfil,prov:renderProv,hor:renderHor,asis:renderAsis,th:renderTH,sst:renderSST,contratos:renderContratos,pila:renderPila,novedades:renderNov,nomina:renderNomina,empleados:renderEmps,vac:renderVac,liq:renderLiq,cert:renderCert,params:renderParams});try{RV[UI.tab]()}catch(er){console.error(er);const v=$('#v-'+UI.tab);if(v)v.innerHTML=`<div class="alert" role="alert"><b>No se pudo mostrar esta pestaña.</b> Tome una foto de este recuadro y envíela para corregirlo.<pre style="white-space:pre-wrap;font-size:.75rem;margin:8px 0 0">${esc(String(er&&er.message||er))}\n${esc(String(er&&er.stack||'').split('\n').slice(1,4).join('\n'))}</pre></div>`}
+  setTimeout(()=>ojos(),0);const RV=({inicio:renderInicio,afil:renderAfil,prov:renderProv,hor:renderHor,asis:renderAsis,th:renderTH,sst:renderSST,contratos:renderContratos,pila:renderPila,novedades:renderNov,nomina:renderNomina,empleados:renderEmps,vac:renderVac,liq:renderLiq,cert:renderCert,params:renderParams});try{const mismo=RENDER_TAB===UI.tab;RENDER_TAB=UI.tab;mismo?conservarVista('v-'+UI.tab,RV[UI.tab]):RV[UI.tab]()}catch(er){console.error(er);const v=$('#v-'+UI.tab);if(v)v.innerHTML=`<div class="alert" role="alert"><b>No se pudo mostrar esta pestaña.</b> Tome una foto de este recuadro y envíela para corregirlo.<pre style="white-space:pre-wrap;font-size:.75rem;margin:8px 0 0">${esc(String(er&&er.message||er))}\n${esc(String(er&&er.stack||'').split('\n').slice(1,4).join('\n'))}</pre></div>`}
   lockUI();
 }
 document.querySelectorAll('nav.tabs[role=tablist] button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;saveUI();render();scrollTo({top:0})});
@@ -1263,7 +1270,7 @@ function bindHorFacil(re){const L=UI.hw;
       R.no=R.no.filter(x=>!/^(sede|cargo|total)/i.test(x));fin(R)}catch(er){console.error(er);toast('No se pudo leer el archivo: '+(er.message||er))}};
   const xs=$('#hXlsS');if(xs)xs.onclick=excelSemana}
 function bindHor(){
-  const re=()=>renderHor();
+  const re=()=>conservarVista('v-hor',renderHor);
   $('#hvF').onclick=()=>{UI.hv='fac';saveUI();re()};$('#hvS').onclick=()=>{UI.hv='sem';saveUI();re()};$('#hvR').onclick=()=>{UI.hv='res';saveUI();re()};$('#hvT').onclick=()=>{UI.hv='tur';saveUI();re()};
   const sd=$('#hSede');if(sd)sd.onchange=e=>{UI.sede=e.target.value;saveUI();re()};
   const xl=$('#hXls');if(xl)xl.onclick=excelHorarios;const xs=$('#hXlsS');if(xs)xs.onclick=excelSemana;
