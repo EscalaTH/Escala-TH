@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='17/11/2026 12:56';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='17/11/2026 15:09';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -2568,7 +2568,7 @@ function renderEmps(){
   ${panelCumples()}
   <div class="section"><div class="bar"><h2 class="grow">Empleados (${empFilt().length})</h2>${sedeSelect('eFil')}</div>`;
   const list=empFilt();
-  {const g={};empAll().forEach(x=>{const k1=String(x.doc||'').replace(/\D/g,''),k2=nrm(x.nombre||'').replace(/\s+/g,' ').trim();[k1&&'d'+k1,k2&&'n'+k2].filter(Boolean).forEach(k=>(g[k]=g[k]||new Set()).add(x.id))});
+  {const g={};empAll().filter(x=>!x.retiro||x.retiro>=todayCO()).forEach(x=>{const k1=String(x.doc||'').replace(/\D/g,''),k2=nrm(x.nombre||'').replace(/\s+/g,' ').trim();[k1&&'d'+k1,k2&&'n'+k2].filter(Boolean).forEach(k=>(g[k]=g[k]||new Set()).add(x.id))});
    const dup=[...new Set(Object.values(g).filter(v=>v.size>1).map(v=>[...v].map(id=>S.emps[id].nombre)[0]))];
    if(dup.length)h+=`<div class="alert">Empleados repetidos (mismo nombre o cédula): <b>${esc(dup.join(', '))}</b>. Use <b>Eliminar</b> en el que sobra para que no salga doble en la nómina.</div>`}
   if(!list.length&&empList().length)h+=`<div class="panel empty"><b>No hay empleados en este centro de costo</b>Hay ${empList().length} empleados activos en total. <button class="free" id="eVerTodos" style="margin-top:8px">Ver todos los empleados</button></div>`;
@@ -3898,7 +3898,7 @@ function renderLiq(){
       <p class="status">${esc(S.config.ciudad||'Bogotá')}, ${fechaLarga(todayCO())}</p></article>`;
   }
   const hist=Object.values(S.liq||{}).sort((a,b)=>a.retiro<b.retiro?1:-1);
-  h+=`<div class="section"><h2 style="margin-bottom:10px">Liquidaciones guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Trabajador</th><th>Retiro</th><th>Causa</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(l=>`<tr><td>${esc(l.nombre)}</td><td>${fCorta(l.retiro)}</td><td>${esc(MOTIVOS[l.f.motivo]||'')}</td><td class="n">${money(l.neto)}</td><td><button class="ghost free" data-lqv="${esc(l.id)}">Abrir</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="panel empty"><b>Aún no hay liquidaciones guardadas</b></div>'}</div>`;
+  h+=`<div class="section"><h2 style="margin-bottom:10px">Liquidaciones guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Trabajador</th><th>Retiro</th><th>Causa</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(l=>`<tr><td>${esc(l.nombre)}${l.pdf?' <span class="pill" title="Liquidación registrada desde el PDF firmado">PDF firmado</span>':''}</td><td>${fCorta(l.retiro)}</td><td>${esc(l.pdf&&l.pdf.causa?l.pdf.causa.charAt(0)+l.pdf.causa.slice(1).toLowerCase():(MOTIVOS[l.f.motivo]||''))}</td><td class="n">${money(l.neto)}</td><td><button class="ghost free" data-lqv="${esc(l.id)}">Abrir</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="panel empty"><b>Aún no hay liquidaciones guardadas</b></div>'}</div>`;
   $('#v-liq').innerHTML=h;{const e2=LQ.eid?S.emps[LQ.eid]:null;if(e2&&(e2.retiro||e2.activo===false))bindDocsRet(e2)}
   $('#lqE').onchange=ev=>abrirLiq(ev.target.value);
   if(e){
