@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='18/11/2026 09:28';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='18/11/2026 10:20';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -565,7 +565,7 @@ function minutosTurno(fecha,t){
 }
 function minutosDia(empId,fecha){const t=turnoDe(codigo(empId,fecha));return t?minutosTurno(fecha,t):[]}
 function semana(empId,ws){
-  const e=S.emps[empId]||{},lim=e.excluido?Infinity:(+S.config.jornada||42)*60,rec=[];
+  const e=S.emps[empId]||{},lim=(e.excluido||S.config.sinExtras)?Infinity:(+S.config.jornada||42)*60,rec=[];
   for(let i=0;i<7;i++){const f=addDays(ws,i);minutosDia(empId,f).forEach(x=>{x.ext=rec.length>=lim;rec.push(x)})}
   return rec;
 }
@@ -1030,7 +1030,8 @@ function sembrarHor(D){ // carga una sola vez los horarios entregados por la emp
   if(nit.startsWith('901594919')&&(+c.hturnosV||0)<5){c.hturnos=structuredClone(HT_ESC4);c.hturnosV=5; // servicios generales por sede (8:00 a. m. – 4:00 p. m.)
     const sg=id=>{const z=nrm(((D.emps||{})[id]||{}).sede||'');return /morato/.test(z)?'SGM':/paseo/.test(z)?'SGP':'SGO'};
     Object.values(D.hor||{}).forEach(w=>Object.entries((w&&w.asig)||{}).forEach(([id,f])=>{if(f.t==='SG')f.t=sg(id);if(f.c)f.c=f.c.map(x=>x==='SG'?sg(id):x)}));ch=true}
-  if(nit.startsWith('901594919')&&!c.semDomV){hMigrarSemana(D,true);c.semDomV=1;ch=true} // Escalautos: semana de horarios de domingo a sábado
+  if(nit.startsWith('901594919')&&!c.semDomV){hMigrarSemana(D,true);c.semDomV=1;ch=true}
+  if(nit.startsWith('901594919')&&c.sinExtras===undefined){c.sinExtras=true;ch=true} // Escalautos: jornada de 42 h sin horas extras; lo adicional es recargo dominical // Escalautos: semana de horarios de domingo a sábado
   if(nit.startsWith('901182851')&&c.hturnosV!==2){c.hturnos=structuredClone(HT_FAR);c.hturnosV=2;if(c.domOrdinario===undefined)c.domOrdinario=true;ch=true}
   if(!HOR_SEED||c.horSeed1||!nit.startsWith(HOR_SEED.nit))return ch;
   const E=Object.values(D.emps||{}),res=n=>{const tk=nrm(n).split(' ').filter(Boolean),inc=(A,B)=>A.every(t=>B.some(x=>x===t||(t.length<=2&&x.startsWith(t))));let L=E.filter(e=>{const et=nrm(e.nombre).split(' ').filter(Boolean);return inc(tk,et)||(et.length>=3&&inc(et,tk))});if(L.length>1)L=L.filter(e=>e.activo!==false);if(L.length>1){const j=' '+tk.join(' ')+' ';L=L.filter(e=>(' '+nrm(e.nombre)+' ').includes(j))}return L.length===1?L[0].id:''};
@@ -1067,8 +1068,8 @@ function hMin(fila,f,code){
 /* semana completa con tope de jornada: lo que pasa del tope es extra (no aplica a dirección, confianza y manejo) */
 const trabDesc=(fila,i)=>!!S.config.domOrdinario&&fila&&fila.dd===i&&!!fila.c&&!!fila.c[i]&&!esHCod(fila.c[i]); // trabajó el día de descanso que tenía asignado
 function hSemana(empId,L){
-  const e=S.emps[empId]||{},fila=hFila(empId,L),lim=e.excluido?Infinity:(+S.config.jornada||42)*60,rec=[];if(!fila||!fila.c)return rec;
-  const top=e.excluido?Infinity:(+S.config.topeDia||9)*60;let ord=0;
+  const e=S.emps[empId]||{},fila=hFila(empId,L),sx=e.excluido||!!S.config.sinExtras,lim=sx?Infinity:(+S.config.jornada||42)*60,rec=[];if(!fila||!fila.c)return rec;
+  const top=sx?Infinity:(+S.config.topeDia||9)*60;let ord=0;
   for(let i=0;i<7;i++){const f=addDays(L,i);if(e.ingreso&&f<e.ingreso)continue;if(e.retiro&&f>e.retiro)continue;let d=0;const td=trabDesc(fila,i);hMin(fila,f,fila.c[i]).forEach(x=>{if(td){x.df=true;x.desc=true}x.ext=d>=top||ord>=lim;d++;if(!x.ext)ord++;rec.push(x)})}
   return rec;
 }
@@ -1130,7 +1131,7 @@ function renderHor(){
   });
   h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="10"></td><td class="n"><b>${hrs(TT.min)}</b></td><td class="n"><b>${hrs(TT.df)}</b></td><td class="n"><b>${hrs(TT.ext)}</b></td><td></td></tr></tfoot></table></div>
   <div class="legend">${hTurnos().map(t=>`<span><i style="background:${esc(t.color)}"></i><b>${esc(t.code)}</b> ${esc(t.nombre)}: ${resumenTurno(t)}</span>`).join('')}${HCOD.map(([k,n])=>`<span><b>${k}</b> ${esc(n)}</span>`).join('')}<span><b>Otro…</b> horario a mano para ese día</span></div>
-  <p class="note">La semana va de lunes a domingo. Elija el <b>turno de la semana</b> y el <b>día de descanso</b> y la fila se llena sola; después puede cambiar cualquier día (vacaciones, incapacidad, permiso, «Otro…» para un horario distinto). Son extra las horas que pasan de ${esc(S.config.jornada)} en la semana o de ${esc(S.config.topeDia||9)} en un mismo día (art. 161 CST), salvo para el personal de dirección, confianza y manejo. ${S.config.domOrdinario?`Trabajadores de domingo a domingo con un día de descanso compensatorio entre semana: el domingo es día ordinario. Se pagan los festivos y el día de descanso si lo trabaja (recargo del ${Math.round(rateDF(L)*100)} %), y el recargo nocturno desde las ${esc(S.config.nocheIni)}. Si alguien trabaja su día de descanso, cambie ese día por su turno y deje el «Día de descanso» como estaba: la app lo paga como festivo.`:`Domingos y festivos se pagan ${S.config.dfHoraCompleta?'hora + ':''}recargo del ${Math.round(rateDF(L)*100)} %.`} <b>Todo pasa solo a la nómina</b>: no vuelva a digitar estas horas ni estos días en Novedades.</p>`;
+  <p class="note">La semana va de lunes a domingo. Elija el <b>turno de la semana</b> y el <b>día de descanso</b> y la fila se llena sola; después puede cambiar cualquier día (vacaciones, incapacidad, permiso, «Otro…» para un horario distinto). ${S.config.sinExtras?`No se liquidan horas extras: todos trabajan ${esc(S.config.jornada)} horas semanales y lo adicional del domingo o festivo se paga como recargo dominical y festivo. `:`Son extra las horas que pasan de ${esc(S.config.jornada)} en la semana o de ${esc(S.config.topeDia||9)} en un mismo día (art. 161 CST), salvo para el personal de dirección, confianza y manejo. `}${S.config.domOrdinario?`Trabajadores de domingo a domingo con un día de descanso compensatorio entre semana: el domingo es día ordinario. Se pagan los festivos y el día de descanso si lo trabaja (recargo del ${Math.round(rateDF(L)*100)} %), y el recargo nocturno desde las ${esc(S.config.nocheIni)}. Si alguien trabaja su día de descanso, cambie ese día por su turno y deje el «Día de descanso» como estaba: la app lo paga como festivo.`:`Domingos y festivos se pagan ${S.config.dfHoraCompleta?'hora + ':''}recargo del ${Math.round(rateDF(L)*100)} %.`} <b>Todo pasa solo a la nómina</b>: no vuelva a digitar estas horas ni estos días en Novedades.</p>`;
   $('#v-hor').innerHTML=h;bindHor();lockUI();
 }
 function resumenHor(){
@@ -1154,6 +1155,7 @@ function editorTurnos(){
     ${[0,1,2,3,4,5,6,'fest'].map(i=>{const r=i==='fest'?t.fest:t.d[i];return `<td data-d="${i}"><div style="display:flex;flex-direction:column;gap:2px">${ti(r&&r.i)}${ti(r&&r.f)}<input class="sd" value="${esc((r&&r.s)||'')}" placeholder="sede" title="Sede de ese día (opcional)" style="padding:3px;font-size:.74rem;min-width:84px"></div></td>`}).join('')}
     <td><input data-k="alm" type="number" min="0" step="5" value="${+t.alm||0}" style="width:64px"></td><td><input data-k="almH" value="${esc(t.almH||'')}" placeholder="12:00-13:00" style="width:104px"></td><td><button class="ghost danger" data-del="${j}">Quitar</button></td></tr>`});
   h+=`</tbody></table></div><div class="bar" style="margin-top:10px"><button id="htAdd">Agregar turno</button><button class="primary" id="htSave">Guardar turnos</button>
+   <label class="chk"><input type="checkbox" id="htSinExt" ${S.config.sinExtras?'checked':''}> Sin horas extras: todos trabajan la jornada ordinaria de ${esc(S.config.jornada||42)} horas semanales; las horas de domingo y festivo se pagan solo con el recargo dominical y festivo</label>
    <label class="chk"><input type="checkbox" id="htDom" ${S.config.domOrdinario?'checked':''}> Trabajadores de domingo a domingo con descanso compensatorio entre semana: el domingo es día ordinario (se pagan festivos, el día de descanso si lo trabaja y el recargo nocturno)</label>
    <span style="display:flex;gap:6px;align-items:center;font-size:.86rem">Rotación semanal entre <select id="htR0">${T.map(t=>`<option${(S.config.hrot||['AP','CI'])[0]===t.code?' selected':''}>${esc(t.code)}</option>`).join('')}</select> y <select id="htR1">${T.map(t=>`<option${(S.config.hrot||['AP','CI'])[1]===t.code?' selected':''}>${esc(t.code)}</option>`).join('')}</select></span></div>`;
   return h;
@@ -1309,7 +1311,7 @@ function bindHor(){
   if(UI.hv==='tur'){
     document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const {out}=leerTurnos();out.splice(+b.dataset.del,1);S.config.hturnos=out;re()});
     $('#htAdd').onclick=()=>{const {out}=leerTurnos();out.push({code:'',nombre:'',color:PAL[out.length%PAL.length],alm:60,almH:'',d:[null,null,null,null,null,null,null],fest:null});S.config.hturnos=out;re();const ins=document.querySelectorAll('#htTab [data-k="code"]');if(ins.length)ins[ins.length-1].focus()};
-    $('#htSave').onclick=()=>{const {out,err}=leerTurnos();if(err){toast(err);return}if(!out.length){toast('Deje al menos un turno');return}S.config.hturnos=out;S.config.hrot=[$('#htR0').value,$('#htR1').value];S.config.domOrdinario=$('#htDom').checked;persist('config');re();toast('Turnos guardados')};
+    $('#htSave').onclick=()=>{const {out,err}=leerTurnos();if(err){toast(err);return}if(!out.length){toast('Deje al menos un turno');return}S.config.hturnos=out;S.config.hrot=[$('#htR0').value,$('#htR1').value];S.config.domOrdinario=$('#htDom').checked;S.config.sinExtras=$('#htSinExt').checked;persist('config');re();toast('Turnos guardados')};
     return}
   $('#hPrev').onclick=()=>{UI.hw=addDays(UI.hw,-7);saveUI();re()};$('#hNext').onclick=()=>{UI.hw=addDays(UI.hw,7);saveUI();re()};$('#hHoy').onclick=()=>{UI.hw=lunesDe(todayCO());saveUI();re()};
   const L=UI.hw;
@@ -3985,7 +3987,7 @@ function recargosHorario(e,ini,fin,op={}){ // recargos y extras del horario entr
       else{const base=x.noc?c.pHEN/100:c.pHED/100;R.vExt+=vh*h*(1+base+(x.df&&!e.sinRecDF?rateDF(x.f):0));if(x.df){x.noc?R.hendf+=h:R.hedf+=h}else{x.noc?R.hen+=h:R.hed+=h}}})}
   return R}
 const hTx=h=>{const m=Math.round(h*60);return `${Math.floor(m/60)}${m%60?':'+String(m%60).padStart(2,'0'):''} h`};
-function liqRecOp(e,F){const no=F.recAuto===false;return {df:!no&&F.recDF!==false&&!e.sinRecDF,noc:!no&&F.recNoc!==false,ext:!no&&(F.recExt!==undefined?F.recExt!==false:!(e.excluido||e.sinExt||S.config.domOrdinario))}}
+function liqRecOp(e,F){const no=F.recAuto===false;return {df:!no&&F.recDF!==false&&!e.sinRecDF,noc:!no&&F.recNoc!==false,ext:!no&&(F.recExt!==undefined?F.recExt!==false:!(e.excluido||e.sinExt||S.config.domOrdinario||S.config.sinExtras))}}
 function calcLiq(e,F){
   const c=S.config,sal=salarioEn(e,{ini:F.retiro}),aux=(e.aux!==false&&sal<=2*c.smmlv)?c.aux:0,prom=+F.prom||0;
   const ing=e.ingreso||F.retiro,y=F.retiro.slice(0,4),sem=F.retiro.slice(5,7)<='06'?`${y}-01-01`:`${y}-07-01`;
