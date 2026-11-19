@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='19/11/2026 09:58';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='19/11/2026 10:47';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -953,8 +953,8 @@ const HT_ESC4=[ // turnos de Escalautos definidos por la empresa (nov. 2026); do
   {code:'A3',nombre:'Administrativo 3',color:'#b8743d',alm:60,almH:'12:00-13:00',d:[...LJ('09:30','17:00'),...VS('09:00','18:00'),null],fest:null}];
 const ALM_OPC=['12:00-13:00','12:30-13:30','13:00-14:00'];
 const HT_FAR=[ // horarios de Farmaser (domingo a domingo): apertura y cierre
-  {code:'AP',nombre:'Apertura',color:'#e0a03a',alm:30,almH:'',d:[hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('08:00','15:30')],fest:hd('08:00','15:30')},
-  {code:'CI',nombre:'Cierre',color:'#5d6fd6',alm:30,almH:'',d:[hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:00')],fest:hd('14:00','21:00')}];
+  {code:'AP',nombre:'Apertura',color:'#e0a03a',alm:0,almH:'',d:[hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('07:30','15:00'),hd('08:00','15:30')],fest:hd('08:00','15:30')},
+  {code:'CI',nombre:'Cierre',color:'#5d6fd6',alm:0,almH:'',d:[hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:30'),hd('14:00','21:00')],fest:hd('14:00','21:00')}];
 const HT_GEN=[
   {code:'AD',nombre:'Administrativo',color:'#2fa37c',alm:60,almH:'12:00-13:00',d:[hd('08:00','17:00'),hd('08:00','17:00'),hd('08:00','17:00'),hd('08:00','17:00'),hd('08:00','17:00'),hd('08:00','12:00'),null],fest:null},
   {code:'M',nombre:'Mañana',color:'#e0a03a',alm:30,almH:'',d:[hd('06:00','14:00'),hd('06:00','14:00'),hd('06:00','14:00'),hd('06:00','14:00'),hd('06:00','14:00'),hd('06:00','14:00'),hd('07:00','13:00')],fest:hd('07:00','13:00')},
@@ -1033,7 +1033,8 @@ function sembrarHor(D){ // carga una sola vez los horarios entregados por la emp
   if(nit.startsWith('901594919')&&!c.semDomV){hMigrarSemana(D,true);c.semDomV=1;ch=true}
   if(nit.startsWith('901594919')&&c.sinExtras===undefined){c.sinExtras=true;ch=true}
   if(nit.startsWith('901594919')&&!c.sedesOrdV&&Array.isArray(c.sedes)){const O=['directivos','outlet','paseo','morato','rotativ'],ix=x=>{const z=nrm(x);const i=O.findIndex(o=>z.includes(o));return i<0?99:i};c.sedes=c.sedes.slice().sort((a,b)=>ix(a)-ix(b));c.sedesOrdV=1;ch=true} // nómina: directivos, Outlet, Paseo, Morato y rotativos // Escalautos: jornada de 42 h sin horas extras; lo adicional es recargo dominical // Escalautos: semana de horarios de domingo a sábado
-  if(nit.startsWith('901182851')&&c.hturnosV!==2){c.hturnos=structuredClone(HT_FAR);c.hturnosV=2;if(c.domOrdinario===undefined)c.domOrdinario=true;ch=true}
+  if(nit.startsWith('901182851')&&c.hturnosV!==2&&c.hturnosV!==3){c.hturnos=structuredClone(HT_FAR);c.hturnosV=2;if(c.domOrdinario===undefined)c.domOrdinario=true;ch=true}
+  if(nit.startsWith('901182851')&&c.hturnosV===2){(c.hturnos||[]).forEach(t=>{if(t.code==='AP'||t.code==='CI'){t.alm=0;t.almH=''}});c.hturnosV=3;c.domOrdinario=true;if(c.sinExtras===undefined)c.sinExtras=true;ch=true} // Farmaser: sin hora de almuerzo, domingo a domingo con descanso entre semana; solo recargo festivo y nocturno
   if(!HOR_SEED||c.horSeed1||!nit.startsWith(HOR_SEED.nit))return ch;
   const E=Object.values(D.emps||{}),res=n=>{const tk=nrm(n).split(' ').filter(Boolean),inc=(A,B)=>A.every(t=>B.some(x=>x===t||(t.length<=2&&x.startsWith(t))));let L=E.filter(e=>{const et=nrm(e.nombre).split(' ').filter(Boolean);return inc(tk,et)||(et.length>=3&&inc(et,tk))});if(L.length>1)L=L.filter(e=>e.activo!==false);if(L.length>1){const j=' '+tk.join(' ')+' ';L=L.filter(e=>(' '+nrm(e.nombre)+' ').includes(j))}return L.length===1?L[0].id:''};
   D.hor=D.hor||{};const nuevas=new Set();
