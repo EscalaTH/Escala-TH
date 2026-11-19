@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='19/11/2026 16:16';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='19/11/2026 16:25';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -372,8 +372,9 @@ try{NUBE.docPend=JSON.parse(localStorage.getItem(NB_K+'.docs')||'[]')}catch(e){}
 (function(){const m=String(location.hash||'').match(/nube=([^&]+)/);if(!m)return;try{const u=decodeURIComponent(m[1]).trim();if(NB_URL.test(u)){NUBE.url=u;localStorage.setItem(NB_K,u)}}catch(e){}try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}})();
 addEventListener('keydown',()=>{NUBE.tecla=Date.now()},true);
 async function nubeFetch(op,body,url,n){const u=url||NUBE.url;if(!u)throw 'sin nube';let r;
-  if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow'});
-  else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow'});
+  const sg=(ms)=>{try{return AbortSignal.timeout(ms)}catch(e){return undefined}};
+  if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow',signal:sg(90000)});
+  else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow',signal:sg(45000)});
   if(!r.ok)throw 'HTTP '+r.status;return r.json()}
 async function nubeTok(){const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array([...DEKRAW,...new TextEncoder().encode('|nube|'+LKEY)])));return [...h].map(x=>x.toString(16).padStart(2,'0')).join('')}
 const esObjN=v=>v&&typeof v==='object'&&!Array.isArray(v);
@@ -402,7 +403,7 @@ function nubeAplicar(res,loc){
     toast('Se recibieron cambios hechos en otro computador')}}
 const TAB_ID=(()=>{try{let t=sessionStorage.getItem('gth.tab');if(!t){t=Math.random().toString(36).slice(2);sessionStorage.setItem('gth.tab',t)}return t}catch(e){return Math.random().toString(36).slice(2)}})();
 async function nubeSync(forzar){
-  if(!NUBE.url||!KEY||!DEKRAW||NUBE.elegir||NUBE.llave)return;if(NUBE.ocup){NUBE.pend=true;return}NUBE.ocup=true;
+  if(!NUBE.url||!KEY||!DEKRAW||NUBE.elegir||NUBE.llave)return;if(NUBE.ocup&&Date.now()-(NUBE.ocupT||0)<120000){NUBE.pend=true;return}NUBE.ocup=true;NUBE.ocupT=Date.now(); // si una sincronización se quedó colgada más de 2 min, se libera
   try{const tok=await nubeTok();
     for(let i=0;i<5;i++){
       const loc={d:JSON.parse(JSON.stringify(payload())),m:metaLocal()},br=await nbBase();let base;
@@ -5956,7 +5957,7 @@ function arreglarLenys(D){ // Lenys Corredor: vacaciones del 6 al 22 de octubre 
   if(!ci[q2]){const d=nov[q2]||(nov[q2]={por:{}});d.por=d.por||{};const x=d.por[id]||(d.por[id]={});if(x.vacD===undefined){delete x.vac;delete x.lnr;x.vacD=7;if(!x.obs||/Labor[oó] 7 d[ií]as/.test(x.obs))x.obs='Regresó de vacaciones el 23 de octubre (vacaciones pagadas en la 1.ª quincena)';ch=true}}
   return ch}
 const DATOS_EMP={'901594919':{direccion:'Av. Américas No 62-84 Local 1-34, Bogotá',correoEmp:'Talentohumano.escalautos@gmail.com',repLegal:'LUISA FERNANDA SABOGAL BASTILLA',cargoRep:'Representante Legal (S)',periodicidadCtr:'Mensual'},
-  '901182851':{direccion:'Cr 7 No 14-04, Soacha, Cundinamarca',correoEmp:'ighsas2022@gmail.com',repLegal:'MARIA FERNANDA GAITAN HERNANDEZ',cargoRep:'Representante Legal (S)',periodicidadCtr:'Quincenal'}};
+  '901182851':{direccion:'Cr 7 No 14-04, Soacha, Cundinamarca',correoEmp:'talentohumanofarmaser@gmail.com',repLegal:'MARIA FERNANDA GAITAN HERNANDEZ',cargoRep:'Representante Legal (S)',periodicidadCtr:'Quincenal'}};
 function datosEmpresa(cfg){if(!cfg||cfg.mig7)return false;const d=DATOS_EMP[String(cfg.nit||'').replace(/\D/g,'').slice(0,9)];if(d)Object.entries(d).forEach(([k,v])=>{if(!cfg[k])cfg[k]=v});cfg.mig7=true;return true}
 function migSST(){ // datos de SST de Escalautos según la autoevaluación 2025 (Ministerio) y el informe de ARL SURA de julio de 2026
   if(MODO==='general'||!esEscalautos()||S.config.migSST1)return false;const d=sstD();
@@ -6006,7 +6007,7 @@ async function avisoRec(){if(!ME||ME.rol!=='admin'||REC||!DEKRAW||document.getEl
 /* ===== sesión que sigue abierta al actualizar (llave del dispositivo, no exportable, en IndexedDB) ===== */
 var SES=window.SES||{db:null};
 function sesDB(){return SES.db||(SES.db=new Promise((ok,ko)=>{try{const r=indexedDB.open('gth-sesion',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}catch(e){ko(e)}}))}
-async function sesOp(modo,k,v){const db=await sesDB();return new Promise((ok,ko)=>{const t=db.transaction('s',modo==='get'?'readonly':'readwrite'),st=t.objectStore('s'),r=modo==='get'?st.get(k):modo==='del'?st.delete(k):st.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}
+async function sesOp(modo,k,v){const db=await Promise.race([sesDB(),new Promise((_,ko)=>setTimeout(()=>ko('idb lento'),8000))]);return new Promise((ok,ko)=>{setTimeout(()=>ko('idb lento'),8000);const t=db.transaction('s',modo==='get'?'readonly':'readwrite'),st=t.objectStore('s'),r=modo==='get'?st.get(k):modo==='del'?st.delete(k):st.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}
 async function sesGuardar(em,pw){
   try{localStorage.setItem(LKEY+'.ultimo',em)}catch(e){}
   try{if(window.PasswordCredential&&navigator.credentials&&pw)navigator.credentials.store(new PasswordCredential({id:em,password:pw,name:em})).catch(()=>{})}catch(e){}
