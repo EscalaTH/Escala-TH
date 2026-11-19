@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='18/11/2026 16:21';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='19/11/2026 09:21';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -223,7 +223,7 @@ td.wrap{white-space:normal;min-width:160px;font-size:.8rem}
 <div class="wrap" id="picker" hidden></div>
 <div class="wrap" id="app" hidden>
   <header class="top">
-    <div class="brand"><img class="serLogo" alt="SER SAS"><div><div class="ser">SER SAS · Servicios Empresariales de Recursos Humanos</div><h1><small id="empresaLbl">Escalautos Colombia S.A.S. · NIT 901.594.919-1</small>Gestor Talento Humano</h1></div></div>
+    <div class="brand"><img class="serLogo" alt="SER SAS"><div><div class="ser">SER SAS · Servicios Empresariales de Recursos Humanos</div><h1><small id="empresaLbl"></small>Gestor Talento Humano</h1></div></div>
     <div class="hright"><div class="who" id="who"><span class="status">Conectando…</span></div><div class="legal" id="legal"></div></div>
   </header>
   <nav class="tabs" role="tablist">
@@ -490,7 +490,7 @@ async function fsRevisar(){ // si otro computador guardó en el mismo archivo de
     if(j&&j.caja&&j.caja.ct&&j.fecha&&loc&&j.fecha>loc&&Math.abs(Date.parse(j.fecha)-Date.parse(loc))>5000)FS.otro=j}catch(e){}}
 async function fsActivar(){if(!FS.h)return;try{FS.ok=(await FS.h.requestPermission({mode:'readwrite'}))==='granted'}catch(e){FS.ok=false}if(FS.ok){FS.err='';await fsRevisar();if(!FS.otro){const b=await cifrar(KEY,payload());fsUlt=b;await fsEscribir()}}fsBarra();if(UI.tab==='params')render()}
 async function fsElegir(){if(!FS.sup)return toast('Este navegador no permite guardar en un archivo. Use Google Chrome o Edge en el computador.');
-  try{const h=await window.showSaveFilePicker({suggestedName:`Escala_TH_datos_${MODO==='general'?'SER_SAS':nrm(S.config.empresa||MODO).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}.json`,types:[{description:'Datos cifrados de la app',accept:{'application/json':['.json']}}]});
+  try{const h=await window.showSaveFilePicker({suggestedName:`Talento_Humano_datos_${MODO==='general'?'SER_SAS':nrm(S.config.empresa||MODO).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}.json`,types:[{description:'Datos cifrados de la app',accept:{'application/json':['.json']}}]});
     FS.h=h;FS.ok=true;FS.otro=null;await fsPut(h);clearTimeout(saveT);const b=await cifrar(KEY,payload());escribirCaja(b);fsUlt=b;await fsEscribir();bitacora('Activó el guardado automático en el archivo '+h.name);fsBarra();render();toast('Listo: cada cambio se guarda también en «'+h.name+'»')}catch(e){if(e&&e.name!=='AbortError')toast('No se pudo vincular el archivo')}}
 async function fsQuitar(){FS.h=null;FS.ok=false;FS.otro=null;await fsPut(null);try{localStorage.removeItem(FS_K)}catch(e){}fsBarra();render();toast('Se dejó de guardar en el archivo')}
 function fsCargarOtro(){const j=FS.otro;if(!j)return;try{localStorage.setItem(LKEY,JSON.stringify(j.caja));localStorage.setItem(FS_K,j.fecha)}catch(e){return toast('No se pudo cargar')}location.reload()}
@@ -670,7 +670,7 @@ const hxS=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).p
 const mezcla=(a,b,t)=>{const A=hx(a),B=hx(b);return A&&B?hxS(A.map((v,i)=>v+(B[i]-v)*t)):a};
 const lumin=h=>{const a=hx(h);if(!a)return 0;const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(a[0])+.7152*f(a[1])+.0722*f(a[2])};
 const tinta=h=>lumin(h)>.42?'#14171f':'#ffffff';
-const TEMAS=[['Azul SER','#1f4fd1','#1f4fd1'],['Morado Escalautos','#6f00ff','#5a00cf'],['Verde farmacia','#0f8a5f','#0b6b4a'],['Rojo corporativo','#c62828','#9e1f1f'],['Naranja','#e8710a','#c25a00'],['Azul petróleo','#0e6e8c','#0b4f66'],['Grafito','#2f3a4a','#1f2733'],['Vino','#8e1b4f','#6d143c']];
+const TEMAS=[['Azul SER','#1f4fd1','#1f4fd1'],['Morado','#6f00ff','#5a00cf'],['Verde farmacia','#0f8a5f','#0b6b4a'],['Rojo corporativo','#c62828','#9e1f1f'],['Naranja','#e8710a','#c25a00'],['Azul petróleo','#0e6e8c','#0b4f66'],['Grafito','#2f3a4a','#1f2733'],['Vino','#8e1b4f','#6d143c']];
 function colorApp(c){c=c||S.config;return c.colorApp||(MODO==='cliente'?c.colorDoc:'')||'#1f4fd1'}
 function aplicarTema(){const c=S.config||{},a=colorApp(c),nav=c.colorNav||a,ni=tinta(nav),claro=ni==='#14171f',st=document.getElementById('temaEmp')||document.head.appendChild(Object.assign(document.createElement('style'),{id:'temaEmp'}));
   const aD=lumin(a)<.18?mezcla(a,'#ffffff',.38):a,navD=mezcla(nav,'#000000',.35);
@@ -2820,9 +2820,9 @@ async function plantilla(){
   const ws0=weekStart(todayCO()),fx=ws0.split('-').reverse().join('/'),s0=S.config.sedes;
   const head=['#','NOMBRE DEL EMPLEADO','CÉDULA','FECHA CUMPLEAÑOS','CARGO','CENTRO DE COSTO','SALARIO','BANCO','TIPO DE CUENTA','No. CUENTA','EPS','FONDO DE PENSIONES','CLASE RIESGO ARL','FECHA DE INGRESO','TIPO CONTRATO','OBSERVACIONES','SEMANA (DOMINGO)','DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
   const filas=[head.slice(),
-    [1,'NOMBRE APELLIDO (EJEMPLO)','1000000001','15 MARZO','ANALISTA COMPRAS',s0[2]||'',S.config.smmlv,'DAVIVIENDA','Ahorros','0550000000000000','SANITAS','PORVENIR','II','01/09/2026','INDEFINIDO','',fx,'T1','D','T1','T1','T1','T1','T1'],
-    [2,'OTRO EMPLEADO (EJEMPLO)','1000000002','02 JULIO','PERITO',s0[1]||'',2050905,'NEQUI','Depósito electrónico','3000000000','COMPENSAR','PROTECCIÓN','II','15/08/2026','INDEFINIDO','',fx,'10:00-15:00','10:30-18:00','D','T2','T2','T2','T2'],
-    [3,'DIRECTIVO (EJEMPLO)','1000000003','','DIRECTOR VENTAS',s0[0]||'',2300000,'BANCOLOMBIA','Ahorros','00000000003','SANITAS','PORVENIR','II','10/01/2024','DIRECCION CONFIANZA Y MANEJO','No cumple horario','','','','','','','','']];
+    [1,'NOMBRE APELLIDO (EJEMPLO)','1000000001','15 MARZO',esEscalautos()?'ANALISTA COMPRAS':esFarmaser()?'AUXILIAR DE FARMACIA':'AUXILIAR ADMINISTRATIVO',s0[2]||'',S.config.smmlv,'DAVIVIENDA','Ahorros','0550000000000000','SANITAS','PORVENIR','II','01/09/2026','INDEFINIDO','',fx,'T1','D','T1','T1','T1','T1','T1'],
+    [2,'OTRO EMPLEADO (EJEMPLO)','1000000002','02 JULIO',esEscalautos()?'PERITO':esFarmaser()?'REGENTE DE FARMACIA':'ASESOR COMERCIAL',s0[1]||'',2050905,'NEQUI','Depósito electrónico','3000000000','COMPENSAR','PROTECCIÓN','II','15/08/2026','INDEFINIDO','',fx,'10:00-15:00','10:30-18:00','D','T2','T2','T2','T2'],
+    [3,'DIRECTIVO (EJEMPLO)','1000000003','',esEscalautos()?'DIRECTOR VENTAS':esFarmaser()?'ADMINISTRADOR DE PUNTO':'GERENTE',s0[0]||'',2300000,'BANCOLOMBIA','Ahorros','00000000003','SANITAS','PORVENIR','II','10/01/2024','DIRECCION CONFIANZA Y MANEJO','No cumple horario','','','','','','','','']];
   const extra=[['FONDO DE CESANTÍAS','CELULAR','CORREO','DIRECCIÓN','FECHA DE NACIMIENTO','CONTACTO DE EMERGENCIA','PARENTESCO','TELÉFONO DE EMERGENCIA'],
     ['PORVENIR','3000000001','ejemplo@correo.com','Calle 1 # 2-3','15/03/1995','MARÍA PÉREZ','Madre','3100000000'],['PROTECCIÓN','3000000002','','','02/07/1990','JUAN RUIZ','Esposo(a)','3110000000'],['PORVENIR','','','','','','','']];
   filas.forEach((r,i)=>filas[i]=r.slice(0,16).concat(extra[i]));head.length=16;head.push(...extra[0]);
@@ -2831,7 +2831,7 @@ async function plantilla(){
   const nov=[['#','EMPLEADO','LICENCIA NO REMUNERADA','INCAPACIDAD GENERAL','INCAPACIDAD LABORAL','VACACIONES DISFRUTADAS','LICENCIA REMUNERADA','RECARGO DOMINICAL (HORAS)','HR EXTRAS DIURNAS','HR EXTRAS NOCTURNAS','RETENCIÓN EN LA FUENTE ($)','PRESTAMOS ($)','EMBARGOS ($)','ANTICIPOS ($)','OTROS DESCUENTOS ($)','OBSERVACIONES'],[1,'NOMBRE APELLIDO (EJEMPLO)',1,'','','','',5,'','','','','','','','NO ASISTE EL 22; SE DESCUENTA EL DÍA']];
   const cod=[['CÓDIGO','SIGNIFICADO','LUNES A JUEVES','VIERNES Y SÁBADO','DOMINGO Y FESTIVO']].concat(S.config.turnos.map(t=>[t.code,t.nombre,t.lj.ini+'-'+t.lj.fin,(t.vs||t.lj).ini+'-'+(t.vs||t.lj).fin,t.df.ini+'-'+t.df.fin]),CODIGOS_ESP.map(t=>[t.code,t.nombre,'','','']));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Empleados');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(nov),'Novedades');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cod),'Codigos de turno');
-  await guardarArchivo('plantilla_escalautos.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  await guardarArchivo(`plantilla_empleados_${nrm(S.config.empresa||'empresa').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'').toUpperCase()}.xlsx`,new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 }
 
 /* ===================== vista: empleados ===================== */
