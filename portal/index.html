@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='19/11/2026 11:47';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='19/11/2026 12:12';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -589,6 +589,28 @@ function segmentosSal(e,P){const ch=[...new Set((e.salarios||[]).filter(x=>x.des
   return cortes.map((a,i)=>{const b=i<cortes.length-1?addDays(cortes[i+1],-1):P.fin;return {desde:a,hasta:b,sal:salarioEn(e,{ini:a}),d:d360(a,b)}}).filter(x=>x.d>0)}
 const novDe=(P,id)=>((S.nov[P.key]||{}).por||{})[id]||{};
 const nv=v=>+v||0;
+const FX_K=['basico','auxT','recDF','recNoc','extD','extN','vacP','incap','lrP']; // valores de la nómina editados a mano
+function totFila(R,N,c,P,e,sal,diasBase){ // totales, aportes y provisiones de una fila de nómina
+  const RD=RDN;
+  R.com=R0(nv(N.com));R.nsal=R0(nv(N.nsal));
+  {const fx=N.fx||{};R.fxManual=[];FX_K.forEach(k=>{if(fx[k]!==undefined&&fx[k]!==''&&!isNaN(+fx[k])){R[k]=Math.max(0,Math.round(+fx[k]));R.fxManual.push(k)}});if(R.fxManual.includes('extD')||R.fxManual.includes('extN'))R.ext=(+R.extD||0)+(+R.extN||0)}
+  R.devSal=R.basico+R.vacP+R.lrP+R.incap+R.recNoc+R.recDF+R.ext+R.com;
+  R.dev=R.devSal+R.auxT+R.nsal;
+  R.ibc=R0(Math.min(25*c.smmlv,R.devSal));
+  const ibcMes=P.tipo==='mensual'?R.ibc:R.ibc*2,xs=ibcMes/c.smmlv;
+  R.salud=C100(R.ibc*c.salud/100);R.pension=C100(R.ibc*c.pension/100);
+  const tf=xs<4?0:xs<16?.01:xs<17?.012:xs<18?.014:xs<19?.016:xs<20?.018:.02;R.fsp=tf?C100(R.ibc*tf):0;
+  R.dedAuto={salud:R.salud,pension:R.pension,fsp:R.fsp};R.dedManual=[];[['salM','salud'],['penM','pension'],['fspM','fsp']].forEach(([k,d])=>{if(N[k]!==undefined&&N[k]!==''&&!isNaN(+N[k])){R[d]=Math.max(0,Math.round(+N[k]));R.dedManual.push(d)}});
+  R.ret=nv(N.ret);R.pre=nv(N.pre);R.emb=nv(N.emb);R.ant=nv(N.ant);R.otr=nv(N.otr);
+  R.ded=R.salud+R.pension+R.fsp+R.ret+R.pre+R.emb+R.ant+R.otr;R.neto=R.dev-R.ded;
+  const exo=c.exonerado&&ibcMes<10*c.smmlv,cl=e.arl||c.arlDef||'II';
+  R.ap={salud:exo?0:C100(R.ibc*.085),pension:C100(R.ibc*.12),arl:C100(R.ibc*(c.arl[cl]??1.044)/100),caja:C100(R.ibc*c.caja/100),sena:exo?0:C100(R.ibc*.02),icbf:exo?0:C100(R.ibc*.03)};
+  R.apTot=Object.values(R.ap).reduce((a,b)=>a+b,0);
+  R.basePrest=R.devSal+R.auxT;
+  if(c.red100){R.pr={ces:RD(R.basePrest/12)};R.pr.int=RD(R.pr.ces*.12);R.pr.prima=RD(R.basePrest/12);R.pr.vac=RD((R.basico+R.recNoc+R.vacP)/24)}else{R.pr={ces:RD(R.basePrest*.0833)};R.pr.int=RD(R.pr.ces*.12);R.pr.prima=RD(R.basePrest*.0833);R.pr.vac=RD(sal*.0417*diasBase/30);}
+  R.prTot=R.pr.ces+R.pr.int+R.pr.prima+R.pr.vac;
+  R.costo=R.dev+R.apTot+R.prTot;
+  return R}
 function liquidar(e,P){
   const segs=segmentosSal(e,P),dS=segs.reduce((a,x)=>a+x.d,0);
   const c=S.config,RD=RDN,sal=segs.length>1&&dS?Math.round(segs.reduce((a,x)=>a+x.sal*x.d,0)/dS):salarioEn(e,P),vh=sal/((+c.jornada||42)*5),vd=sal/30,N=novDe(P,e.id);
@@ -639,23 +661,7 @@ function liquidar(e,P){
   R.aplicaAux=e.aux!==false&&sal<=2*c.smmlv;
   R.auxT=R.aplicaAux?RD(c.aux/30*R.dias):0;
   R.recNoc=RD(R.v.recNoc);R.recDF=RD(R.v.recDF);R.recDFAuto=R.recDF;if(N.vdf!==undefined&&N.vdf!==''&&!isNaN(+N.vdf)){R.recDF=Math.max(0,Math.round(+N.vdf));R.recDFManual=true}R.extD=RD(R.v.extD);R.extN=RD(R.v.ext-R.v.extD);R.ext=R.extD+R.extN;
-  R.com=R0(nv(N.com));R.nsal=R0(nv(N.nsal));
-  R.devSal=R.basico+R.vacP+R.lrP+R.incap+R.recNoc+R.recDF+R.ext+R.com;
-  R.dev=R.devSal+R.auxT+R.nsal;
-  R.ibc=R0(Math.min(25*c.smmlv,R.devSal));
-  const ibcMes=P.tipo==='mensual'?R.ibc:R.ibc*2,xs=ibcMes/c.smmlv;
-  R.salud=C100(R.ibc*c.salud/100);R.pension=C100(R.ibc*c.pension/100);
-  const tf=xs<4?0:xs<16?.01:xs<17?.012:xs<18?.014:xs<19?.016:xs<20?.018:.02;R.fsp=tf?C100(R.ibc*tf):0;
-  R.dedAuto={salud:R.salud,pension:R.pension,fsp:R.fsp};R.dedManual=[];[['salM','salud'],['penM','pension'],['fspM','fsp']].forEach(([k,d])=>{if(N[k]!==undefined&&N[k]!==''&&!isNaN(+N[k])){R[d]=Math.max(0,Math.round(+N[k]));R.dedManual.push(d)}});
-  R.ret=nv(N.ret);R.pre=nv(N.pre);R.emb=nv(N.emb);R.ant=nv(N.ant);R.otr=nv(N.otr);
-  R.ded=R.salud+R.pension+R.fsp+R.ret+R.pre+R.emb+R.ant+R.otr;R.neto=R.dev-R.ded;
-  const exo=c.exonerado&&ibcMes<10*c.smmlv,cl=e.arl||c.arlDef||'II';
-  R.ap={salud:exo?0:C100(R.ibc*.085),pension:C100(R.ibc*.12),arl:C100(R.ibc*(c.arl[cl]??1.044)/100),caja:C100(R.ibc*c.caja/100),sena:exo?0:C100(R.ibc*.02),icbf:exo?0:C100(R.ibc*.03)};
-  R.apTot=Object.values(R.ap).reduce((a,b)=>a+b,0);
-  R.basePrest=R.devSal+R.auxT;
-  if(c.red100){R.pr={ces:RD(R.basePrest/12)};R.pr.int=RD(R.pr.ces*.12);R.pr.prima=RD(R.basePrest/12);R.pr.vac=RD((R.basico+R.recNoc+R.vacP)/24)}else{R.pr={ces:RD(R.basePrest*.0833)};R.pr.int=RD(R.pr.ces*.12);R.pr.prima=RD(R.basePrest*.0833);R.pr.vac=RD(sal*.0417*diasBase/30);}
-  R.prTot=R.pr.ces+R.pr.int+R.pr.prima+R.pr.vac;
-  R.costo=R.dev+R.apTot+R.prTot;
+  totFila(R,N,c,P,e,sal,diasBase);
   return R;
 }
 
@@ -2430,11 +2436,11 @@ function renderNomina(){
   <tr><th class="n">Básico</th><th class="n">Aux. transp.</th><th class="n">Rec. dom/fest</th><th class="n">Rec. nocturno</th><th class="n">Horas extra</th><th class="n">Comisiones</th><th class="n">Vacaciones</th><th class="n">Incapac.</th><th class="n">Lic. rem.</th><th class="n">No salarial</th><th class="n">Total</th>
   <th class="n">IBC</th><th class="n">Salud 4%</th><th class="n">Pensión 4%</th><th class="n">FSP</th><th class="n">Retención</th><th class="n">Préstamos</th><th class="n">Embargos</th><th class="n">Anticipos y otros</th><th class="n">Total</th></tr></thead><tbody>`;
   R.forEach((r,i)=>{if(!UI.sede&&(i===0||(R[i-1].e.sede||'')!==(r.e.sede||''))){const n=R.filter(x=>(x.e.sede||'')===(r.e.sede||'')).length;h+=`<tr class="sedeRow"><td class="sticky"><b>${esc(r.e.sede||'Sin sede')}</b> <span class="status">${n} empleado${n>1?'s':''}</span></td><td colspan="24"></td></tr>`}
-    h+=`<tr class="click" data-i="${i}" tabindex="0"><td class="sticky"><b>${esc(r.e.nombre)}</b><br><span class="status">${esc(r.e.cargo||'')}</span></td><td>${esc(r.e.sede||'')}</td><td class="n">${money(r.sal)}${r.segs&&r.segs.length>1?`<br><span class="pill warn" title="${r.segs.map(x=>x.d+' días a '+money(x.sal)).join(' + ')}">${r.segs.length} salarios</span>`:''}</td><td class="n">${r.dias}</td>
-    <td class="n">${mz(r.basico)}</td><td class="n">${mz(r.auxT)}</td><td class="n">${mz(r.recDF)}</td><td class="n">${mz(r.recNoc)}</td><td class="n">${mz(r.ext)}</td><td class="n">${mz(r.com)}</td><td class="n">${mz(r.vacP)}</td><td class="n">${mz(r.incap)}</td><td class="n">${mz(r.lrP)}</td><td class="n">${mz(r.nsal)}</td><td class="n"><b>${money(r.dev)}</b></td>
+    h+=`<tr class="click" data-i="${i}" tabindex="0"><td class="sticky"><b>${esc(r.e.nombre)}</b><br><span class="status">${esc(r.e.cargo||'')}</span>${PERM.write?`<br><button class="ghost free mini" data-edfila="${i}" title="Editar los valores de este empleado">✎ Editar</button>`:''}${(r.fxManual||[]).length||r.editada?' <span class="pill warn" title="Tiene valores editados a mano">editado</span>':''}</td><td>${esc(r.e.sede||'')}</td><td class="n">${money(r.sal)}${r.segs&&r.segs.length>1?`<br><span class="pill warn" title="${r.segs.map(x=>x.d+' días a '+money(x.sal)).join(' + ')}">${r.segs.length} salarios</span>`:''}</td><td class="n">${r.dias}</td>
+    ${['basico','auxT','recDF','recNoc','ext'].map(k=>{const m=(r.fxManual||[]).includes(k)||(k==='ext'&&((r.fxManual||[]).includes('extD')||(r.fxManual||[]).includes('extN')));return `<td class="n"${m?' style="color:var(--accent);font-weight:700" title="Editado a mano"':''}>${mz(r[k])}${m?' ✎':''}</td>`}).join('')}<td class="n">${mz(r.com)}</td><td class="n">${mz(r.vacP)}</td><td class="n">${mz(r.incap)}</td><td class="n">${mz(r.lrP)}</td><td class="n">${mz(r.nsal)}</td><td class="n"><b>${money(r.dev)}</b></td>
     <td class="n">${money(r.ibc)}</td>${['salud','pension','fsp'].map(k=>`<td class="n"${(r.dedManual||[]).includes(k)?' style="color:var(--accent);font-weight:700" title="Editado a mano en Novedades"':''}>${mz(r[k])}${(r.dedManual||[]).includes(k)?' ✎':''}</td>`).join('')}<td class="n">${mz(r.ret)}</td><td class="n">${mz(r.pre)}</td><td class="n">${mz(r.emb)}</td><td class="n">${mz(r.ant+r.otr)}</td><td class="n">${money(r.ded)}</td><td class="n"><b>${money(r.neto)}</b></td></tr>`});
   h+=`<tr class="tot"><td class="sticky">Totales</td><td></td><td></td><td></td>${['basico','auxT','recDF','recNoc','ext','com','vacP','incap','lrP','nsal','dev','ibc','salud','pension','fsp','ret','pre','emb',r=>r.ant+r.otr,'ded','neto'].map(k=>`<td class="n">${money(T(k))}</td>`).join('')}</tr></tbody></table></div>
-  <p class="note">Toque un empleado para ver su desprendible. Aportes a seguridad social redondeados a la centena superior, como en la planilla PILA.</p>
+  <p class="note">Toque un empleado para ver su desprendible, o <b>✎ Editar</b> para cambiar sus valores (días, básico, recargos, extras, incapacidad, descuentos…), también en nóminas ya guardadas. Aportes a seguridad social redondeados a la centena superior, como en la planilla PILA.</p>
   <p class="note">Los aportes del empleador, las provisiones (cesantías, intereses, prima y vacaciones) y el costo total de la empresa están en la pestaña <b>Provisiones</b>.</p>`;
   const hist=Object.entries(S.cierres||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   h+=`<div class="section"><h2 style="margin-bottom:10px">Nóminas guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Periodo</th><th>Guardada</th><th class="n">Empleados</th><th class="n">Devengado</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(([k,c])=>{const [mes,t]=k.split('_'),pp=periodo(mes,t),sm=f=>c.filas.reduce((a,r)=>a+(r[f]||0),0);return `<tr><td>${tituloP(pp)}</td><td>${fCorta(c.fecha)}</td><td class="n">${c.filas.length}</td><td class="n">${money(sm('dev'))}</td><td class="n">${money(sm('neto'))}</td><td><button class="ghost free" data-vercierre="${k}">Ver</button></td></tr>`}).join('')}</tbody></table></div>`:'<p class="note">Todavía no hay nóminas guardadas. Al terminar cada periodo, use «Guardar nómina del periodo».</p>'}</div>`;
@@ -2442,6 +2448,7 @@ function renderNomina(){
   if(!CI){const fT=[];emps.forEach(e=>{for(let L=lunesDe(P.ini);L<=P.fin;L=addDays(L,7)){const fl=hFila(e.id,L);if(fl&&fl.c)fl.c.forEach((cd,i)=>{const f=addDays(L,i);if(cd==='T'&&f>=P.ini&&f<=P.fin)fT.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}`)})}});
     if(fT.length)h=h.replace('</div>','</div><div class="alert">Hay domingos o festivos marcados «TRABAJA» sin horas ('+fT.slice(0,10).join(', ')+(fT.length>10?'…':'')+'). Escriba las horas en Horarios › Registro fácil; sin ellas no se paga el recargo.</div>')}
   $('#v-nomina').innerHTML=h;bindNom();
+  document.querySelectorAll('[data-edfila]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();editarFila(+b.dataset.edfila)});
   document.querySelectorAll('[data-vercierre]').forEach(b=>b.onclick=()=>{const [mes,t]=b.dataset.vercierre.split('_');UI.mes=mes;UI.tipo=t;UI.det=null;saveUI();renderNomina();scrollTo({top:0})});
   const bc=$('#nCerrar');if(bc)bc.onclick=()=>{if(!UI.cAsk){UI.cAsk=true;bc.textContent='¿Confirmar? Los valores quedan fijos';setTimeout(()=>{UI.cAsk=false;const x=$('#nCerrar');if(x)x.textContent='Guardar nómina del periodo'},4000);return}
     UI.cAsk=false;setTimeout(()=>{try{if(S.portal&&Object.keys(S.portal.emp||{}).length)portalPublicar(true)}catch(e){}},1500);bitacora(`Guardó (cerró) la nómina ${P.key}`);S.cierres=S.cierres||{};S.cierres[P.key]={fecha:todayCO(),por:CUR.email,filas:JSON.parse(JSON.stringify(R.map(r=>({...r,e:{id:r.e.id,nombre:r.e.nombre,doc:r.e.doc||'',cargo:r.e.cargo||'',sede:r.e.sede||'',arl:r.e.arl||'II',ingreso:r.e.ingreso||'',retiro:r.e.retiro||''}}))))};saveLocal();renderNomina();toast('Nómina guardada en el historial')};
@@ -2449,6 +2456,39 @@ function renderNomina(){
     UI.rAsk=false;delete S.cierres[P.key];bitacora(`Reabrió la nómina ${P.key}`);saveLocal();renderNomina();toast('Periodo reabierto')};
   if(UI.det!=null&&R[UI.det])renderDetalle(R[UI.det],P);
 }
+const EDF=[['dias','Días laborados'],['basico','Salario básico'],['auxT','Auxilio de transporte'],['recDF','Recargo dominical / festivo'],['recNoc','Recargo nocturno'],['extD','Horas extra diurnas ($)'],['extN','Horas extra nocturnas ($)'],['com','Comisiones'],['vacP','Vacaciones'],['incap','Incapacidad'],['lrP','Licencia remunerada'],['nsal','Pagos no salariales'],
+  ['salud','Salud 4 %'],['pension','Pensión 4 %'],['fsp','Fondo de solidaridad'],['ret','Retención en la fuente'],['pre','Préstamos'],['emb','Embargos'],['ant','Anticipos'],['otr','Otros descuentos']];
+function editarFila(i){const r=ULTIMA[i];if(!r)return;const P=periodo(UI.mes,UI.tipo),CI=(S.cierres||{})[P.key];UI.det=null;
+  const v=k=>Math.round(+r[k]||0);
+  $('#detalle').innerHTML=`<div class="panel detail" id="edfPanel"><div class="bar"><h3 class="grow">Editar valores · ${esc(r.e.nombre)} · ${tituloP(P)}</h3><button class="ghost free" id="edfX">Cerrar</button></div>
+  <p class="note">${CI?'Esta nómina ya está guardada: los cambios se hacen sobre la fila guardada y se recalculan el total, el IBC, los aportes y las provisiones.':'La nómina está abierta: los valores que cambie quedan fijos aunque cambien los horarios. Use «Volver al cálculo» para quitar los ajustes.'} Si cambia los días y no el básico, el básico y el auxilio se recalculan solos. Salud, pensión y fondo de solidaridad se recalculan sobre el nuevo IBC, salvo que los cambie a mano.</p>
+  <div class="grid3" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px">${EDF.map(([k,l])=>`<label class="f">${l}<input type="number" step="${k==='dias'?'0.5':'100'}" min="0" data-edf="${k}" value="${v(k)}"></label>`).join('')}</div>
+  <label class="f" style="margin-top:10px">Observación<input id="edfObs" value="${esc((r.N&&r.N.obs)||'')}"></label>
+  <div class="bar" style="margin-top:12px"><span class="grow"></span>${CI?'':'<button class="ghost" id="edfReset">Volver al cálculo</button>'}<button class="primary" id="edfOk">Guardar cambios</button></div></div>`;
+  $('#edfPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  $('#edfX').onclick=()=>{$('#detalle').innerHTML=''};
+  const lee=()=>{const o={};document.querySelectorAll('[data-edf]').forEach(x=>{o[x.dataset.edf]=x.value===''?0:+x.value});return o};
+  const rs=$('#edfReset');if(rs)rs.onclick=()=>{const d=S.nov[P.key];const n=d&&d.por&&d.por[r.e.id];if(n){delete n.fx;delete n.dl;['salM','penM','fspM'].forEach(k=>delete n[k])}bitacora(`Quitó los ajustes manuales de ${r.e.nombre} en la nómina ${P.key}`);saveLocal();renderNomina();toast('Se volvió al cálculo automático')};
+  $('#edfOk').onclick=()=>{const o=lee(),obs=$('#edfObs').value.trim(),ch=k=>Math.round(+o[k]||0)!==v(k)&&!(k==='dias'&&+o.dias===+r.dias),c=S.config;
+    const cambios=EDF.filter(([k])=>ch(k)).map(([,l])=>l);if(!cambios.length&&obs===((r.N&&r.N.obs)||'')){toast('No hay cambios');return}
+    const vd=(+r.sal||0)/30;
+    if(CI){const idx=CI.filas.findIndex(f=>f.e&&f.e.id===r.e.id);if(idx<0)return;const f=CI.filas[idx];
+      if(ch('dias')){f.dias=+o.dias;if(!ch('basico'))o.basico=RDN(vd*f.dias);if(!ch('auxT')&&f.auxT)o.auxT=RDN(c.aux/30*f.dias)}
+      const fx={};FX_K.forEach(k=>{fx[k]=Math.round(+o[k]||0)});
+      const N2={fx,com:o.com,nsal:o.nsal,ret:o.ret,pre:o.pre,emb:o.emb,ant:o.ant,otr:o.otr};
+      [['salud','salM'],['pension','penM'],['fsp','fspM']].forEach(([k,m])=>{if(ch(k)||(f.dedManual||[]).includes(k))N2[m]=ch(k)?o[k]:f[k]});
+      const e=S.emps[r.e.id]||f.e;const sal=+f.sal||0;totFila(f,N2,c,P,e,sal,(f.d&&f.d.base)||P.dias);delete f.fxManual;
+      f.editada=true;f.N={...(f.N||{}),obs:obs||((f.N&&f.N.obs)||'')};
+      bitacora(`Editó la nómina guardada ${P.key} de ${r.e.nombre}: ${cambios.join(', ')||'observación'}`)}
+    else{const d=S.nov[P.key]||(S.nov[P.key]={por:{}});d.por=d.por||{};const n=d.por[r.e.id]||(d.por[r.e.id]={});n.fx=n.fx||{};
+      if(ch('dias')){n.dl=+o.dias}
+      FX_K.forEach(k=>{if(ch(k))n.fx[k]=Math.round(+o[k]||0)});
+      if(ch('dias')&&!ch('basico'))delete n.fx.basico;if(ch('dias')&&!ch('auxT'))delete n.fx.auxT;
+      if(!Object.keys(n.fx).length)delete n.fx;
+      ['com','nsal','ret','pre','emb','ant','otr'].forEach(k=>{if(ch(k))n[k]=Math.round(+o[k]||0)});
+      [['salud','salM'],['pension','penM'],['fsp','fspM']].forEach(([k,m])=>{if(ch(k))n[m]=Math.round(+o[k]||0)});
+      n.obs=obs;try{persistLater('nov',P.key)}catch(e){}bitacora(`Editó la nómina ${P.key} de ${r.e.nombre}: ${cambios.join(', ')||'observación'}`)}
+    saveLocal();renderNomina();toast('Cambios guardados');setTimeout(()=>{const j=ULTIMA.findIndex(x=>x.e.id===r.e.id);if(j>=0){UI.det=j;renderDetalle(ULTIMA[j],P)}},50)}}
 function renderDetalle(r,P){
   const H=r.horas,c=S.config,cu=cuenta(r.e.id);let rows='';
   for(let f=P.ini;f<=P.fin;f=addDays(f,1)){
