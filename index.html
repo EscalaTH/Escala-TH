@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='19/11/2026 16:25';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='20/11/2026 13:56';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -5503,7 +5503,7 @@ async function portalSols(){if(PT.cargando||!NUBE.url)return;PT.cargando=true;co
 const portalPend=()=>(PT.sols||[]).filter(x=>x.estado==='pendiente');
 function portalAuto(){try{return !PORTAL&&NUBE.url&&S&&S.portal&&Object.keys(S.portal.emp||{}).length}catch(e){return false}}
 setInterval(()=>{if(portalAuto()&&document.visibilityState==='visible'&&(!PT.t||Date.now()-PT.t>120000))portalSols()},30000);
-function renderPortalAdmin(){const P=ptD(),url=portalUrl(),lst=empAll().filter(e=>!e.excluido).sort((a,b)=>(a.retiro?1:0)-(b.retiro?1:0)||a.nombre.localeCompare(b.nombre));
+function renderPortalAdmin(){const P=ptD(),url=portalUrl(),lst=empAll().sort((a,b)=>(a.retiro?1:0)-(b.retiro?1:0)||a.nombre.localeCompare(b.nombre));
   const pend=(PT.sols||[]).filter(x=>x.estado==='pendiente').length;let h='';
   if(!NUBE.url)return `<div class="alert">El portal de empleados funciona con la nube. Conéctela primero en <b>Parámetros → Trabajar en varios computadores</b>.</div>`;
   h+=`<div class="panel"><h3 style="margin-top:0">Portal de empleados</h3><p class="note">Cada empleado entra con su cédula y una clave, y descarga su <b>certificado laboral con el sello de la empresa</b> y sus <b>desprendibles de nómina</b>. Si necesita el certificado firmado por el representante legal, lo solicita desde el portal y la solicitud llega aquí.</p>
@@ -5524,8 +5524,8 @@ function bindPortalAdmin(){const g=id=>document.getElementById(id);if(!g('ptPub'
   g('ptSol').onclick=()=>{PT.t=0;portalSols();renderTH()};try{bindPortalDocs();bindPortalLinks()}catch(e){console.error(e)}if(!PT.sols&&!PT.cargando)portalSols();
   g('ptSello').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.config.sello=r.result;saveLocal();renderTH();toast('Sello actualizado: presione «Actualizar portal»')};r.readAsDataURL(f)};
   const pc=g('ptCed');if(pc)pc.onclick=()=>{RIT.ask='ptCed';renderTH()};const pn=g('ptCedNo');if(pn)pn.onclick=()=>{RIT.ask=null;renderTH()};
-  const po=g('ptCedOk');if(po)po.onclick=async()=>{RIT.ask=null;po.disabled=true;let n=0;for(const e of empAll())if(!e.excluido&&e.doc){await portalClave(e.id);n++}await portalPublicar();toast(`Clave = cédula para ${n} empleados`);renderTH()};
-  g('ptAll').onclick=async()=>{let n=0;for(const e of empAll())if(!e.excluido&&e.doc&&!ptD().emp[e.id]){await portalClave(e.id);n++}toast(n?`${n} claves creadas: presione «Actualizar portal»`:'Todos tienen clave');renderTH()};
+  const po=g('ptCedOk');if(po)po.onclick=async()=>{RIT.ask=null;po.disabled=true;let n=0;for(const e of empAll())if(e.doc){await portalClave(e.id);n++}await portalPublicar();toast(`Clave = cédula para ${n} empleados`);renderTH()};
+  g('ptAll').onclick=async()=>{let n=0;for(const e of empAll())if(e.doc&&!ptD().emp[e.id]){await portalClave(e.id);n++}toast(n?`${n} claves creadas: presione «Actualizar portal»`:'Todos tienen clave');renderTH()};
   document.querySelectorAll('[data-ptk]').forEach(b=>b.onclick=async()=>{await portalClave(b.dataset.ptk);renderTH();toast('Clave creada: presione «Actualizar portal»')});
   document.querySelectorAll('[data-ptm]').forEach(b=>b.onclick=()=>{const e=S.emps[b.dataset.ptm],pe=ptD().emp[e.id];const m=`Hola ${capi(e.nombre.split(' ')[0])}. Desde el portal de empleados de ${S.config.empresa} puede descargar su certificado laboral y sus desprendibles de nómina.\n\nEnlace: ${portalUrl()}\nCédula: ${e.doc}\nClave: ${pe.pin}\n\nSu clave inicial es su número de cédula; al entrar le recomendamos cambiarla.`;navigator.clipboard.writeText(m).then(()=>toast('Mensaje copiado'))});
   bindPtSols()}
