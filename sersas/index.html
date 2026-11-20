@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 18:32';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='20/11/2026 18:49';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1123,7 +1123,14 @@ const hCorta=t=>{let [h,m]=t.split(':').map(Number);const ap=h>=12?'p':'a';h=h%1
 function resumenTurno(t){const g=[];t.d.forEach((r,i)=>{const k=r?hCorta(r.i)+'–'+hCorta(r.f):'descansa',u=g[g.length-1];if(u&&u.k===k)u.b=i;else g.push({a:i,b:i,k})});return g.map(x=>`${DIASL[x.a]}${x.b>x.a?'–'+DIASL[x.b]:''} ${x.k}`).join(' · ')+(t.fest?` · Fest ${hCorta(t.fest.i)}–${hCorta(t.fest.f)}`:'')}
 const fmtHH=t=>{let [h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';h=h%12||12;return h+':'+String(m).padStart(2,'0')+ap};
 function hTexto(code,f){if(!code)return '';if(esHCod(code))return HCOD_TXT[code];const hn=RX_HN.exec(code);if(hn)return hn[1].replace('.',',')+' HORAS';const r=hRango(code,f);return r?fmtHH(r.i)+' - '+fmtHH(r.f)+(r.t&&r.t.nombre?' '+r.t.nombre.toUpperCase():r.s?' '+r.s.toUpperCase():''):code} // siempre el nombre completo del turno (p. ej. INTERMEDIO PASEO)
-function hEmps(L){const fin=addDays(L,6);return empAll().filter(e=>(!UI.sede||e.sede===UI.sede)&&(!e.ingreso||e.ingreso<=fin)&&(!e.retiro||e.retiro>=L)&&(e.activo!==false||(e.retiro&&e.retiro>=L)))}
+function hCat(e,L){ // orden de los horarios: directivos, Paseo, Outlet, Morato, administrativos, rotativos y servicios generales
+  const t=((hFila(e.id,L)||{}).t)||'',sd=nrm(e.sede||''),cg=nrm(e.cargo||'');
+  if(/^SG/.test(t)||/servicio|aseo|oficios varios/.test(cg))return 6;
+  if(/^A[123]$/.test(t)||(!t&&/administrativ|contab|analista|recepcion|tesorer/.test(cg)&&!/director|gerente/.test(cg)))return 4;
+  if(/directiv/.test(sd)||t==='DI'||/director|gerente/.test(cg))return 0;
+  if(/paseo/.test(sd))return 1;if(/outlet/.test(sd))return 2;if(/morato/.test(sd))return 3;if(/rotativ/.test(sd))return 5;return 7}
+function hEmps(L){const fin=addDays(L,6);const r=empAll().filter(e=>(!UI.sede||e.sede===UI.sede)&&(!e.ingreso||e.ingreso<=fin)&&(!e.retiro||e.retiro>=L)&&(e.activo!==false||(e.retiro&&e.retiro>=L)));
+  if(!esEscalautos())return r;const k=new Map(r.map(e=>[e.id,hCat(e,L)]));return r.slice().sort((a,b)=>k.get(a.id)-k.get(b.id)||(+a.num||9999)-(+b.num||9999)||a.nombre.localeCompare(b.nombre))}
 function hGen(fila){fila.c=fila.c||['','','','','','',''];const t=hTurno(fila.t);for(let i=0;i<7;i++){if(i===fila.dd)fila.c[i]='D';else if(fila.c[i]==='D'||!esHCod(fila.c[i]))fila.c[i]=t&&!t.d[hk(i)]?'':(fila.t||'')}}
 function hSet(L,id){const w=S.hor[L]||(S.hor[L]={asig:{}});w.asig=w.asig||{};return w.asig[id]||(w.asig[id]={t:'',alm:'',dd:-1,c:['','','','','','','']})}
 function hGuardar(L){persistLater('hor',L)}
@@ -1196,7 +1203,7 @@ function hSemPanel(){return `<div style="display:flex;gap:8px;align-items:center
    <p class="note" style="margin:6px 0 0">Al cambiar el día de inicio, los horarios ya guardados se reacomodan sin perder ningún día. Ocultar un día solo lo quita de la vista: si alguien tiene turno ese día, se sigue pagando.</p>`}
 function gruposTurnos(){ // turnos agrupados por sede (Escalautos) para la leyenda y las listas
   const T=hTurnos(),usados=new Set(),ord=t=>{const n=nrm(t.nombre);return /^apertura/.test(n)?0:/^intermedio/.test(n)?1:/^cierre/.test(n)?2:/servicios/.test(n)?3:4},grupos=[];
-  if(esEscalautos())[['Outlet','outlet'],['Paseo','paseo'],['Morato','morato']].forEach(([lb,k])=>{const L=T.filter(t=>nrm(t.nombre).includes(k)).sort((a,b)=>ord(a)-ord(b));L.forEach(t=>usados.add(t.code));if(L.length)grupos.push([`Sede ${lb}`,L])});
+  if(esEscalautos())[['Paseo','paseo'],['Outlet','outlet'],['Morato','morato']].forEach(([lb,k])=>{const L=T.filter(t=>nrm(t.nombre).includes(k)).sort((a,b)=>ord(a)-ord(b));L.forEach(t=>usados.add(t.code));if(L.length)grupos.push([`Sede ${lb}`,L])});
   if(esEscalautos()){const dir=T.filter(t=>!usados.has(t.code)&&/director|administrativo/i.test(t.nombre));if(dir.length){dir.forEach(t=>usados.add(t.code));grupos.push(['Directivos y administrativos',dir])}}
   const otros=T.filter(t=>!usados.has(t.code)).sort((a,b)=>ord(a)-ord(b));if(otros.length)grupos.push([grupos.length?'Otros turnos':'Turnos',otros]);return grupos}
 function leyendaTurnos(){
@@ -1243,7 +1250,7 @@ function hhParse(t,dom){ // texto libre -> código interno ('' vacío, null = no
 function hhVer(code,fe){if(!code)return '';if(code==='T')return 'TRABAJA';if(esHCod(code))return code;const hn=RX_HN.exec(code);if(hn)return hn[1].replace('.',',');const r=hRango(code,fe||todayCO());if(!r)return code;const f=t=>{let [h,mi]=t.split(':').map(Number);return h+(mi?':'+String(mi).padStart(2,'0'):'')};return `${f(r.i)}-${f(r.f)}`}
 function sedesLista(){const L=[...(S.config.sedes||[])];empAll().forEach(e=>{if(e.sede&&!L.includes(e.sede))L.push(e.sede)});if(esEscalautos())['Directivos','Paseo Villa del Río','Outlet Factory','Morato','Rotativo'].forEach(x=>{if(!L.some(y=>nrm(y)===nrm(x)))L.push(x)});return L}
 function selSede(e){return `<select data-hfs="${e.id}" title="Cambiar de sede" style="display:block;margin-top:3px;font-size:.78rem;padding:2px 4px;max-width:190px"><option value="">Sin sede</option>${sedesLista().map(x=>`<option${e.sede===x?' selected':''}>${esc(x)}</option>`).join('')}</select>`}
-const GRUPOS_H=[['mor','Morato',['AM','CM','IM','SGM']],['out','Outlet',['AO','CO','IO','SGO']],['pas','Paseo',['AP','CP','IPS','SGP']],['dir','Directivos',['DI','A1','A2','A3']],['otr','Rotativos y otros',['SGO','SGP','SGM','A1','A2','A3']]];
+const GRUPOS_H=[['dir','Directivos',['DI','A1','A2','A3']],['pas','Paseo',['AP','CP','IPS','SGP']],['out','Outlet',['AO','CO','IO','SGO']],['mor','Morato',['AM','CM','IM','SGM']],['otr','Rotativos y otros',['SGO','SGP','SGM','A1','A2','A3']]];
 function grupoH(e){const s=nrm(e.sede||''),c=nrm(e.cargo||'');if(/directiv/.test(s))return 'dir';if(/morato/.test(s))return 'mor';if(/outlet/.test(s))return 'out';if(/paseo/.test(s))return 'pas';if(!s&&/gerente|director/.test(c))return 'dir';return 'otr'}
 function turnoOpts(fila,g){const T=hTurnos(),pri=((GRUPOS_H.find(x=>x[0]===g)||[])[2]||[]),A=T.filter(t=>pri.includes(t.code)),B=T.filter(t=>!pri.includes(t.code)),o=t=>`<option value="${esc(t.code)}"${fila.t===t.code?' selected':''}>${esc(t.nombre)}</option>`;
   return `<option value="">—</option>${A.length?A.map(o).join('')+`<optgroup label="Otros turnos">${B.map(o).join('')}</optgroup>`:T.map(o).join('')}`}
