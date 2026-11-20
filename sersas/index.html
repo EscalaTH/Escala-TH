@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 18:10';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='20/11/2026 18:17';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1474,31 +1474,31 @@ function previewImp(){
 /* ---------- Excel del mes con el formato de la plantilla ---------- */
 /* hoja de una semana con los colores de la plantilla de horarios de la empresa (encabezado morado, filas azul/lila, domingo y festivos en amarillo, descanso en morado) */
 function hojaSemanaXls(wb,L){
-  const c=S.config,dias=[0,1,2,3,4,5,6].map(i=>addDays(L,i)),FILL=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}}),th={style:'thin',color:{argb:'FF000000'}},md={style:'medium',color:{argb:'FF000000'}},B=(t,l,b,r)=>({top:t,left:l,bottom:b,right:r});
+  const c=S.config,dias=hDiasX([0,1,2,3,4,5,6].map(i=>addDays(L,i))),ND=dias.length,UL=dias[ND-1],FILL=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}}),th={style:'thin',color:{argb:'FF000000'}},md={style:'medium',color:{argb:'FF000000'}},B=(t,l,b,r)=>({top:t,left:l,bottom:b,right:r});
   const MOR='FF8064A2',MOR2='FF604A7B',AZUL='FFB8CCE4',LILA='FFE5DFEC',AMA='FFFFFF00',F9=(o={})=>({name:'Calibri',size:9,...o});
-  const ws=wb.addWorksheet(`${String(D(L).getUTCDate()).padStart(2,'0')} ${MESES[D(L).getUTCMonth()]} al ${D(dias[6]).getUTCDate()} ${MESES[D(dias[6]).getUTCMonth()]}`.replace(/[\\/?*[\]:]/g,''),{views:[{state:'frozen',xSplit:3,ySplit:8,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:1}});
-  const cab=['SEDE','CARGO','EMPLEADO','TURNO DE LA SEMANA','ALMUERZO','DÍA DE DESCANSO'],fin=['DESCANSOS PENDIENTES','HR SEMANALES','HR RECARGO DOM/FEST','HR EXTRA'],N=6+7+fin.length;
+  const ws=wb.addWorksheet(`${String(D(L).getUTCDate()).padStart(2,'0')} ${MESES[D(L).getUTCMonth()]} al ${D(UL).getUTCDate()} ${MESES[D(UL).getUTCMonth()]}`.replace(/[\\/?*[\]:]/g,''),{views:[{state:'frozen',xSplit:3,ySplit:8,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:1}});
+  const cab=['SEDE','CARGO','EMPLEADO','TURNO DE LA SEMANA','ALMUERZO','DÍA DE DESCANSO'],fin=['DESCANSOS PENDIENTES','HR SEMANALES','HR RECARGO DOM/FEST','HR EXTRA'],N=6+ND+fin.length;
   ws.getCell(1,1).value=c.empresa||'';ws.getCell(1,1).font=F9({bold:true,size:11,color:{argb:'FF1F4E78'}});
-  ws.getCell(3,1).value='Lunes de la semana:';ws.getCell(3,1).font=F9({bold:true});
+  ws.getCell(3,1).value='Inicio de la semana:';ws.getCell(3,1).font=F9({bold:true});
   const d3=ws.getCell(3,3);d3.value=new Date(L+'T12:00:00');d3.numFmt='d/m/yyyy';d3.fill=FILL('FFFFF2CC');d3.font=F9({bold:true,color:{argb:'FF0000FF'}});d3.alignment={horizontal:'center'};d3.border=B(th,th,th,th);
-  ws.getCell(3,4).value=`Semana del ${fCorta(dias[0])} al ${fCorta(dias[6])}`;ws.getCell(3,4).font=F9({bold:true,color:{argb:'FFC00000'}});
+  ws.getCell(3,4).value=`Semana del ${fCorta(dias[0])} al ${fCorta(UL)}`;ws.getCell(3,4).font=F9({bold:true,color:{argb:'FFC00000'}});
   const hd=(r,col,v,fill,o={})=>{const cl=ws.getCell(r,col);cl.value=v;cl.fill=FILL(fill);cl.font=F9({bold:true,color:{argb:fill===AMA?'FF000000':'FFFFFFFF'},...o});cl.alignment={horizontal:'center',vertical:'middle',wrapText:true};cl.border=B(md,md,md,md)};
   cab.forEach((t,i)=>{ws.mergeCells(6,i+1,8,i+1);hd(6,i+1,t,i<2?MOR:MOR2)});
-  dias.forEach((f,i)=>{const col=7+i,df=dow(f)===0||!!festivo(f),fe=festivo(f);hd(6,col,diasWL()[i].toUpperCase().replace('MIERCOLES','MIÉRCOLES').replace('SABADO','SÁBADO')+(fe&&dow(f)!==0?'\nFESTIVO':fe?' · FESTIVO':''),df?AMA:MOR2);ws.mergeCells(7,col,8,col);const dc=ws.getCell(7,col);hd(7,col,new Date(f+'T12:00:00'),df?AMA:MOR2);dc.numFmt='d/m/yyyy'});
-  fin.forEach((t,i)=>{const col=14+i;ws.mergeCells(6,col,8,col);hd(6,col,t,MOR2)});
+  dias.forEach((f,i)=>{const col=7+i,df=dow(f)===0||!!festivo(f),fe=festivo(f);hd(6,col,diasWL()[i%7].toUpperCase().replace('MIERCOLES','MIÉRCOLES').replace('SABADO','SÁBADO')+(fe&&dow(f)!==0?'\nFESTIVO':fe?' · FESTIVO':''),df?AMA:MOR2);ws.mergeCells(7,col,8,col);const dc=ws.getCell(7,col);hd(7,col,new Date(f+'T12:00:00'),df?AMA:MOR2);dc.numFmt='d/m/yyyy'});
+  fin.forEach((t,i)=>{const col=7+ND+i;ws.mergeCells(6,col,8,col);hd(6,col,t,MOR2)});
   ws.getRow(6).height=24;ws.getRow(7).height=15;ws.getRow(8).height=15;
   const CF={D:['FF7030A0','FFFFFFFF'],V:['FFC6E0B4','FF000000'],I:['FFF8CBAD','FF000000'],IL:['FFF8CBAD','FF000000'],L:['FFFFD966','FF000000'],X:['FFFFD966','FF000000'],S:['FFFFD966','FF000000']};
   let r=9;hEmps(L).forEach(e=>{const f=hFila(e.id,L);if(!f||!f.c||!f.c.some(x=>x))return;const o=valorSemana(e,L),t=hTurno(f.t),dir=f.t==='DI'||e.excluido,base=dir?AZUL:LILA;
     const v=[(e.sede||'').toUpperCase(),(e.cargo||'').toUpperCase(),e.nombre,t?t.nombre.toUpperCase():'',f.alm?f.alm.split('-').map(fmtHH).join(' - '):'',f.dd>=0?diasWL()[f.dd].toUpperCase().replace('MIERCOLES','MIÉRCOLES').replace('SABADO','SÁBADO'):'',
-      ...dias.map((d,i)=>{const cd=f.c[i]||'';if(cd==='D')return 'DESCANSO';const tx=hTexto(cd,d);return tx.replace(/^(\d{1,2}:\d{2}[ap]m - \d{1,2}:\d{2}[ap]m) /,'$1\n')}),'',Math.round(o.min/6)/10,e.sinRecDF?'NO APLICA':Math.round(o.df/6)/10,Math.round(o.ext/6)/10];
-    const row=ws.getRow(r);row.height=/\n/.test(v.slice(6,13).join(''))?30:21.75;
-    v.forEach((x,i)=>{const cl=row.getCell(i+1),cd=i>=6&&i<13?(f.c[i-6]||''):'',d=i>=6&&i<13?dias[i-6]:null;cl.value=x;cl.font=F9({bold:i>=14});cl.alignment={horizontal:'center',vertical:'middle',wrapText:true};cl.border=B(th,i===0?md:th,th,i===N-1?md:th);
-      let fl=base,fc='FF000000';if(cd&&CF[cd]){[fl,fc]=CF[cd]}else if(d&&(dow(d)===0||festivo(d))&&cd){fl=AMA;cl.font=F9({bold:true})}else if(d&&trabDesc(f,i-6)){fl=AMA;cl.font=F9({bold:true})}
-      cl.fill=FILL(fl);if(fc!=='FF000000')cl.font=F9({color:{argb:fc}});if(i>=14&&i<=16)cl.numFmt='0.0'});
+      ...dias.map((d,i)=>{const cd=(i<7?f.c[i]:hSig(L,e.id).c[0])||'';if(cd==='D')return 'DESCANSO';const tx=hTexto(cd,d);return tx.replace(/^(\d{1,2}:\d{2}[ap]m - \d{1,2}:\d{2}[ap]m) /,'$1\n')}),'',Math.round(o.min/6)/10,e.sinRecDF?'NO APLICA':Math.round(o.df/6)/10,Math.round(o.ext/6)/10];
+    const row=ws.getRow(r);row.height=/\n/.test(v.slice(6,6+ND).join(''))?30:21.75;
+    v.forEach((x,i)=>{const cl=row.getCell(i+1),dI=i-6,enD=i>=6&&i<6+ND,cd=enD?((dI<7?f.c[dI]:hSig(L,e.id).c[0])||''):'',d=enD?dias[dI]:null;cl.value=x;cl.font=F9({bold:i>=7+ND});cl.alignment={horizontal:'center',vertical:'middle',wrapText:true};cl.border=B(th,i===0?md:th,th,i===N-1?md:th);
+      let fl=base,fc='FF000000';if(cd&&CF[cd]){[fl,fc]=CF[cd]}else if(d&&(dow(d)===0||festivo(d))&&cd){fl=AMA;cl.font=F9({bold:true})}else if(d&&dI<7&&trabDesc(f,dI)){fl=AMA;cl.font=F9({bold:true})}
+      cl.fill=FILL(fl);if(fc!=='FF000000')cl.font=F9({color:{argb:fc}});if(i>=7+ND&&i<=9+ND)cl.numFmt='0.0'});
     r++});
   if(r===9){ws.getCell(9,1).value='Sin horario registrado esta semana';ws.getCell(9,1).font=F9({italic:true})}
   else{const lr=ws.getRow(r-1);for(let i=1;i<=N;i++){const cl=lr.getCell(i);cl.border={...cl.border,bottom:md}}}
-  [18,18,26,14,14,13,16,16,16,16,16,16,16,12,10,12,10].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  [18,18,26,14,14,13,...Array(ND).fill(16),12,10,12,10].forEach((w,i)=>ws.getColumn(i+1).width=w);
   ws.getCell(r+1,1).value='Convenciones:';ws.getCell(r+1,1).font=F9({bold:true});
   [['DESCANSO','FF7030A0','FFFFFFFF'],['DOMINGO / FESTIVO','FFFFFF00','FF000000'],['VACACIONES','FFC6E0B4','FF000000'],['INCAPACIDAD','FFF8CBAD','FF000000'],['PERMISO / LICENCIA','FFFFD966','FF000000'],['DIRECTIVOS','FFB8CCE4','FF000000'],['DEMÁS CARGOS','FFE5DFEC','FF000000']].forEach(([t,f,k],i)=>{const cl=ws.getCell(r+1,2+i);cl.value=t;cl.fill=FILL(f);cl.font=F9({bold:true,color:{argb:k}});cl.alignment={horizontal:'center',vertical:'middle',wrapText:true};cl.border=B(th,th,th,th)});
   return ws;
