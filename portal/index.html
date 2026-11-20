@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 17:40';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='20/11/2026 18:02';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1139,7 +1139,8 @@ function renderHor(){
   if(UI.hImp)h+=previewImp();
   if(!emps.length){$('#v-hor').innerHTML=h+`<div class="panel empty"><b>No hay empleados${UI.sede?' en este centro de costo':''}</b>Agréguelos en la pestaña Empleados.</div>`;bindHor();lockUI();return}
   const tOpts=sel=>[`<option value=""${!sel?' selected':''}>—</option>`,...hTurnos().map(t=>`<option value="${esc(t.code)}"${sel===t.code?' selected':''}>${esc(t.nombre)}</option>`)].join('');
-  const cOpts=sel=>{const cust=RX_HH.test(sel||'');return [`<option value=""${!sel?' selected':''}>—</option>`,...hTurnos().map(t=>`<option value="${esc(t.code)}"${sel===t.code?' selected':''}>${esc(t.code)}</option>`),...HCOD.map(([k,n])=>`<option value="${k}"${sel===k?' selected':''} title="${esc(n)}">${k}</option>`),`<option value="*"${cust?' selected':''}>Otro…</option>`].join('')};
+  const cOpts=sel=>{const cust=RX_HH.test(sel||''),op=(v,c,n)=>`<option value="${esc(v)}" data-c="${esc(c)}" data-n="${esc(n)}"${sel===v?' selected':''}>${esc(sel===v?c:n)}</option>`;
+    return [`<option value=""${!sel?' selected':''}>—</option>`,...gruposTurnos().map(([g,L])=>`<optgroup label="${esc(g)}">${L.map(t=>op(t.code,t.code,t.nombre)).join('')}</optgroup>`),`<optgroup label="Novedades">${HCOD.map(([k,n])=>op(k,k,n)).join('')}</optgroup>`,`<option value="*"${cust?' selected':''}>Otro… (horario a mano)</option>`].join('')};
   const bg=c=>{const t=hTurno(c);if(t)return `color-mix(in srgb, ${t.color} 28%, var(--surface))`;if(c==='D')return 'var(--paper)';if(c==='V'||c==='L')return 'var(--accent-soft)';if(c&&esHCod(c))return 'var(--bad-soft)';if(RX_HH.test(c||''))return 'color-mix(in srgb, #8a6fd1 22%, var(--surface))';return 'var(--surface)'};
   h+=hSemDet();
   h+=`<div class="panel scroll fija"><table class="malla${hOcultos().map(d=>' hoc'+d).join('')}"><thead><tr><th class="sticky">Empleado</th><th>Turno de la semana</th><th>Almuerzo</th><th>Día de descanso</th>${hDiasX(dias).map((f,i)=>{const fe=festivo(f);return `<th data-dw="${dow(f)}" class="day${dow(f)===0?' dom':''}${fe?' fest':''}${i>6?' xsig':''}">${diasW()[i%7]}<span class="d">${fd(f)}</span>${fe?`<span class="tag" title="${esc(fe)}">Festivo</span>`:''}</th>`}).join('')}<th class="n">Horas semana</th><th class="n">Horas de recargo dominical / festivo</th><th class="n">Horas extra</th><th>Revisión</th></tr></thead><tbody>`;
@@ -1187,15 +1188,14 @@ function hSemPanel(){return `<div style="display:flex;gap:8px;align-items:center
    <span>· Días que se muestran:</span>${[1,2,3,4,5,6,0].map(n=>`<label class="chk" style="margin:0"><input type="checkbox" data-hdia="${n}"${hOcultos().includes(n)?'':' checked'}> ${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][n]}</label>`).join('')}</div>
    <label class="chk" style="margin:8px 0 0"><input type="checkbox" id="hExtraC"${hExtra()?' checked':''}> Mostrar también el ${['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][semIniD()]} siguiente (8 días en pantalla, por ejemplo de domingo a domingo)</label>
    <p class="note" style="margin:6px 0 0">Al cambiar el día de inicio, los horarios ya guardados se reacomodan sin perder ningún día. Ocultar un día solo lo quita de la vista: si alguien tiene turno ese día, se sigue pagando.</p>`}
-function leyendaTurnos(){ // turnos agrupados por sede: apertura, intermedio, cierre y servicios generales
-  const T=hTurnos(),usados=new Set(),ord=t=>{const n=nrm(t.nombre);return /^apertura/.test(n)?0:/^intermedio/.test(n)?1:/^cierre/.test(n)?2:/servicios/.test(n)?3:4};
-  const item=t=>`<div class="legI"><i style="background:${esc(t.color)}"></i><div><b>${esc(t.nombre)}</b> <small class="status">${esc(t.code)}</small><div class="status">${resumenTurno(t)}</div></div></div>`;
-  const grupos=[];
+function gruposTurnos(){ // turnos agrupados por sede (Escalautos) para la leyenda y las listas
+  const T=hTurnos(),usados=new Set(),ord=t=>{const n=nrm(t.nombre);return /^apertura/.test(n)?0:/^intermedio/.test(n)?1:/^cierre/.test(n)?2:/servicios/.test(n)?3:4},grupos=[];
   if(esEscalautos())[['Outlet','outlet'],['Paseo','paseo'],['Morato','morato']].forEach(([lb,k])=>{const L=T.filter(t=>nrm(t.nombre).includes(k)).sort((a,b)=>ord(a)-ord(b));L.forEach(t=>usados.add(t.code));if(L.length)grupos.push([`Sede ${lb}`,L])});
-  const resto=T.filter(t=>!usados.has(t.code));
-  if(esEscalautos()){const dir=resto.filter(t=>/director|administrativo/i.test(t.nombre));if(dir.length){dir.forEach(t=>usados.add(t.code));grupos.push(['Directivos y administrativos',dir])}}
-  const otros=T.filter(t=>!usados.has(t.code)).sort((a,b)=>ord(a)-ord(b));if(otros.length)grupos.push([grupos.length?'Otros turnos':'Turnos',otros]);
-  return `<div class="legT">${grupos.map(([g,L])=>`<div class="legG"><div class="legGt">${esc(g)}</div>${L.map(item).join('')}</div>`).join('')}</div>`}
+  if(esEscalautos()){const dir=T.filter(t=>!usados.has(t.code)&&/director|administrativo/i.test(t.nombre));if(dir.length){dir.forEach(t=>usados.add(t.code));grupos.push(['Directivos y administrativos',dir])}}
+  const otros=T.filter(t=>!usados.has(t.code)).sort((a,b)=>ord(a)-ord(b));if(otros.length)grupos.push([grupos.length?'Otros turnos':'Turnos',otros]);return grupos}
+function leyendaTurnos(){
+  const item=t=>`<div class="legI"><i style="background:${esc(t.color)}"></i><div><b>${esc(t.nombre)}</b> <small class="status">${esc(t.code)}</small><div class="status">${resumenTurno(t)}</div></div></div>`;
+  return `<div class="legT">${gruposTurnos().map(([g,L])=>`<div class="legG"><div class="legGt">${esc(g)}</div>${L.map(item).join('')}</div>`).join('')}</div>`}
 function editorTurnos(){
   const T=hTurnos(),ti=v=>`<input type="time" value="${esc(v||'')}" style="padding:3px;font-size:.78rem;min-width:84px">`;
   let h=`<div class="panel" style="padding:10px 14px;margin-bottom:10px">${hSemPanel()}</div>`;
@@ -1376,6 +1376,7 @@ function bindHor(){
     else if(k==='dd'){f.dd=+x.value;hGen(f)}
     else if(k==='alm'){const v=x.value.replace(/\s/g,'').replace(/^(\d):/,'0$1:');if(v&&!RX_HH.test(v)){toast('Escriba el almuerzo así: 13:00-14:00');x.value=f.alm||'';return}f.alm=v}
     hGuardar(L);re()});
+  document.querySelectorAll('#v-hor td.cell select').forEach(s=>{const lar=()=>[...s.options].forEach(o=>{if(o.dataset.n)o.textContent=o.dataset.n}),cor=()=>{const o=s.selectedOptions[0];if(o&&o.dataset.c)o.textContent=o.dataset.c};s.addEventListener('mousedown',lar);s.addEventListener('focus',lar);s.addEventListener('keydown',lar);s.addEventListener('blur',()=>{lar();cor()});s.addEventListener('change',()=>{lar();cor()})});
   document.querySelectorAll('#v-hor td.cell select').forEach(s=>s.onchange=()=>{const i0=+s.dataset.i,LL=i0>6?addDays(L,7):L,f=hSet(LL,s.dataset.e),i=i0%7;
     if(s.value==='*'){const r=hRango(f.c[i],addDays(LL,i))||{i:'09:00',f:'18:00'};f.c[i]=r.i+'-'+r.f}else f.c[i]=s.value;
     if(s.value==='D'){if(f.dd<0||!S.config.domOrdinario)f.dd=i}else if(f.dd===i&&!(S.config.domOrdinario&&s.value&&!esHCod(s.value)))f.dd=-1;hGuardar(LL);re()});
