@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 18:49';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='20/11/2026 18:53';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -320,7 +320,7 @@ const DEF_CONFIG={
   pNoc:35, pHED:25, pHEN:75, dfAuto:true, pDF:90, pagarDF:true, dfHoraCompleta:true,
   salud:4, pension:4, caja:4, pIncGen:66.67, exonerado:true,
   arl:{I:0.522,II:1.044,III:2.436,IV:4.35,V:6.96},
-  sedes:['Directivos','Paseo Villa del Río','Outlet Factory','Rotativo','Morato'],
+  sedes:['Directivos','Paseo Villa del Río','Outlet Factory','Rotativo','Morato','Taller Morato'],
   rotar:['T1','T2'],
   turnos:[
     {code:'T1',nombre:'Turno 9:30',color:'#e0a03a',lj:{ini:'09:30',fin:'17:00'},vs:{ini:'09:00',fin:'18:00'},df:{ini:'10:00',fin:'16:00'},desc:60,descDF:0},
@@ -1061,6 +1061,7 @@ function sembrarHor(D){ // carga una sola vez los horarios entregados por la emp
   if(nit.startsWith('901594919')&&(+c.hturnosV||0)<6){c.hturnos=c.hturnos||[];['IM','IO','IPS'].forEach(k=>{if(!c.hturnos.some(t=>t.code===k))c.hturnos.push(structuredClone(HT_ESC4.find(t=>t.code===k)))});c.hturnosV=6;ch=true} // horario intermedio en todas las sedes
   if(nit.startsWith('901594919')&&!c.semDomV){hMigrarSemana(D,true);c.semDomV=1;ch=true}
   if(nit.startsWith('901594919')&&c.sinExtras===undefined){c.sinExtras=true;ch=true}
+  if(nit.startsWith('901594919')&&!c.sedeTMV){c.sedes=Array.isArray(c.sedes)?c.sedes:[];if(!c.sedes.some(x=>/taller/i.test(x))){const i=c.sedes.findIndex(x=>/morato/i.test(x));c.sedes.splice(i<0?c.sedes.length:i+1,0,'Taller Morato')}c.sedeTMV=1;ch=true} // nueva sede: Taller Morato
   if(nit.startsWith('901594919')&&!c.sedesOrdV&&Array.isArray(c.sedes)){const O=['directivos','outlet','paseo','morato','rotativ'],ix=x=>{const z=nrm(x);const i=O.findIndex(o=>z.includes(o));return i<0?99:i};c.sedes=c.sedes.slice().sort((a,b)=>ix(a)-ix(b));c.sedesOrdV=1;ch=true} // nómina: directivos, Outlet, Paseo, Morato y rotativos // Escalautos: jornada de 42 h sin horas extras; lo adicional es recargo dominical // Escalautos: semana de horarios de domingo a sábado
   if(nit.startsWith('901182851')&&c.hturnosV!==2&&c.hturnosV!==3&&c.hturnosV!==4&&c.hturnosV!==5&&c.hturnosV!==6){c.hturnos=structuredClone(HT_FAR);c.hturnosV=6;if(c.domOrdinario===undefined)c.domOrdinario=true;if(c.sinExtras===undefined)c.sinExtras=true;ch=true}
   if(nit.startsWith('901182851')&&c.hturnosV===2){(c.hturnos||[]).forEach(t=>{if(t.code==='AP'||t.code==='CI'){t.alm=0;t.almH=''}});c.hturnosV=3;c.domOrdinario=true;if(c.sinExtras===undefined)c.sinExtras=true;ch=true}
@@ -1128,7 +1129,7 @@ function hCat(e,L){ // orden de los horarios: directivos, Paseo, Outlet, Morato,
   if(/^SG/.test(t)||/servicio|aseo|oficios varios/.test(cg))return 6;
   if(/^A[123]$/.test(t)||(!t&&/administrativ|contab|analista|recepcion|tesorer/.test(cg)&&!/director|gerente/.test(cg)))return 4;
   if(/directiv/.test(sd)||t==='DI'||/director|gerente/.test(cg))return 0;
-  if(/paseo/.test(sd))return 1;if(/outlet/.test(sd))return 2;if(/morato/.test(sd))return 3;if(/rotativ/.test(sd))return 5;return 7}
+  if(/paseo/.test(sd))return 1;if(/outlet/.test(sd))return 2;if(/taller/.test(sd))return 3.5;if(/morato/.test(sd))return 3;if(/rotativ/.test(sd))return 5;return 7}
 function hEmps(L){const fin=addDays(L,6);const r=empAll().filter(e=>(!UI.sede||e.sede===UI.sede)&&(!e.ingreso||e.ingreso<=fin)&&(!e.retiro||e.retiro>=L)&&(e.activo!==false||(e.retiro&&e.retiro>=L)));
   if(!esEscalautos())return r;const k=new Map(r.map(e=>[e.id,hCat(e,L)]));return r.slice().sort((a,b)=>k.get(a.id)-k.get(b.id)||(+a.num||9999)-(+b.num||9999)||a.nombre.localeCompare(b.nombre))}
 function hGen(fila){fila.c=fila.c||['','','','','','',''];const t=hTurno(fila.t);for(let i=0;i<7;i++){if(i===fila.dd)fila.c[i]='D';else if(fila.c[i]==='D'||!esHCod(fila.c[i]))fila.c[i]=t&&!t.d[hk(i)]?'':(fila.t||'')}}
@@ -5006,6 +5007,9 @@ function manualesBase(){
   M('m-sg','Servicios Generales','servicios generales','Administrativa','Asistente Administrativo','Operativo','Turnos rotativos de domingo a domingo','Mantener limpias, ordenadas y en buen estado las instalaciones y los vehículos exhibidos en las sedes.',
     ['Realizar el aseo y la desinfección de oficinas, baños, áreas comunes y zonas de exhibición.','Lavar y mantener presentados los vehículos exhibidos, según las indicaciones del área comercial.','Apoyar la atención básica de clientes (bebidas, orientación).','Reportar daños o necesidades de mantenimiento de las instalaciones.','Hacer uso adecuado de los insumos de aseo y llevar su control.','Movilizar vehículos únicamente cuando lo autorice su jefe directo.'],
     ['Uso y cuidado de insumos y elementos de aseo.'],'Bachiller o básica secundaria.','Seis (6) meses en labores similares.',['Orden','Responsabilidad','Servicio','Trabajo en equipo']),
+  M('m-ltm','Líder Taller Morato','lider taller|líder taller|jefe de taller|taller morato','Taller – Sede Morato','Gerente','Operativo – líder de área','Turnos rotativos de domingo a domingo (42 h semanales)','Coordinar la operación del taller de la sede Morato: el alistamiento, mantenimiento y reparación de los vehículos recibidos y vendidos, el personal y las herramientas del taller, de modo que los vehículos se entreguen a tiempo, en buen estado y con las normas de seguridad y salud en el trabajo.',
+    ['Recibir los vehículos que ingresan al taller con su inventario, estado y documentos, y registrar los trabajos que requieren.','Programar y distribuir los trabajos de alistamiento, mantenimiento y reparación entre el personal del taller, y verificar su calidad antes de la entrega.','Cotizar repuestos y servicios externos, solicitar su aprobación y controlar los costos de cada vehículo.','Llevar el control de los vehículos en el taller, los tiempos de entrega y los reportes diarios a la gerencia.','Velar por el buen uso, custodia e inventario de las herramientas, equipos y repuestos del taller.','Hacer cumplir las normas de seguridad y salud en el trabajo: uso de elementos de protección personal, orden y aseo, manejo de sustancias y residuos, y reportar los incidentes.','Coordinar con las sedes comerciales la entrega oportuna de los vehículos alistados para la venta.','Las demás funciones que le asigne su jefe inmediato, relacionadas con el cargo.'],
+    ['Vehículos, herramientas, equipos y repuestos del taller bajo su custodia.','Personal del taller a su cargo.'],'Técnico o tecnólogo en mecánica automotriz o afines.','Mínimo dos (2) años en talleres automotrices, preferiblemente con personal a cargo.',['Liderazgo','Conocimiento técnico automotriz','Organización','Orientación a la calidad','Seguridad y autocuidado']),
   M('m-th','Líder de Talento Humano','talento humano|lider talento','Talento humano','Gerente','Profesional','Dirección, confianza y manejo','Gestionar los procesos de talento humano: selección, contratación, nómina, bienestar, SST y relaciones laborales, conforme a la normativa vigente.',
     ['Adelantar los procesos de selección, contratación, inducción y retiro del personal.','Elaborar contratos, otrosíes, certificaciones laborales y liquidaciones.','Liquidar la nómina, la seguridad social y las prestaciones sociales.','Programar y controlar las mallas de turnos, vacaciones y novedades.','Adelantar los procesos disciplinarios con el debido proceso.','Coordinar el Sistema de Gestión de SST y los programas de bienestar y capacitación.','Mantener actualizadas las hojas de vida y los archivos del personal.'],
     ['Manejo de información salarial y personal reservada.'],'Profesional en psicología, administración, derecho o afines; preferiblemente con especialización en talento humano o SST.','Mínimo dos (2) años en cargos similares.',['Comunicación','Conocimiento de legislación laboral','Confidencialidad','Organización','Manejo de conflictos']),
@@ -5036,7 +5040,9 @@ const manuales=()=>{const ms=S.config.manuales;if(ms&&!S.config.migLiqV&&String(
   S.config.migLiqV=true}
   if(ms&&S.config.migLiqV!==2&&String(S.config.nit||'').replace(/\D/g,'').startsWith('901594919')){const a=ms.find(m=>m.id==='m-aux'||/auxiliar administrativ/i.test(m.cargo||''));
     if(a&&a.funciones){const k=a.funciones.findIndex(f=>FUNC_LIQV_ANT.includes(f));a.funciones=a.funciones.filter(f=>!FUNC_LIQV_ANT.includes(f));if(!a.funciones.includes(FUNC_LIQV[0]))a.funciones.splice(k<0?a.funciones.length:k,0,FUNC_LIQV[0])}
-    S.config.migLiqV=2}return ms||manualesBase()};
+    S.config.migLiqV=2}
+  if(ms&&!S.config.migLTM&&String(S.config.nit||'').replace(/\D/g,'').startsWith('901594919')){if(!ms.some(m=>m.id==='m-ltm'||/taller/i.test(m.cargo||''))){const n=manualesBase().find(m=>m.id==='m-ltm');if(n)ms.push(structuredClone(n))}S.config.migLTM=true}
+  return ms||manualesBase()};
 function manualDe(cargo){const n=' '+nrm(cargo||'').replace(/[^a-z0-9]+/g,' ').trim()+' ';if(!n.trim())return null;let best=null,bl=0;manuales().forEach(m=>String(m.alias||'').split('|').concat(m.cargo).forEach(a=>{a=nrm(a).replace(/[^a-z0-9]+/g,' ').trim();if(a&&n.includes(' '+a+' ')&&a.length>bl){best=m;bl=a.length}}));return best}
 function manualXml(m,e){
   const T=(t,o={})=>wR(t,{sz:20,...o}),fila=(a,b)=>[{t:a,b:true,fill:'D9D9D9',sz:18},{t:b,sz:18}];
