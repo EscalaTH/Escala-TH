@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 18:17';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='20/11/2026 18:32';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1111,8 +1111,14 @@ function valorSemana(e,L){
   hSemana(e.id,L).forEach(x=>{o.min++;if(x.df)o.df++;
     if(!x.ext){if(x.df&&!e.sinRecDF)o.vDF+=vh*h*factorDF(x.f);if(x.noc){o.noc++;o.vNoc+=vh*h*c.pNoc/100}}
     else{o.ext++;if(x.df)o.extDF++;o.vExt+=vh*h*(1+(x.noc?c.pHEN:c.pHED)/100+(x.df&&!e.sinRecDF?rateDF(x.f):0))}});
-  return o;
+  o.fest=hFestDesc(e,L);return o;
 }
+function hFestDesc(e,L){ // minutos de festivos entre semana que el turno no trabaja: descanso remunerado (cuentan para las 42 h)
+  const fila=hFila(e.id,L);if(!fila||!fila.c)return 0;let m=0;
+  for(let i=0;i<7;i++){const f=addDays(L,i);if(!festivo(f)||dow(f)===0)continue;if(e.ingreso&&f<e.ingreso)continue;if(e.retiro&&f>e.retiro)continue;
+    const cd=fila.c[i]||fila.t||'';if(cd==='D'||esHCod(cd)||hRango(cd,f))continue;const t=hTurno(cd)||hTurno(fila.t);if(!t)continue;const k=(dow(f)+6)%7,r=t.d[k];if(!r||!r.i||!r.f)continue;
+    let a=toMin(r.i),b=toMin(r.f);if(b<=a)b+=1440;let tot=b-a;const al=+t.alm||0;if(al&&tot>300)tot-=al;m+=tot}
+  return m}
 const hCorta=t=>{let [h,m]=t.split(':').map(Number);const ap=h>=12?'p':'a';h=h%12||12;return h+(m?':'+String(m).padStart(2,'0'):'')+ap};
 function resumenTurno(t){const g=[];t.d.forEach((r,i)=>{const k=r?hCorta(r.i)+'–'+hCorta(r.f):'descansa',u=g[g.length-1];if(u&&u.k===k)u.b=i;else g.push({a:i,b:i,k})});return g.map(x=>`${DIASL[x.a]}${x.b>x.a?'–'+DIASL[x.b]:''} ${x.k}`).join(' · ')+(t.fest?` · Fest ${hCorta(t.fest.i)}–${hCorta(t.fest.f)}`:'')}
 const fmtHH=t=>{let [h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';h=h%12||12;return h+':'+String(m).padStart(2,'0')+ap};
@@ -1162,7 +1168,7 @@ function renderHor(){
       if(S.config.domOrdinario&&fila.c.some((x,i)=>trabDesc(fila,i)))pills.push('<span class="pill warn">Trabajó su día de descanso: se paga recargo</span>');
       if(domT&&!fila.c.includes('D')&&!S.config.domOrdinario)pills.push('<span class="pill warn">Debe descanso compensatorio</span>');
       if(!pills.length)pills.push('<span class="pill good">OK</span>')}
-    h+=`<td class="n">${o.min?hrs(o.min):'—'}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.ext?hrs(o.ext):'—'}</td><td><div class="sum">${pills.join(' ')}</div></td></tr>`;
+    h+=`<td class="n">${o.min?hrs(o.min):'—'}${o.fest?`<div class="status" title="Festivo entre semana que no se trabaja: descanso remunerado">+ ${hrs(o.fest)} festivo = ${hrs(o.min+o.fest)}</div>`:''}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.ext?hrs(o.ext):'—'}</td><td><div class="sum">${pills.join(' ')}</div></td></tr>`;
   });
   h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="10"></td><td class="n"><b>${hrs(TT.min)}</b></td><td class="n"><b>${hrs(TT.df)}</b></td><td class="n"><b>${hrs(TT.ext)}</b></td><td></td></tr></tfoot></table></div>
   ${leyendaTurnos()}<div class="legend">${HCOD.map(([k,n])=>`<span><b>${k}</b> ${esc(n)}</span>`).join('')}<span><b>Otro…</b> horario a mano para ese día</span></div>
@@ -1262,7 +1268,7 @@ function horFacil(){
     h+=`<tr><td class="emp sticky"><b>${esc(e.nombre)}</b><span>${esc(e.cargo||'')}</span>${selSede(e)}</td><td class="cell" style="padding:3px;background:var(--accent-soft)"><select data-hft="${e.id}" style="min-width:150px">${turnoOpts(fila,grupoH(e))}</select></td><td class="cell" style="padding:3px;background:var(--accent-soft)"><select data-hfal="${e.id}" style="min-width:128px"><option value="">${(()=>{const t=hTurno(fila.t)||{};return t.almH?esc(t.almH.split('-').map(x=>hCorta(x)).join(' a ')):(t.code?(+t.alm?(+t.alm)+' min de pausa':'Sin almuerzo'):'12p a 1p')})()}</option>${ALM_OPC.map(a=>`<option value="${a}"${fila.alm===a?' selected':''}>${a.split('-').map(x=>hCorta(x)).join(' a ')}</option>`).join('')}</select></td><td class="cell" style="padding:3px;background:var(--accent-soft)"><select data-hfd="${e.id}" style="min-width:70px"><option value="">—</option>${diasW().map((dn,i)=>`<option value="${i}"${dd===i?' selected':''}>${dn.slice(0,3)}</option>`).join('')}</select></td>`;
     hDiasX(dias).forEach((f,i)=>{const FL=i<7?fila:hSig(L,e.id),code=(FL.c||[])[i%7]||'',df=dow(f)===0||!!festivo(f),bad=code&&code!=='T'&&!esHCod(code)&&!hRango(code,f);
       h+=`<td data-dw="${dow(f)}" class="cell" style="padding:3px"><input class="hfin" data-hfe="${e.id}" data-hfi="${i}" data-df="${df?1:0}" value="${code==='T'?'':esc(hhVer(code,f))}" placeholder="${code==='T'?'¿horas?':df?'h':''}" title="${code==='T'?'Trabaja: escriba el número de horas':esc(hTexto(code,f))}" style="width:100%;min-width:${df?58:92}px;text-align:center;${code==='T'?'background:#fff3a6;border-color:var(--bad);color:#111;':''}${bad?'border-color:var(--bad);':''}${code==='D'?'background:var(--paper);':esHCod(code)?'background:var(--accent-soft);':''}"${df?' inputmode="decimal"':''}></td>`});
-    h+=`<td class="n">${o.min?hrs(o.min):'—'}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.noc?hrs(o.noc):'—'}</td><td class="n">${o.ext?`<span class="pill warn">${hrs(o.ext)}</span>`:'—'}${(fila.c||[]).includes('T')?'<br><span class="pill bad">Faltan horas</span>':''}</td></tr>`});
+    h+=`<td class="n">${o.min?hrs(o.min):'—'}${o.fest?`<div class="status" title="Festivo entre semana que no se trabaja: descanso remunerado">+ ${hrs(o.fest)} festivo = ${hrs(o.min+o.fest)}</div>`:''}</td><td class="n">${e.sinRecDF?'<span class="status">No aplica</span>':o.df?'<b>'+hrs(o.df)+'</b>':'—'}</td><td class="n">${o.noc?hrs(o.noc):'—'}</td><td class="n">${o.ext?`<span class="pill warn">${hrs(o.ext)}</span>`:'—'}${(fila.c||[]).includes('T')?'<br><span class="pill bad">Faltan horas</span>':''}</td></tr>`});
   h+=`</tbody><tfoot><tr><td class="sticky"><b>Totales de la semana</b></td><td colspan="10"></td><td class="n"><b>${hrs(T.min)}</b></td><td class="n"><b>${hrs(T.df)}</b></td><td class="n"><b>${hrs(T.noc)}</b></td><td class="n"><b>${hrs(T.ext)}</b></td></tr></tfoot></table></div>
    <p class="note">Estas horas pasan solas a <b>Novedades</b> y a la <b>Nómina</b> del periodo, igual que con la vista por turnos. Con Enter o Tab pasa a la siguiente casilla.</p>`;
   return h}
@@ -1490,7 +1496,7 @@ function hojaSemanaXls(wb,L){
   const CF={D:['FF7030A0','FFFFFFFF'],V:['FFC6E0B4','FF000000'],I:['FFF8CBAD','FF000000'],IL:['FFF8CBAD','FF000000'],L:['FFFFD966','FF000000'],X:['FFFFD966','FF000000'],S:['FFFFD966','FF000000']};
   let r=9;hEmps(L).forEach(e=>{const f=hFila(e.id,L);if(!f||!f.c||!f.c.some(x=>x))return;const o=valorSemana(e,L),t=hTurno(f.t),dir=f.t==='DI'||e.excluido,base=dir?AZUL:LILA;
     const v=[(e.sede||'').toUpperCase(),(e.cargo||'').toUpperCase(),e.nombre,t?t.nombre.toUpperCase():'',f.alm?f.alm.split('-').map(fmtHH).join(' - '):'',f.dd>=0?diasWL()[f.dd].toUpperCase().replace('MIERCOLES','MIÉRCOLES').replace('SABADO','SÁBADO'):'',
-      ...dias.map((d,i)=>{const cd=(i<7?f.c[i]:hSig(L,e.id).c[0])||'';if(cd==='D')return 'DESCANSO';const tx=hTexto(cd,d);return tx.replace(/^(\d{1,2}:\d{2}[ap]m - \d{1,2}:\d{2}[ap]m) /,'$1\n')}),'',Math.round(o.min/6)/10,e.sinRecDF?'NO APLICA':Math.round(o.df/6)/10,Math.round(o.ext/6)/10];
+      ...dias.map((d,i)=>{const cd=(i<7?f.c[i]:hSig(L,e.id).c[0])||'';if(cd==='D')return 'DESCANSO';if(cd&&!esHCod(cd)&&festivo(d)&&dow(d)!==0&&!hRango(cd,d))return 'FESTIVO\n(descanso remunerado)';const tx=hTexto(cd,d);return tx.replace(/^(\d{1,2}:\d{2}[ap]m - \d{1,2}:\d{2}[ap]m) /,'$1\n')}),'',Math.round(o.min/6)/10,e.sinRecDF?'NO APLICA':Math.round(o.df/6)/10,Math.round(o.ext/6)/10];
     const row=ws.getRow(r);row.height=/\n/.test(v.slice(6,6+ND).join(''))?30:21.75;
     v.forEach((x,i)=>{const cl=row.getCell(i+1),dI=i-6,enD=i>=6&&i<6+ND,cd=enD?((dI<7?f.c[dI]:hSig(L,e.id).c[0])||''):'',d=enD?dias[dI]:null;cl.value=x;cl.font=F9({bold:i>=7+ND});cl.alignment={horizontal:'center',vertical:'middle',wrapText:true};cl.border=B(th,i===0?md:th,th,i===N-1?md:th);
       let fl=base,fc='FF000000';if(cd&&CF[cd]){[fl,fc]=CF[cd]}else if(d&&(dow(d)===0||festivo(d))&&cd){fl=AMA;cl.font=F9({bold:true})}else if(d&&dI<7&&trabDesc(f,dI)){fl=AMA;cl.font=F9({bold:true})}
