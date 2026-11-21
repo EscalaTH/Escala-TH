@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='20/11/2026 18:59';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='20/11/2026 19:03';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1131,7 +1131,7 @@ function hCat(e,L){ // orden de los horarios: directivos, Paseo, Outlet, Morato,
   if(/directiv/.test(sd)||t==='DI'||/director|gerente/.test(cg))return 0;
   if(/paseo/.test(sd))return 1;if(/outlet/.test(sd))return 2;if(/taller/.test(sd))return 3.5;if(/morato/.test(sd))return 3;if(/rotativ/.test(sd))return 5;return 7}
 function hEmps(L){const fin=addDays(L,6);const r=empAll().filter(e=>(!UI.sede||e.sede===UI.sede)&&(!e.ingreso||e.ingreso<=fin)&&(!e.retiro||e.retiro>=L)&&(e.activo!==false||(e.retiro&&e.retiro>=L)));
-  if(!esEscalautos())return r;const k=new Map(r.map(e=>[e.id,hCat(e,L)]));return r.slice().sort((a,b)=>k.get(a.id)-k.get(b.id)||(+a.num||9999)-(+b.num||9999)||a.nombre.localeCompare(b.nombre))}
+  if(!esEscalautos())return r;if(S.config.ordenXls){const sd=(S.config.sedes||[]).map(nrm),ix=e=>{const i=sd.indexOf(nrm(e.sede||''));return i<0?999:i};return r.slice().sort((a,b)=>ix(a)-ix(b)||(+a.num||9999)-(+b.num||9999))}const k=new Map(r.map(e=>[e.id,hCat(e,L)]));return r.slice().sort((a,b)=>k.get(a.id)-k.get(b.id)||(+a.num||9999)-(+b.num||9999)||a.nombre.localeCompare(b.nombre))}
 function hGen(fila){fila.c=fila.c||['','','','','','',''];const t=hTurno(fila.t);for(let i=0;i<7;i++){if(i===fila.dd)fila.c[i]='D';else if(fila.c[i]==='D'||!esHCod(fila.c[i]))fila.c[i]=t&&!t.d[hk(i)]?'':(fila.t||'')}}
 function hSet(L,id){const w=S.hor[L]||(S.hor[L]={asig:{}});w.asig=w.asig||{};return w.asig[id]||(w.asig[id]={t:'',alm:'',dd:-1,c:['','','','','','','']})}
 function hGuardar(L){persistLater('hor',L)}
@@ -1265,7 +1265,7 @@ function horFacil(){
    <p class="note">Letras: <b>D</b> descanso, <b>V</b> vacaciones, <b>I</b> incapacidad, <b>L</b> licencia, <b>X</b> ausencia. La app calcula las horas, las extras (más de ${c.jornada||42} h a la semana o ${c.topeDia||9} h al día), las nocturnas (${c.nocheIni}–${c.nocheFin}) y las dominicales y festivas, y descuenta el almuerzo escogido.</p>`;
   if(UI.hfPaste)h+=`<div class="panel" style="padding:12px 14px;margin-bottom:12px"><b>Pegar o subir el horario enviado</b><p class="note" style="margin:4px 0 8px">Seleccione en Excel la tabla completa <b>con los títulos</b> (SEDE, CARGO, EMPLEADO, TURNO, ALMUERZO, DÍA DE DESCANSO y los días con sus fechas), cópiela y péguela aquí, o suba el archivo de Excel. La app toma la fecha de cada columna (aunque la semana empiece en domingo o abarque dos semanas), el almuerzo de cada empleado, «DESCANSO», «VACACIONES» y los horarios como «9:00am - 6:00pm» u «08:00 am-4:00pm PASEO». Los domingos y festivos marcados «TRABAJA» quedan en amarillo para que escriba las horas.</p>
     <textarea id="hfTxt" rows="7" style="width:100%;font-family:var(--mono);font-size:.82rem" placeholder="Pegue aquí la tabla copiada de Excel (con los títulos y las fechas)">${esc(UI.hfTxt||'')}</textarea>
-    <div class="bar" style="margin-top:6px"><button class="free primary" id="hfLoad">Cargar lo pegado</button><label class="free" style="cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:6px 10px">Subir el Excel<input type="file" id="hfFile" accept=".xlsx,.xls,.ods,.csv" hidden></label><button class="free ghost" id="hfCan">Cerrar</button><span class="grow"></span></div>${UI.hfRes?`<div class="alert info" style="margin-top:6px">${UI.hfRes}</div>`:''}</div>`;
+    <div class="bar" style="margin-top:6px"><button class="free primary" id="hfLoad">Cargar lo pegado</button><label class="free" style="cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:6px 10px">Subir el Excel<input type="file" id="hfFile" accept=".xlsx,.xls,.ods,.csv" hidden></label><button class="free ghost" id="hfCan">Cerrar</button><span class="grow"></span></div><label class="chk" style="margin-top:6px"><input type="checkbox" id="hfOrd" checked> Ordenar también los empleados en todas las listas (y su sede) tal como vienen en el archivo</label>${UI.hfRes?`<div class="alert info" style="margin-top:6px">${UI.hfRes}</div>`:''}</div>`;
   if(!emps.length&&sep&&UI.hg!=='all')return h+`<div class="panel empty"><b>No hay empleados en ${esc((GRUPOS_H.find(x=>x[0]===UI.hg)||[])[1]||'')}</b>Asigne la sede en la ficha de cada empleado (Empleados › Centro de costo) para que aparezcan en esta pestaña.</div>`;
   if(!emps.length)return h+`<div class="panel empty"><b>No hay empleados${UI.sede?' en este centro de costo':''}</b>Agréguelos en la pestaña Empleados.</div>`;
   h+=hSemDet();
@@ -1311,6 +1311,20 @@ function nomFuzzy(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1||a.
 function hfMatch2(nombre,emps){const t=nrm(nombre).replace(/[^a-zñ ]/g,' ').split(/\s+/).filter(x=>x.length>1);if(!t.length)return null;
   let best=null,bs=0,dup=false;emps.forEach(e=>{const n=nrm(e.nombre).split(/\s+/),sc=t.filter(x=>n.some(y=>nomFuzzy(x,y))).length;if(sc>bs){bs=sc;best=e;dup=false}else if(sc===bs&&sc>0)dup=true});
   return best&&bs>=Math.min(2,t.length)&&!dup?best:null}
+function ordenDesdeTabla(rows){ // ordena los empleados (y su sede) tal como vienen en el Excel de horarios: SEDE · CARGO · EMPLEADO
+  const hi=rows.findIndex(r=>r.some(x=>/^empleado$/i.test(String(x).trim()))&&r.some(x=>/^sede$/i.test(String(x).trim())));if(hi<0)return null;
+  const H=rows[hi].map(x=>String(x).trim().toLowerCase()),cS=H.indexOf('sede'),cE=H.indexOf('empleado');
+  const E=Object.values(S.emps).filter(e=>e.activo!==false&&!(e.retiro&&e.retiro<todayCO())),c=S.config,orden=[],sedesV=[],cambios=[];
+  const titulo=t=>t.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/\bDel\b/g,'del').replace(/\bDe\b/g,'de');
+  const sedeDe=t=>{const n=nrm(t);if(!n)return '';if(/a?d?minis?trativ/.test(n))return (c.sedes||[]).find(x=>/administrativ/i.test(x))||'Administrativos';
+    return (c.sedes||[]).find(x=>nrm(x)===n)||(c.sedes||[]).find(x=>nrm(x).includes(n)||n.includes(nrm(x))&&!(/taller/.test(n)&&!/taller/i.test(x)))||titulo(String(t).trim())};
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i],nom=String(r[cE]||'').trim();if(!nom||/^convenciones/i.test(String(r[0]||'')))continue;
+    const e=resEmpEn(E,nom,'');if(!e||orden.includes(e))continue;orden.push(e);const sd=sedeDe(r[cS]);if(sd){if(!sedesV.includes(sd))sedesV.push(sd);if(e.sede!==sd){cambios.push(`${e.nombre}: ${e.sede||'sin sede'} → ${sd}`);e.sede=sd}}}
+  if(!orden.length)return null;
+  const resto=empAll().filter(e=>!orden.includes(e));[...orden,...resto].forEach((e,i)=>{e.num=String(i+1)});
+  c.sedes=[...sedesV,...(c.sedes||[]).filter(x=>!sedesV.includes(x))];c.ordenXls=true;
+  bitacora(`Ordenó los empleados como el Excel de horarios (${orden.length})${cambios.length?' · cambió la sede de '+cambios.length:''}`);
+  return {n:orden.length,cambios}}
 function cargarTablaHorario(rows){
   rows=rows.map(r=>r.map(c=>c instanceof Date||typeof c==='number'?c:String(c??'').trim()));
   const hi=rows.findIndex(r=>r.some(c=>typeof c==='string'&&/^(empleado|nombre|trabajador|colaborador)/i.test(c)));
@@ -1330,7 +1344,7 @@ function cargarTablaHorario(rows){
 function guardarCeldaH(e,f,v,R,al){const L=lunesDe(f),i=Math.round((Date.parse(f)-Date.parse(L))/864e5),df=dow(f)===0||!!festivo(f),cd=horValor(v,df);
   if(cd===null){R.err.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}: «${String(v).replace(/\s+/g,' ')}»`);return}
   const fila=hSet(L,e.id);fila.t='';fila.c[i]=cd;if(cd==='D')fila.dd=i;if(al)fila.alm=al;if(cd==='T')R.faltan.push(`${e.nombre.split(' ')[0]} ${fCorta(f)}`);R.semanas.add(L);R.celdas++;hGuardar(L)}
-function resumenCarga(R){const sem=[...R.semanas].sort();return `<b>${R.ok.size} empleado${R.ok.size===1?'':'s'} cargado${R.ok.size===1?'':'s'}</b> (${R.celdas} días${sem.length?`, semana${sem.length>1?'s':''} del ${sem.map(x=>fCorta(x)).join(' y del ')}`:''}).${R.faltan.length?` <b>Faltan las horas</b> de ${R.faltan.length} domingo${R.faltan.length>1?'s':''} o festivo${R.faltan.length>1?'s':''} marcados «TRABAJA»: escríbalas en las casillas amarillas (${R.faltan.slice(0,8).join(', ')}${R.faltan.length>8?'…':''}).`:''}${R.no.length?` No encontré: ${R.no.map(esc).join(', ')}.`:''}${R.err.length?` Revise: ${R.err.slice(0,6).map(esc).join('; ')}.`:''}`}
+function resumenCarga(R){const sem=[...R.semanas].sort();return (R.orden?`<b>Empleados ordenados como el archivo (${R.orden.n}).</b>${R.orden.cambios.length?' Cambios de sede: '+R.orden.cambios.map(esc).join('; ')+'.':''}<br>`:'')+`<b>${R.ok.size} empleado${R.ok.size===1?'':'s'} cargado${R.ok.size===1?'':'s'}</b> (${R.celdas} días${sem.length?`, semana${sem.length>1?'s':''} del ${sem.map(x=>fCorta(x)).join(' y del ')}`:''}).${R.faltan.length?` <b>Faltan las horas</b> de ${R.faltan.length} domingo${R.faltan.length>1?'s':''} o festivo${R.faltan.length>1?'s':''} marcados «TRABAJA»: escríbalas en las casillas amarillas (${R.faltan.slice(0,8).join(', ')}${R.faltan.length>8?'…':''}).`:''}${R.no.length?` No encontré: ${R.no.map(esc).join(', ')}.`:''}${R.err.length?` Revise: ${R.err.slice(0,6).map(esc).join('; ')}.`:''}`}
 function hfMatch(nombre,emps){const t=nrm(nombre).replace(/[^a-zñ ]/g,' ').split(/\s+/).filter(x=>x.length>1);if(!t.length)return null;
   let best=null,bs=0,dup=false;emps.forEach(e=>{const n=nrm(e.nombre).split(/\s+/),sc=t.filter(x=>n.includes(x)).length;if(sc>bs){bs=sc;best=e;dup=false}else if(sc===bs&&sc>0)dup=true});
   return best&&bs>=Math.min(2,t.length)&&!dup?best:null}
@@ -1357,12 +1371,12 @@ function bindHorFacil(re){const L=UI.hw;
     hGuardar(L);re();toast(`Semana copiada (${n} empleados). Revise los festivos.`)};
   $('#hfPaste').onclick=()=>{UI.hfPaste=!UI.hfPaste;UI.hfRes='';re();const t=$('#hfTxt');if(t)t.focus()};
   const cn=$('#hfCan');if(cn)cn.onclick=()=>{UI.hfPaste=false;UI.hfRes='';re()};
-  const fin=R=>{const sem=[...R.semanas].sort();if(sem.length&&!sem.includes(UI.hw))UI.hw=sem[0];UI.hfRes=resumenCarga(R);saveUI();re();toast(`Horario cargado para ${R.ok.size} empleados`);bitacora('Cargó el horario enviado ('+R.ok.size+' empleados)')};
-  const ld=$('#hfLoad');if(ld)ld.onclick=()=>{const txt=$('#hfTxt').value;UI.hfTxt=txt;if(!txt.trim())return toast('Pegue primero la tabla');fin(cargarTablaHorario(tsvParse(txt)))};
+  const fin=R=>{const sem=[...R.semanas].sort();if(sem.length&&!sem.includes(UI.hw))UI.hw=sem[0];UI.hfRes=resumenCarga(R);saveUI();re();toast(`Horario cargado para ${R.ok.size} empleados`+(R.orden?` · empleados ordenados como el Excel${R.orden.cambios.length?' ('+R.orden.cambios.length+' cambios de sede)':''}`:''));bitacora('Cargó el horario enviado ('+R.ok.size+' empleados)')};
+  const ld=$('#hfLoad');if(ld)ld.onclick=()=>{const txt=$('#hfTxt').value;UI.hfTxt=txt;if(!txt.trim())return toast('Pegue primero la tabla');const rows=tsvParse(txt),R=cargarTablaHorario(rows);if(!$('#hfOrd')||$('#hfOrd').checked){const o=ordenDesdeTabla(rows);if(o){R.orden=o;saveLocal()}}fin(R)};
   const ff=$('#hfFile');if(ff)ff.onchange=async()=>{const f=ff.files[0];if(!f)return;if(typeof XLSX==='undefined')return toast('No se pudo cargar el lector de Excel. Revise la conexión.');
     try{const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});const R={ok:new Set(),no:[],err:[],faltan:[],semanas:new Set(),celdas:0};
       wb.SheetNames.forEach(n=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''});const r=cargarTablaHorario(rows);r.ok.forEach(x=>R.ok.add(x));r.semanas.forEach(x=>R.semanas.add(x));R.no.push(...r.no.filter(x=>!R.no.includes(x)));R.err.push(...r.err);R.faltan.push(...r.faltan);R.celdas+=r.celdas});
-      R.no=R.no.filter(x=>!/^(sede|cargo|total)/i.test(x));fin(R)}catch(er){console.error(er);toast('No se pudo leer el archivo: '+(er.message||er))}};
+      R.no=R.no.filter(x=>!/^(sede|cargo|total)/i.test(x));if(!$('#hfOrd')||$('#hfOrd').checked){let o=null;for(const n of wb.SheetNames){o=ordenDesdeTabla(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''}));if(o)break}if(o){R.orden=o;saveLocal()}}fin(R)}catch(er){console.error(er);toast('No se pudo leer el archivo: '+(er.message||er))}};
   const xs=$('#hXlsS');if(xs)xs.onclick=excelSemana}
 function bindHor(){
   const re=()=>conservarVista('v-hor',renderHor);
@@ -2475,7 +2489,7 @@ async function nombreDe(id){if(!id)return 'alguien';if(USER&&USER.profiles){try{
 const nomArch=t=>String(t||'documento').replace(/ñ/g,'\u0001').replace(/Ñ/g,'\u0002').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0001/g,'ñ').replace(/\u0002/g,'Ñ').replace(/[^a-z0-9ñÑ]+/gi,'_').replace(/^_+|_+$/g,'').toUpperCase(); // nombre de archivo: conserva la Ñ (ZUÑIGA)
 let ULTIMA=[];
 /* orden de la nómina: por sede, en el orden de Parámetros; dentro de cada sede, primero dirección y confianza */
-function ordenSedes(R,get=r=>r.e){const sd=(S.config.sedes||[]).map(nrm),ix=e=>{const i=sd.indexOf(nrm(e.sede||''));return i<0?999:i};return R.map((r,i)=>[r,i]).sort((a,b)=>{const ea=get(a[0])||{},eb=get(b[0])||{};return ix(ea)-ix(eb)||(!!eb.excluido-!!ea.excluido)||a[1]-b[1]}).map(x=>x[0])}
+function ordenSedes(R,get=r=>r.e){const sd=(S.config.sedes||[]).map(nrm),ix=e=>{const i=sd.indexOf(nrm(e.sede||''));return i<0?999:i};return R.map((r,i)=>[r,i]).sort((a,b)=>{const ea=get(a[0])||{},eb=get(b[0])||{};return ix(ea)-ix(eb)||(S.config.ordenXls?((+(S.emps[ea.id]||ea).num||9999)-(+(S.emps[eb.id]||eb).num||9999)):(!!eb.excluido-!!ea.excluido))||a[1]-b[1]}).map(x=>x[0])}
 function renderNomina(){
   const P=periodo(UI.mes,UI.tipo),CI=(S.cierres||{})[P.key];
   const R=ordenSedes(CI?CI.filas.map(f=>({...f,e:{...(S.emps[f.e.id]||{}),...f.e}})).filter(r=>!UI.sede||r.e.sede===UI.sede):empPeriodo(P).map(e=>liquidar(e,P))),emps=R.map(r=>r.e);ULTIMA=R;
