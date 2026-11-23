@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 11:50';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='23/11/2026 13:54';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -6414,7 +6414,7 @@ async function portalClave(id){const P=ptD(),e=S.emps[id];if(!e.doc)return toast
   const pe=P.emp[id]=P.emp[id]||{ek:toB64(crypto.getRandomValues(new Uint8Array(32))),salt:toB64(crypto.getRandomValues(new Uint8Array(16)))};
   pe.pin=String(e.doc).replace(/\D/g,'');const d=await pbDerive(e.doc,pe.pin,pe.salt);pe.wpin=await aesEnc(d.k,fromB64(pe.ek));pe.authH=await sha64(d.auth);pe.reset=true;pe.creado=new Date().toISOString();
   bitacora('Creó clave del portal para '+e.nombre);saveLocal()}
-function portalEmp(e){const sal=salarioEn(e,{ini:todayCO()});return {id:e.id,nombre:e.nombre,doc:e.doc||'',cargo:e.cargo||'',sede:e.sede||'',ingreso:e.ingreso||'',retiro:e.retiro||'',estado:e.activo===false||e.retiro?'retirado':'activo',
+function portalEmp(e){const sal=salarioEn(e,{ini:todayCO()});return {id:e.id,ps:esContratista(e)?1:0,nombre:e.nombre,doc:e.doc||'',cargo:e.cargo||'',sede:e.sede||'',ingreso:e.ingreso||'',retiro:e.retiro||'',estado:e.activo===false||e.retiro?'retirado':'activo',
   contrato:/fijo/i.test(e.contrato||'')?'a término fijo':/aprendiz/i.test(e.contrato||'')?'de aprendizaje':/obra/i.test(e.contrato||'')?'por obra o labor':'a término indefinido',salario:sal,prom:promSalarial(e),eps:capi(e.eps||''),afp:capi(e.afp||''),
   trato:certF(e.id).trato,datos:Object.fromEntries(PDAT.map(([k])=>[k,String(e[k]||'')]))}}
 function portalHor(id){ // semanas de horario del empleado para el portal: la anterior, la actual y las que ya estén programadas
@@ -6489,7 +6489,7 @@ async function pdfCertSello(F,C){const PL=await cargarPdfLib();const {PDFDocumen
   cen(emp,fB,12);cen('NIT '+(cfg.nit||''),fR,10);y-=14;cen('CERTIFICA:',fB,12);y-=12;
   const par=(t,o={})=>{const f=o.b?fB:fR,s=11,words=String(t).split(/\s+/);let line=[];const out=[];for(const w of words){const tt=[...line,w].join(' ');if(f.widthOfTextAtSize(tt,s)>W-(o.ind||0)&&line.length){out.push(line);line=[w]}else line.push(w)}if(line.length)out.push(line);
     out.forEach((ln,i)=>{const x0=L+(o.ind||0);if(i<out.length-1&&!o.noJust){const tw=ln.reduce((a,w)=>a+f.widthOfTextAtSize(w,s),0),gap=(W-(o.ind||0)-tw)/Math.max(1,ln.length-1);let x=x0;ln.forEach(w=>{pg.drawText(w,{x,y,size:s,font:f,color:ink});x+=f.widthOfTextAtSize(w,s)+gap})}else pg.drawText(ln.join(' '),{x:x0,y,size:s,font:f,color:ink});y-=16});y-=8};
-  const T=textoCert(F);par(T.p1);if(T.p2){par(T.p2);T.af.forEach(([k,v])=>{pg.drawText(k+':',{x:L+24,y,size:11,font:fB,color:ink});pg.drawText(String(v),{x:L+110,y,size:11,font:fR,color:ink});y-=16});y-=8}
+  const T=F.ps?(()=>{const t=textoCertPS(F);return {p1:t.p1,p2:'',af:[],p3:t.p4,acl:t.p3}})():textoCert(F);par(T.p1);if(T.acl)par(T.acl);if(T.p2){par(T.p2);T.af.forEach(([k,v])=>{pg.drawText(k+':',{x:L+24,y,size:11,font:fB,color:ink});pg.drawText(String(v),{x:L+110,y,size:11,font:fR,color:ink});y-=16});y-=8}
   if(F.dirigido)par('Este certificado se dirige a: '+F.dirigido+'.');par(T.p3);y-=10;pg.drawText('Atentamente,',{x:L,y,size:11,font:fR,color:ink});y-=16;
   const se=await img(C.sello);let sy=y-72;if(se){const s=Math.min(135/se.width,52/se.height);pg.drawImage(se,{x:L+8,y:sy+6,width:se.width*s,height:se.height*s})}
   pg.drawLine({start:{x:L,y:sy},end:{x:L+230,y:sy},thickness:.8,color:gris});pg.drawText(C.firma||emp,{x:L,y:sy-14,size:10.5,font:fB,color:ink});pg.drawText('NIT '+(cfg.nit||''),{x:L,y:sy-27,size:9.5,font:fR,color:gris});
@@ -6694,14 +6694,14 @@ function portalVista(){const el=$('#portal'),C=PP.com||{},cfg=C.cfg||{};let h='<
   const RET=!!(E.retiro&&E.retiro<=todayCO())||E.estado==='retirado';
   const lkA=(C.links||[]).filter(l=>!l.hasta||l.hasta>=todayCO()),dsA=C.docs||[];
   const hayFir=((PP.d&&PP.d.fir)||[]).length>0;const orden=RET?[...(hayFir?['fir']:[]),'cert']:[...(hayFir?['fir']:[]),'hor','cert','desp','perm','inc','datos',...(dsA.length?['docs']:[]),'rep',...(lkA.length?['links']:[])],N={};orden.forEach((k,i)=>N[k]=i+1);
-  const TIT={fir:'Documentos para firmar',inc:'Reportar una incapacidad',via:'Viáticos y desplazamientos',hor:'Mi horario de la semana',cert:'Certificado laboral',desp:'Desprendibles de nómina',perm:'Permisos, licencias y vacaciones',datos:'Mis datos y contacto de emergencia',docs:'Documentos de la empresa',rep:'Reportar condición insegura',links:'Encuestas y enlaces'};
+  const TIT={fir:'Documentos para firmar',inc:'Reportar una incapacidad',via:'Viáticos y desplazamientos',hor:'Mi horario de la semana',cert:(PP.d&&PP.d.emp&&PP.d.emp.ps)?'Certificación de prestación de servicios':'Certificado laboral',desp:'Desprendibles de nómina',perm:'Permisos, licencias y vacaciones',datos:'Mis datos y contacto de emergencia',docs:'Documentos de la empresa',rep:'Reportar condición insegura',links:'Encuestas y enlaces'};
   if(RET)h+=`<div class="alert info" style="margin-top:12px">Su contrato con ${esc(cfg.empresa||'la empresa')} terminó${E.retiro?' el '+fCorta(E.retiro):''}. Desde el portal puede descargar su <b>certificado laboral</b> cuando lo necesite.</div>`;
   else h+=`<nav class="ptMenu">${orden.map(k=>`<a href="#pt-${k}" data-ptgo="${k}"><span class="ptN">${N[k]}</span>${PT_IC[k==='links'?'link':k]}<span>${TIT[k]}</span></a>`).join('')}</nav>`;
   if(hayFir)h+=portalFirmaHTML(N.fir);
   if(!RET)h+=portalHorHTML(N.hor);
   h+=`<div class="panel ptSec" id="pt-cert" style="margin-top:12px">${ptH(N.cert,'cert','Certificado laboral')}<p class="note" style="margin-top:0">Sale con la fecha de hoy, firmado con el sello de ${esc(cfg.empresa||'la empresa')}.</p>
     <label class="f">Dirigido a (opcional)<input id="ppDir" placeholder="Ej.: Banco Davivienda · si lo deja vacío: a quien interese"></label>
-    <label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="ppSal" checked style="width:auto"> Incluir el salario y el promedio salarial</label>
+    <label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="ppSal" ${PP.d&&PP.d.emp&&PP.d.emp.ps?'':'checked'} style="width:auto"> ${PP.d&&PP.d.emp&&PP.d.emp.ps?'Incluir los honorarios':'Incluir el salario y el promedio salarial'}</label>
     <button class="primary" id="ppCert">Descargar certificado (PDF)</button>
     <details style="margin-top:14px"><summary style="cursor:pointer"><b>¿Necesita el certificado firmado por el representante legal?</b></summary>
      <p class="note">Envíe la solicitud y Talento Humano se lo hará llegar.</p><label class="f">Dirigido a<input id="psDir" placeholder="Entidad o persona"></label><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="psSal" checked style="width:auto"> Incluir el salario</label>
@@ -6725,7 +6725,7 @@ async function portalEntrar(doc,clave){doc=String(doc||'').replace(/\D/g,'');if(
   const EK=await aesKey(ek),ck=await aesDec(EK,r.rec.wck),CK=await aesKey(ck);PP.data=JSON.parse(decT(await aesDec(EK,r.rec.data)));PP.com=r.com?JSON.parse(decT(await aesDec(CK,r.com))):{};
   PP.CK=CK;try{const pm=JSON.parse(localStorage.getItem(PW+'.perm')||'null');if(pm)PP.perm=pm}catch(e){}try{PP.horOk=JSON.parse(localStorage.getItem(PW+'.horOk.'+n)||'{}')}catch(e){PP.horOk={}}PP.horI=undefined;PP.d=PP.data;PP.doc=doc;PP.n=n;PP.auth=d.auth;PP.ek=ek;PP.salt=r.rec.salt;try{localStorage.setItem(PW+'.doc',doc)}catch(e){}
   S.config={...S.config,...(PP.com.cfg||{})};portalVista()}
-function portalCertF(){const E=PP.d.emp,c=PP.com.cfg||{};return {trato:E.trato||'m',nombre:E.nombre,doc:E.doc,ingreso:E.ingreso,estado:E.estado,retiro:E.retiro,cargo:E.cargo,contrato:E.contrato,conSal:$('#ppSal')?$('#ppSal').checked:true,salario:E.salario,prom:E.prom||0,afil:true,eps:E.eps,afp:E.afp,ccf:c.ccf||'',arl:c.arlEnt||'',dirigido:($('#ppDir')&&$('#ppDir').value.trim())||'',fecha:todayCO(),ciudad:c.ciudad||'Bogotá'}}
+function portalCertF(){const E=PP.d.emp,c=PP.com.cfg||{};if(E.ps)return {ps:true,trato:E.trato||'m',nombre:E.nombre,doc:E.doc,inicio:E.ingreso,estado:E.estado==='activo'?'vigente':'terminado',fin:E.retiro,objeto:E.cargo?'prestar los servicios de '+String(E.cargo).toLowerCase():'',conHon:$('#ppSal')?$('#ppSal').checked:false,honorarios:E.salario,honTxt:'mensuales',cumple:false,acl:true,dirigido:($('#ppDir')&&$('#ppDir').value.trim())||'',fecha:todayCO(),ciudad:c.ciudad||'Bogotá'};return {trato:E.trato||'m',nombre:E.nombre,doc:E.doc,ingreso:E.ingreso,estado:E.estado,retiro:E.retiro,cargo:E.cargo,contrato:E.contrato,conSal:$('#ppSal')?$('#ppSal').checked:true,salario:E.salario,prom:E.prom||0,afil:true,eps:E.eps,afp:E.afp,ccf:c.ccf||'',arl:c.arlEnt||'',dirigido:($('#ppDir')&&$('#ppDir').value.trim())||'',fecha:todayCO(),ciudad:c.ciudad||'Bogotá'}}
 function portalBind(){const s=$('#ppSalir');if(s)s.onclick=()=>{PP.d=null;PP.auth=null;PP.ek=null;PP.CK=null;PP.rit=null;PP.perm=null;PP.vista='inicio';PP.msg=null;portalVista()};
   const k=$('#ppClave');if(k)k.onclick=()=>{PP.vista='clave';PP.msg=null;portalVista()};
   document.querySelectorAll('[data-ppdoc]').forEach(b=>b.onclick=async()=>{const t=b.textContent;b.disabled=true;b.textContent='Abriendo…';try{await portalAbrirDoc(b.dataset.ppdoc)}catch(e){toast('No se pudo abrir el documento. Revise el internet.')}b.disabled=false;b.textContent=t});
@@ -6738,7 +6738,7 @@ function portalBind(){const s=$('#ppSalir');if(s)s.onclick=()=>{PP.d=null;PP.aut
   const cf=$('#ppCf');if(cf)cf.onsubmit=async ev=>{ev.preventDefault();const e=$('#ppCe'),a=$('#ppC0').value,b1=$('#ppC1').value,b2=$('#ppC2').value;if(b1.length<8)return e.textContent='La clave nueva debe tener mínimo 8 caracteres';if(b1!==b2)return e.textContent='Las claves nuevas no coinciden';
     $('#ppCb').disabled=true;try{const d0=await pbDerive(PP.doc,a,PP.salt);if(d0.auth!==PP.auth)throw 'La clave actual no es correcta';const d1=await pbDerive(PP.doc,b1,PP.salt);const wpin=await aesEnc(d1.k,PP.ek);
       const r=await nubeFetchW('ppin',{n:PP.n,auth:d0.auth,nauth:d1.auth,wpin},PW);if(!r.ok)throw r.error==='clave'?'La clave actual no es correcta':'No se pudo guardar';PP.auth=d1.auth;PP.vista='inicio';PP.msg='Su clave quedó cambiada.';portalVista()}catch(x){e.textContent=typeof x==='string'?x:'No se pudo guardar. Revise el internet.';$('#ppCb').disabled=false}};
-  const c=$('#ppCert');if(c)c.onclick=async()=>{c.disabled=true;c.textContent='Generando…';try{const b=await pdfCertSello(portalCertF(),PP.com);await guardarArchivo(`CERTIFICADO_LABORAL_${nomArch(PP.d.emp.nombre)}.pdf`,new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el certificado. Revise el internet.')}c.disabled=false;c.textContent='Descargar certificado (PDF)'};
+  const c=$('#ppCert');if(c)c.onclick=async()=>{c.disabled=true;c.textContent='Generando…';try{const b=await pdfCertSello(portalCertF(),PP.com);await guardarArchivo(`${PP.d.emp.ps?'CERTIFICACION_PRESTACION_SERVICIOS':'CERTIFICADO_LABORAL'}_${nomArch(PP.d.emp.nombre)}.pdf`,new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el certificado. Revise el internet.')}c.disabled=false;c.textContent='Descargar certificado (PDF)'};
   const se=$('#psEnv');if(se)se.onclick=async()=>{se.disabled=true;try{const r=await nubeFetchW('psol',{n:PP.n,auth:PP.auth,sol:{tipo:'cert_firmado',dirigido:$('#psDir').value.trim(),conSal:$('#psSal').checked,obs:$('#psObs').value.trim(),contacto:$('#psCon').value.trim(),nombre:PP.d.emp.nombre}},PW);if(!r.ok)throw 0;PP.msg='Solicitud enviada. Talento Humano le enviará el certificado firmado.';portalVista()}catch(e){se.disabled=false;toast('No se pudo enviar la solicitud. Intente de nuevo.')}};
   document.querySelectorAll('[data-ppd]').forEach(b=>b.onclick=async()=>{const x=PP.d.desp[+b.dataset.ppd];const [mes,tipo]=x.k.split('_');try{await pdfDesprendibles([x.row],periodo(mes,tipo))}catch(e){toast('No se pudo generar el PDF')}})}
 
@@ -6756,7 +6756,29 @@ function renderTH(){
 
 /* ===================== certificados laborales ===================== */
 const CT={eid:'',f:null,tipo:'cert'};
-function abrirCert(id){CT.eid=id;if(!id){CT.f=null;renderCert();return}CT.f=certF(id);renderCert()}
+function abrirCert(id){CT.eid=id;if(!id){CT.f=null;renderCert();return}CT.f=CT.tipo==='ps'?certPSF(id):certF(id);renderCert()}
+/* certificación para prestadores de servicios (contratistas): no es certificado laboral */
+const certPSLista=()=>[...empAll().filter(esContratista).map(e=>({id:e.id,nombre:e.nombre,ret:e.activo===false||!!e.retiro})),...(PS_ON()?psAll().map(p=>({id:'p:'+p.id,nombre:p.nombre,ret:!!p.retirado})):[])].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+function certPSF(id){const c=S.config,hoy=todayCO(),fem=n=>/^(.*\s)?(maria|luisa|laura|karen|diana|yineth|yuli|stephany|nicol|eliana|luz|andrea|daniela|valentina|sofia|carolina|paola|natalia|catalina|juliana|camila|alejandra|tatiana|briyith|monica|milena|martha)(\s|$)/i.test(nrm(n))?'f':'m';
+  const base={dirigido:'',fecha:hoy,firmante:c.firmante||'',cargoF:c.cargoFirmante||'',ciudad:c.ciudad||'Bogotá',conHon:false,cumple:true,acl:true};
+  if(String(id).startsWith('p:')){const p=psD().lista[id.slice(2)];return {...base,trato:fem(p.nombre),nombre:p.nombre,doc:p.doc||'',tipoDoc:p.tipoDoc||'CC',inicio:p.inicio||'',estado:p.retirado?'terminado':'vigente',fin:p.retiro||'',objeto:'asesoría comercial en la venta y colocación del portafolio de productos y servicios de la compañía',honorarios:+(p.fijo??psCfg().fijo)||0,honTxt:'mensuales fijos, más honorarios variables por resultados'}}
+  const e=S.emps[id];return {...base,trato:fem(e.nombre),nombre:e.nombre,doc:e.doc||'',tipoDoc:e.tipoDoc||'CC',inicio:e.ingreso||'',estado:e.activo===false||(e.retiro&&e.retiro<=hoy)?'terminado':'vigente',fin:e.retiro||'',objeto:(e.cargo?'prestar los servicios de '+e.cargo.toLowerCase():''),honorarios:salarioEn(e,{ini:hoy})||0,honTxt:'mensuales'}}
+function textoCertPS(F){const fem=F.trato==='f',sr=fem?'la señora':'el señor',idf=fem?'identificada':'identificado',int_=fem?'de la interesada':'del interesado',vig=F.estado==='vigente';
+  const td={CC:'C.C.',CE:'C.E.',PPT:'PPT',PEP:'PEP',Pasaporte:'pasaporte'}[F.tipoDoc||'CC']||'C.C.';
+  const p1=`Que ${sr} ${(F.nombre||'').toUpperCase()}, ${idf} con ${td} No. ${cedula(F.doc)}, ${vig?'presta':'prestó'} sus servicios a nuestra compañía como contratista independiente, mediante contrato de prestación de servicios, ${vig?`desde el ${fCorta(F.inicio)} a la fecha`:`desde el ${fCorta(F.inicio)} hasta el ${fCorta(F.fin)}`}${F.objeto?`, con el objeto de ${F.objeto}`:''}`+(F.conHon&&F.honorarios?`, con honorarios de ${numLetras(F.honorarios)} (${money(F.honorarios)}) ${F.honTxt||'mensuales'}.`:'.');
+  const p2=F.cumple?`Durante la ejecución del contrato, ${fem?'la contratista':'el contratista'} ${vig?'ha cumplido':'cumplió'} a satisfacción con las obligaciones pactadas.`:'';
+  const p3=F.acl?'El contrato es de naturaleza civil, se ejecuta con autonomía técnica y administrativa y no genera relación laboral, salario ni prestaciones sociales.':'';
+  const p4=`La presente se expide en ${F.ciudad}, a solicitud ${int_}, ${fechaCert(F.fecha)}.`;
+  return {p1,p2,p3,p4}}
+async function wordCertPS(F){FONT_ACT=fuenteDe('cert');try{const c=S.config,T=textoCertPS(F),o={sz:22};
+  let b='';if(F.dirigido)b+=wP(wR(F.dirigido,o),{after:240});
+  if(!disenoDe('cert'))b+=wP(wR(c.empresa.toUpperCase(),{b:true,sz:22}),{jc:'center',after:0})+wP(wR('Nit. '+c.nit,{b:true,sz:22}),{jc:'center',after:240});b+=wP(wR('CERTIFICA:',{b:true,sz:22}),{jc:'center',after:360});
+  [T.p1,T.p2,T.p3].filter(Boolean).forEach(t=>{b+=wP(wR(t,o),{jc:'both',after:240,line:300})});
+  b+=wP(wR('Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto'+(c.contacto?': '+c.contacto:'')+'.',o),{jc:'both',after:240,line:300});
+  b+=wP(wR(T.p4,o),{jc:'both',after:360,line:300})+wP(wR('Atentamente,',o),{after:900});
+  b+=wP(wR((F.firmante||'').toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(F.cargoF||'',{b:true,sz:22}),{after:0});
+  bitacora(`Expidió certificación de prestación de servicios a ${F.nombre}`);
+  await generarDocx(b,'Certificación de prestación de servicios',`CERTIFICACION_PRESTACION_SERVICIOS_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert')}finally{FONT_ACT=null}}
 /* promedio salarial mensual: salario básico ponderado + promedio de recargos, extras y comisiones de los últimos 12 meses (o desde el ingreso) */
 function promSalarial(e){try{const hoy=todayCO(),fin=e.retiro&&e.retiro<hoy?e.retiro:hoy,ini=maxF(e.ingreso||fin,addDays(fin,-364));if(fin<ini)return 0;
   let t=0,d=0;mesesEntre(ini,fin).forEach(m=>{const a=maxF(ini,m+'-01'),b=finMes(m)<fin?finMes(m):fin,dd=d360(a,b);t+=salarioEn(e,{ini:a})*dd;d+=dd});
@@ -6785,7 +6807,8 @@ function textoCta(F){
 }
 function renderCert(){
   const lista=empAll(),F=CT.f;
-  const cta=CT.tipo==='cta';let h=`<div class="bar"><h2 class="grow">${cta?'Carta de apertura de cuenta':'Certificados laborales'}</h2></div><div class="panel grid-form"><label class="f">Documento<select id="ctT" class="free"><option value="cert"${cta?'':' selected'}>Certificación laboral</option><option value="cta"${cta?' selected':''}>Carta de apertura de cuenta bancaria</option></select></label><label class="f">Trabajador<select id="ctE" class="free"><option value="">Elija…</option>${lista.map(x=>`<option value="${x.id}"${CT.eid===x.id?' selected':''}>${esc(x.nombre)}${x.activo===false?' (retirado)':''}</option>`).join('')}</select></label></div>`;
+  const cta=CT.tipo==='cta';let h=`<div class="bar"><h2 class="grow">${cta?'Carta de apertura de cuenta':CT.tipo==='ps'?'Certificación de prestación de servicios':'Certificados laborales'}</h2></div><div class="panel grid-form"><label class="f">Documento<select id="ctT" class="free"><option value="cert"${cta?'':' selected'}>Certificación laboral</option><option value="cta"${cta?' selected':''}>Carta de apertura de cuenta bancaria</option><option value="ps"${CT.tipo==='ps'?' selected':''}>Certificación de prestación de servicios</option></select></label>${CT.tipo==='ps'?`<label class="f">Prestador de servicios<select id="ctE" class="free"><option value="">Elija…</option>${certPSLista().map(x=>`<option value="${x.id}"${CT.eid===x.id?' selected':''}>${esc(x.nombre)}${x.ret?' (terminado)':''}</option>`).join('')}</select></label>`:`<label class="f">Trabajador<select id="ctE" class="free"><option value="">Elija…</option>${lista.filter(x=>!esContratista(x)).map(x=>`<option value="${x.id}"${CT.eid===x.id?' selected':''}>${esc(x.nombre)}${x.activo===false?' (retirado)':''}</option>`).join('')}</select></label>`}</div>`;
+  if(CT.tipo==='ps'&&!certPSLista().length)h+=`<div class="panel empty" style="margin-top:12px"><b>No hay prestadores de servicios</b>En Empleados, los que tienen contrato «de prestación de servicios» aparecen aquí.</div>`;
   if(F&&cta){
     const T=textoCta(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
     h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
@@ -6809,6 +6832,28 @@ function renderCert(){
       <p class="j">${esc(T.p1)}</p><p class="j">${esc(T.p2)}</p><p class="j">${esc(T.p3)}</p>
       <p class="j">Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto${S.config.contacto?': '+esc(S.config.contacto):''}.</p>
       <p>Atentamente,</p><div style="height:48px"></div><p><b>${esc(F.firmaCta.toUpperCase())}</b><br>${esc(F.cargoCta)}<br>${esc(S.config.empresa)}</p></article>`;
+  }else if(F&&CT.tipo==='ps'){
+    const T=textoCertPS(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
+    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
+      <label class="f">Tratamiento<select data-ct="trato" id="ct-trato"><option value="m"${F.trato==='m'?' selected':''}>Señor</option><option value="f"${F.trato==='f'?' selected':''}>Señora</option></select></label>
+      ${inp('nombre','Nombre completo')}${inp('doc','Documento')}${inp('inicio','Fecha de inicio del contrato','date')}
+      <label class="f">Estado<select data-ct="estado" id="ct-estado"><option value="vigente"${F.estado==='vigente'?' selected':''}>Contrato vigente</option><option value="terminado"${F.estado==='terminado'?' selected':''}>Contrato terminado</option></select></label>
+      ${F.estado==='terminado'?inp('fin','Fecha de terminación','date'):''}
+      <label class="f" style="grid-column:1/-1">Objeto del contrato (complete la frase «con el objeto de…»)<input data-ct="objeto" id="ct-objeto" value="${esc(F.objeto||'')}"></label>
+      ${inp('honorarios','Honorarios ($)','number','min="0" step="1"')}${inp('honTxt','Forma de los honorarios','text','placeholder="mensuales"')}
+      ${inp('ciudad','Ciudad de expedición')}${inp('fecha','Fecha de expedición','date')}${inp('firmante','Firma')}${inp('cargoF','Cargo de quien firma')}
+      ${inp('dirigido','Dirigido a (opcional)','text','placeholder="A quien interese"')}
+      <label class="chk"><input type="checkbox" data-ct="conHon" id="ct-conHon" ${F.conHon?'checked':''}> Incluir honorarios</label>
+      <label class="chk"><input type="checkbox" data-ct="cumple" id="ct-cumple" ${F.cumple?'checked':''}> Cumplió a satisfacción</label>
+      <label class="chk"><input type="checkbox" data-ct="acl" id="ct-acl" ${F.acl?'checked':''}> Aclarar que no hay relación laboral</label>
+    </form>
+    <div class="bar" style="margin-top:14px"><span class="grow note">Vista previa</span><button class="free primary" id="ctW">Descargar Word</button></div>
+    <article class="docpage cert">${docHead('Certificación de prestación de servicios')}
+      ${F.dirigido?`<p>${esc(F.dirigido)}</p>`:''}
+      <p class="ctr"><b>${esc(S.config.empresa.toUpperCase())}</b><br>NIT ${esc(S.config.nit)}</p><p class="ctr"><b>CERTIFICA:</b></p>
+      <p class="j">${esc(T.p1)}</p>${T.p2?`<p class="j">${esc(T.p2)}</p>`:''}${T.p3?`<p class="j">${esc(T.p3)}</p>`:''}
+      <p class="j">Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto${S.config.contacto?': '+esc(S.config.contacto):''}.</p>
+      <p class="j">${esc(T.p4)}</p><p>Atentamente,</p><div style="height:48px"></div><p><b>${esc((F.firmante||'').toUpperCase())}</b><br>${esc(F.cargoF||'')}</p></article>`;
   }else if(F){
     const T=textoCert(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
     h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
@@ -6835,10 +6880,10 @@ function renderCert(){
   }
   {const pp=portalPend().filter(x=>!(x.d&&['permiso','reporte','datos','horario'].includes(x.d.tipo)));if(pp.length)h=h.replace('</h2></div>',`</h2></div><div class="alert" style="margin-bottom:10px"><b>${pp.length} solicitud${pp.length>1?'es':''} de certificado firmado desde el portal:</b> ${pp.map(x=>`<span style="white-space:nowrap">${esc(x.e?x.e.nombre:'(empleado no encontrado)')}${x.d&&x.d.dirigido?' — '+esc(x.d.dirigido):''} ${x.e?`<button class="free ghost" data-ptc="${esc(x.id)}">Hacer certificado</button>`:''}<button class="free ghost" data-ptok="${esc(x.id)}">Marcar atendida</button></span>`).join(' · ')}</div>`);else if(!PT.sols&&portalAuto())setTimeout(portalSols,50)}
   $('#v-cert').innerHTML=h;bindPtSols();
-  $('#ctE').onchange=ev=>abrirCert(ev.target.value);$('#ctT').onchange=ev=>{CT.tipo=ev.target.value;renderCert()};
+  $('#ctE').onchange=ev=>abrirCert(ev.target.value);$('#ctT').onchange=ev=>{const a=CT.tipo;CT.tipo=ev.target.value;if((a==='ps')!==(CT.tipo==='ps')){CT.eid='';CT.f=null}else if(CT.eid)CT.f=CT.tipo==='ps'?certPSF(CT.eid):certF(CT.eid);renderCert()};
   if(F){document.querySelectorAll('[data-ct]').forEach(x=>x.onchange=()=>{const k=x.dataset.ct;F[k]=x.type==='checkbox'?x.checked:x.type==='number'?+x.value||0:x.value;
       const M={banco:'bancoEmp',oficina:'bancoOfi',ctaTipo:'bancoTipo',ctaNum:'bancoCta',firmaCta:'cartaFirma',cargoCta:'cartaCargo'};if(M[k]&&PERM.write){S.config[M[k]]=F[k];saveCfg()}renderCert()});
-    $('#ctW').onclick=()=>cta?wordCta(F):wordCert(F);const pp=$('#ctP');if(pp)pp.onclick=()=>pdfCta(F)}
+    $('#ctW').onclick=()=>cta?wordCta(F):CT.tipo==='ps'?wordCertPS(F):wordCert(F);const pp=$('#ctP');if(pp)pp.onclick=()=>pdfCta(F)}
 }
 async function wordCert(F){
   FONT_ACT=fuenteDe('cert');try{return await wordCert0(F)}finally{FONT_ACT=null}}
