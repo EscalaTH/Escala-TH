@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 14:30';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='23/11/2026 14:45';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -1092,6 +1092,7 @@ function sembrarHor(D){ // carga una sola vez los horarios entregados por la emp
   if(nit.startsWith('901182851')&&c.hturnosV!==2&&c.hturnosV!==3&&c.hturnosV!==4&&c.hturnosV!==5&&c.hturnosV!==6){c.hturnos=structuredClone(HT_FAR);c.hturnosV=6;if(c.domOrdinario===undefined)c.domOrdinario=true;if(c.sinExtras===undefined)c.sinExtras=true;ch=true}
   if(nit.startsWith('901182851')&&c.hturnosV===2){(c.hturnos||[]).forEach(t=>{if(t.code==='AP'||t.code==='CI'){t.alm=0;t.almH=''}});c.hturnosV=3;c.domOrdinario=true;if(c.sinExtras===undefined)c.sinExtras=true;ch=true}
   if(nit.startsWith('901182851')&&c.hturnosV===3){(c.hturnos||[]).forEach(t=>{if(t.code==='AP'||t.code==='CI'){t.alm=30;t.almH=''}});c.hturnosV=4;ch=true}
+  if(nit.startsWith('901182851')&&!c.migRL1){const M=/MARIA FERNANDA GAITAN/i;if(!c.repLegal||M.test(c.repLegal)){c.repLegal='DANIEL FELIPE GAITAN HERNANDEZ';c.cargoRep='Representante Legal'}if(!c.firmante||M.test(c.firmante)){c.firmante='DANIEL FELIPE GAITAN HERNANDEZ';c.cargoFirmante='Representante Legal'}if(M.test(c.cartaFirma||'')){c.cartaFirma='DANIEL FELIPE GAITAN HERNANDEZ';c.cartaCargo='Representante Legal'}c.migRL1=true;ch=true}
   if(nit.startsWith('901182851')&&c.almDef===undefined){c.almDef=30;ch=true} // pausa (break) de 30 min cuando el horario se escribe a mano
   if(nit.startsWith('901182851')&&(c.hturnosV===4||c.hturnosV===5)){const usa=Object.values(D.hor||{}).some(w=>Object.values((w&&w.asig)||{}).some(f=>f&&(f.t==='IN'||(f.c||[]).includes('IN'))));if(!usa)c.hturnos=(c.hturnos||[]).filter(t=>t.code!=='IN');c.hturnosV=6;ch=true} // el intermedio era solo para Escalautos // 30 min de pausa: 7 h efectivas al día, 42 h a la semana // Farmaser: sin hora de almuerzo, domingo a domingo con descanso entre semana; solo recargo festivo y nocturno
   if(!HOR_SEED||c.horSeed1||!nit.startsWith(HOR_SEED.nit))return ch;
@@ -3884,6 +3885,7 @@ function renderParams(){setTimeout(()=>ojos(),0);
     <label class="f">Caja de compensación<input data-p="ccf" id="pCc" value="${esc(c.ccf||'')}"></label><label class="f">ARL<input data-p="arlEnt" id="pAe" value="${esc(c.arlEnt||'')}"></label>
     <label class="f">Dirección de la empresa<input data-p="direccion" id="pDi" value="${esc(c.direccion||'')}"></label><label class="f">Correo de la empresa<input data-p="correoEmp" id="pCe" value="${esc(c.correoEmp||'')}"></label>
     <label class="f">Representante legal (contratos)<input data-p="repLegal" id="pRl" value="${esc(c.repLegal||'')}" placeholder="${esc(c.firmante||'')}"></label><label class="f">Cargo del representante<input data-p="cargoRep" id="pCr" value="${esc(c.cargoRep||'')}" placeholder="Representante legal"></label>
+    <div class="f" style="grid-column:1/-1"><span>Firma escaneada del representante legal <span class="status">(imagen PNG o JPG, idealmente con fondo blanco o transparente)</span></span><div class="row" style="gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">${c.firmaRL?`<img src="${c.firmaRL}" alt="Firma" style="height:56px;max-width:220px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px">`:'<span class="status">Sin firma cargada</span>'}<label style="cursor:pointer"><input type="file" id="pFirmaRL" accept="image/png,image/jpeg" hidden><span class="btn free" style="display:inline-block;border:1px solid var(--line);border-radius:7px;padding:6px 12px;background:var(--surface)">${c.firmaRL?'Cambiar firma':'Subir firma'}</span></label>${c.firmaRL?'<button class="free ghost danger" id="pFirmaRLx">Quitar firma</button>':''}</div><span class="status">Aparece encima de la línea de firma del representante legal en los certificados, contratos, cartas y demás documentos de Word que firma él.</span></div>
     <label class="f">Ciudad<input data-p="ciudad" id="pCi" value="${esc(c.ciudad||'')}"></label>
     <label class="chk"><input type="checkbox" data-pc="sabHabil" id="pSab" ${c.sabHabil!==false?'checked':''}> El sábado es día hábil para contar vacaciones</label><label class="f">Canal de contacto (correo o teléfono)<input data-p="contacto" id="pCo" value="${esc(c.contacto||'')}"></label>
     ${MODO!=='escalautos'?`<div style="grid-column:1/-1;display:flex;gap:14px;align-items:center;flex-wrap:wrap">${c.logo?`<img src="${c.logo}" alt="Logo" style="height:56px;max-width:200px;object-fit:contain;background:#fff;border-radius:6px;padding:4px">`:'<span class="status">Sin logo</span>'}<label class="f">Logo de la empresa (aparece en los documentos)<input type="file" id="pLogo" accept="image/png,image/jpeg"></label>${c.logo?'<button type="button" class="ghost" id="pLogoX">Quitar logo</button>':''}</div>`:''}
@@ -3907,6 +3909,7 @@ function renderParams(){setTimeout(()=>ojos(),0);
   document.querySelectorAll('[data-tdel]').forEach(b=>b.onclick=()=>{c.turnos.splice(+b.dataset.tdel,1);saveCfg();renderParams()});
 
   document.querySelectorAll('[data-p]').forEach(inp=>inp.onchange=()=>{c[inp.dataset.p]=inp.type==='number'?+inp.value:inp.value;saveCfg()});
+  {const f=$('#pFirmaRL');if(f)f.onchange=async()=>{const fl=f.files[0];if(!fl)return;try{c.firmaRL=await firmaImgPrep(fl);bitacora('Cargó la firma escaneada del representante legal');saveCfg();renderParams();toast('Firma guardada')}catch(e){toast('No se pudo leer la imagen')}};const x=$('#pFirmaRLx');if(x)x.onclick=()=>{delete c.firmaRL;bitacora('Quitó la firma escaneada del representante legal');saveCfg();renderParams()}}
   document.querySelectorAll('[data-arl]').forEach(inp=>inp.onchange=()=>{c.arl[inp.dataset.arl]=+inp.value;saveCfg()});
   {const r=$('#pRed');if(r)r.onchange=()=>{c.redondeo=+r.value||1;saveCfg();renderParams();toast('Redondeo actualizado. Las nóminas ya guardadas no cambian; reábralas si quiere recalcularlas.')}}
   document.querySelectorAll('[data-pc]').forEach(inp=>inp.onchange=()=>{c[inp.dataset.pc]=inp.checked;saveCfg();renderParams()});
@@ -3945,6 +3948,13 @@ function numLetras(n){
 }
 const capi=s=>s.toLowerCase().replace(/^./,c=>c.toUpperCase());
 function fechaLarga(f){const [y,m,d]=f.split('-').map(Number);return `${d} de ${MESESL[m-1].toLowerCase()} de ${y}`}
+const ORTO=Object.fromEntries('tecnico técnico|tecnica técnica|tecnicos técnicos|tecnologo tecnólogo|tecnologa tecnóloga|logistico logístico|logistica logística|administracion administración|administrativo administrativo|gestion gestión|atencion atención|informacion información|produccion producción|direccion dirección|coordinacion coordinación|comunicacion comunicación|comunicaciones comunicaciones|operacion operación|operaciones operaciones|recepcion recepción|analisis análisis|analista analista|economico económico|economica económica|mecanico mecánico|mecanica mecánica|electrico eléctrico|electrica eléctrica|quimico químico|quimica química|farmaceutico farmacéutico|farmaceutica farmacéutica|medico médico|medica médica|juridico jurídico|juridica jurídica|credito crédito|creditos créditos|vehiculo vehículo|vehiculos vehículos|almacen almacén|bodega bodega|telefonico telefónico|telefonica telefónica|cajero cajero|auxiliar auxiliar|asistencia asistencia|asesoria asesoría|asesorias asesorías|consultoria consultoría|auditoria auditoría|contabilidad contabilidad|nomina nómina|nominas nóminas|compania compañía|compañia compañía|area área|areas áreas|basico básico|basica básica|minimo mínimo|maximo máximo|ultimo último|numero número|telefono teléfono|categoria categoría|garantia garantía|mantenimiento mantenimiento|seguridad seguridad|limpieza limpieza|cafeteria cafetería|panaderia panadería|drogueria droguería|farmacia farmacia|regente regente|electronica electrónica|electronico electrónico|informatica informática|informatico informático|sistemas sistemas|diseno diseño|disenador diseñador|disenadora diseñadora|ingenieria ingeniería|ingeniero ingeniero|psicologo psicólogo|psicologa psicóloga|odontologo odontólogo|odontologa odontóloga|enfermeria enfermería|pedagogico pedagógico|academico académico|academica académica|juridicos jurídicos|publico público|publica pública|publicidad publicidad|metodologia metodología|tecnologia tecnología|tecnologias tecnologías|financiero financiero|estrategico estratégico|estrategica estratégica|comercializacion comercialización|facturacion facturación|cartera cartera|tesoreria tesorería|tramites trámites|tramite trámite|logisticos logísticos|almacenista almacenista|domicilios domicilios|mensajeria mensajería|conduccion conducción|vigilancia vigilancia|recepcionista recepcionista|cocina cocina|asesor asesor|lider líder|lideres líderes|jefe jefe|subgerente subgerente|gerencia gerencia|presidencia presidencia|direccion dirección|bogota Bogotá|medellin Medellín|sibate Sibaté|ibague Ibagué|cucuta Cúcuta|popayan Popayán|monteria Montería|facatativa Facatativá|zipaquira Zipaquirá|fusagasuga Fusagasugá|chia Chía|bogotá Bogotá'.split('|').map(x=>x.split(' ')).filter(([a,b])=>a!==b));
+/* revisión de ortografía de los datos que se escriben en las certificaciones: tildes de palabras frecuentes, espacios y signos */
+function ortoFix(t,cambios){if(!t)return t;let o=String(t).replace(/\s{2,}/g,' ').replace(/\s+([,.;:])/g,'$1').replace(/([,;:])(?=[^\s\d])/g,'$1 ').trim();
+  o=o.replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g,w=>{const k=w.toLowerCase(),r=ORTO[k];if(!r)return w;const nv=w===w.toUpperCase()&&w.length>1?r.toUpperCase():w[0]===w[0].toUpperCase()?r[0].toUpperCase()+r.slice(1):r;if(nv!==w&&cambios)cambios.push([w,nv]);return nv});
+  if(cambios&&o!==String(t).trim()&&!cambios.length)cambios.push([String(t).trim(),o]);return o}
+function ortoF(F,campos){const out={...F},lista=[];campos.forEach(([k,lab])=>{if(typeof F[k]!=='string'||!F[k])return;const ch=[];out[k]=ortoFix(F[k],ch);ch.forEach(([a,b])=>lista.push({k,lab,a,b}))});return {F:out,lista}}
+const ORTO_CERT=[['cargo','cargo'],['objeto','objeto del contrato'],['honTxt','forma de los honorarios'],['dirigido','dirigido a'],['ciudad','ciudad'],['banco','banco'],['oficina','oficina'],['cargoF','cargo de quien firma'],['cargoCta','cargo de quien firma'],['eps','EPS'],['afp','fondo de pensiones']];
 function fechaCert(f){const [y,m,d]=f.split('-').map(Number);const w=numLetras(d).replace(/ PESOS$/,'').replace(/VEINTIUNO$/,'VEINTIÚN').replace(/UNO$/,'UN').toLowerCase();
   return d===1?`al primer (1) día del mes de ${MESESL[m-1].toLowerCase()} de ${y}`:`a los ${w} (${d}) días del mes de ${MESESL[m-1].toLowerCase()} de ${y}`}
 const fCorta=f=>f?f.split('-').reverse().join('/'):'';
@@ -3968,6 +3978,33 @@ function wTbl(rows,widths,o={}){
     return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${span>1?`<w:gridSpan w:val="${span}"/>`:''}${c.fill?`<w:shd w:val="clear" w:color="auto" w:fill="${c.fill}"/>`:''}<w:vAlign w:val="center"/></w:tcPr>${wP(wR(c.t??'',{b:c.b,sz:c.sz||18,color:c.color}),{jc:c.jc,after:0,line:240})}</w:tc>`}).join('')}</w:tr>`).join('')+`</w:tbl>`;
 }
 async function imgInfo(dataUrl){return new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r({w:300,h:100});i.src=dataUrl})}
+/* firma escaneada del representante legal: recorta márgenes blancos y la reduce */
+async function firmaImgPrep(fl){const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(fl)});
+  const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;const x=cv.getContext('2d');x.drawImage(img,0,0);const d=x.getImageData(0,0,cv.width,cv.height).data;let x0=cv.width,y0=cv.height,x1=0,y1=0;
+  for(let yy=0;yy<cv.height;yy+=2)for(let xx=0;xx<cv.width;xx+=2){const k=(yy*cv.width+xx)*4;if(d[k+3]>40&&(d[k]+d[k+1]+d[k+2])<600){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy}}
+  if(x1<=x0||y1<=y0){x0=0;y0=0;x1=cv.width-1;y1=cv.height-1}const pad=6;x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(cv.width-1,x1+pad);y1=Math.min(cv.height-1,y1+pad);
+  const w=x1-x0+1,h=y1-y0+1,sc=Math.min(1,600/w,250/h),o=document.createElement('canvas');o.width=Math.round(w*sc);o.height=Math.round(h*sc);const ox=o.getContext('2d');ox.drawImage(cv,x0,y0,w,h,0,0,o.width,o.height);
+  const od=ox.getImageData(0,0,o.width,o.height);for(let k=0;k<od.data.length;k+=4){const l=od.data[k]+od.data[k+1]+od.data[k+2];if(l>690)od.data[k+3]=0}ox.putImageData(od,0,0);return o.toDataURL('image/png')}
+async function docxFirmaRL(zip){const c=S.config;if(!c.firmaRL||!c.repLegal)return;const f=zip.file('word/document.xml');if(!f)return;let xml=await f.async('string');
+  const rep=nrm(c.repLegal).replace(/\s+/g,' ').trim();if(!rep)return;const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.getElementsByTagName('parsererror').length)return;
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main',txt=n=>[...n.getElementsByTagNameNS(W,'t')].map(t=>t.textContent).join('');const ps=[...doc.getElementsByTagNameNS(W,'p')];const usados=new Set();
+  const subr=p=>p&&/_{6,}/.test(txt(p));
+  ps.forEach(p=>{if(nrm(txt(p)).replace(/\s+/g,' ').trim()!==rep)return;let tgt=null;const tc=p.closest?p.closest('tc'):null;
+    let tcEl=null;for(let n=p.parentNode;n&&n.nodeType===1;n=n.parentNode){if(n.localName==='tc'){tcEl=n;break}if(n.localName==='body')break}
+    if(tcEl){const tr=tcEl.parentNode,idx=[...tr.childNodes].filter(n=>n.localName==='tc').indexOf(tcEl);let pr=tr.previousSibling;while(pr&&pr.localName!=='tr')pr=pr.previousSibling;
+      if(pr){const cel=[...pr.childNodes].filter(n=>n.localName==='tc')[idx];if(cel)tgt=[...cel.getElementsByTagNameNS(W,'p')].find(subr)||null}
+      if(!tgt){let q=p.previousSibling;for(let i=0;i<3&&q;i++,q=q.previousSibling)if(q.localName==='p'&&subr(q)){tgt=q;break}}}
+    else{let q=p.previousSibling;for(let i=0;i<3&&q;i++,q=q.previousSibling)if(q.localName==='p'&&subr(q)){tgt=q;break}}
+    if(!tgt)tgt=p;if(usados.has(tgt))return;usados.add(tgt);const np=doc.createElementNS(W,'w:p'),r=doc.createElementNS(W,'w:r'),t=doc.createElementNS(W,'w:t');t.textContent='⟦FIRMA_RL⟧';r.appendChild(t);np.appendChild(r);tgt.parentNode.insertBefore(np,tgt)});
+  if(!usados.size)return;xml=new XMLSerializer().serializeToString(doc);
+  const m=c.firmaRL.match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return;const ext=m[1]==='png'?'png':'jpeg';zip.file('word/media/firmaRL.'+ext,m[2],{base64:true});
+  const dim=await imgInfo(c.firmaRL);let hE=560000,wE=Math.round(hE*dim.w/dim.h);if(wE>1900000){hE=Math.round(hE*1900000/wE);wE=1900000}
+  const draw=`<w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${wE}" cy="${hE}"/><wp:docPr id="9701" name="FirmaRL"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9701" name="firmaRL.${ext}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdFirmaRL"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${wE}" cy="${hE}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+  xml=xml.replace(/<w:r>\s*<w:t>⟦FIRMA_RL⟧<\/w:t>\s*<\/w:r>/g,draw).replace(/<w:p><w:r><w:drawing><wp:inline xmlns:wp/g,'<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp');
+  zip.file('word/document.xml',xml);
+  const rf='word/_rels/document.xml.rels';let rels=zip.file(rf)?await zip.file(rf).async('string'):'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  if(!/rIdFirmaRL/.test(rels))rels=rels.replace('</Relationships>',`<Relationship Id="rIdFirmaRL" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/firmaRL.${ext}"/></Relationships>`);zip.file(rf,rels);
+  const ctf=zip.file('[Content_Types].xml');if(ctf){let ct=await ctf.async('string');if(!new RegExp('Extension="'+ext+'"','i').test(ct))ct=ct.replace('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="${ext}" ContentType="image/${ext}"/>`);zip.file('[Content_Types].xml',ct)}}
 async function generarDocx(body,titulo,nombre,tipo,opt={}){
   const PG=opt.pg||{w:12240,h:15840,t:2000,r:1701,b:1417,l:1701,hd:600},TW=PG.w-PG.l-PG.r;
   if(typeof JSZip==='undefined'){toast('No se pudo cargar el generador de Word. Revise la conexión.');return}
@@ -3993,6 +4030,7 @@ async function generarDocx(body,titulo,nombre,tipo,opt={}){
     zip.file('word/header1.xml',hdr);
     zip.file('word/document.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:pgSz w:w="${PG.w}" w:h="${PG.h}"${PG.w>PG.h?' w:orient="landscape"':''}/><w:pgMar w:top="${PG.t}" w:right="${PG.r}" w:bottom="${PG.b}" w:left="${PG.l}" w:header="${PG.hd}" w:footer="400" w:gutter="0"/></w:sectPr></w:body></w:document>`);
   }
+  try{await docxFirmaRL(zip)}catch(e){console.error('firma RL',e)}
   const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   await guardarArchivo(nombre,blob);
 }
@@ -6047,7 +6085,7 @@ async function wordActaRetiroPS(p){const E=psEmp(),R_=psFirmaRep(),r=psRT(p),mes
   const T=(t,o={})=>wP(wR(t,{sz:21,...o}),{jc:'both',after:140,...(o.p||{})});
   let b=wP(wR('ACTA DE TERMINACIÓN Y LIQUIDACIÓN FINAL',{b:true,sz:24}),{jc:'center',after:60})+wP(wR('CONTRATO DE PRESTACIÓN DE SERVICIOS',{b:true,sz:21}),{jc:'center',after:240});
   b+=wTbl([[{t:'CONTRATANTE:',b:true},{t:E.n+' · NIT '+E.nit}],[{t:'CONTRATISTA:',b:true},{t:p.nombre+' · '+(p.tipoDoc||'CC')+' '+cedula(p.doc)}],[{t:'FECHA DE INICIO:',b:true},{t:p.inicio?fechaTxt(p.inicio):''}],[{t:'FECHA DE TERMINACIÓN:',b:true},{t:fechaTxt(r.fecha)}],[{t:'CAUSA:',b:true},{t:mot}]],[2800,6038])+wP('',{after:160});
-  b+=T(`En ${E.ciu}, a los ${+r.fecha.slice(8)} días del mes de ${MESESL[+r.fecha.slice(5,7)-1].toLowerCase()} de ${r.fecha.slice(0,4)}, las partes dejan constancia de la terminación del contrato de prestación de servicios y de su liquidación final, así:`);
+  b+=T(`En ${E.ciu}, ${fechaCert(r.fecha)}, las partes dejan constancia de la terminación del contrato de prestación de servicios y de su liquidación final, así:`);
   b+=T(`1. Honorarios del último periodo (${psMesTxt(mes)}):`,{b:true});
   b+=wTbl([...psTablaLiq(c).map(([t,v])=>[{t,sz:18},{t:money(v),sz:18,jc:'right'}]),[{t:'Total honorarios',b:true,sz:18},{t:money(c.ingreso),b:true,sz:18,jc:'right'}],[{t:'Seguridad social descontada',sz:18},{t:c.descSS?'-'+money(c.descSS):'$0',sz:18,jc:'right'}],[{t:'Retención en la fuente',sz:18},{t:c.ret?'-'+money(c.ret):'$0',sz:18,jc:'right'}],...(c.desc?[[{t:'Otros descuentos',sz:18},{t:'-'+money(c.desc),sz:18,jc:'right'}]]:[]),[{t:'NETO A PAGAR',b:true,sz:18},{t:money(c.neto),b:true,sz:18,jc:'right'}]],[6338,2500])+wP('',{after:120});
   b+=T('2. Con el pago del valor anterior, EL CONTRATISTA declara que EL CONTRATANTE se encuentra a paz y salvo por todo concepto derivado del contrato, sin perjuicio de los honorarios variables de negocios entregados antes de la terminación que se paguen por el cliente con posterioridad, los cuales se liquidarán conforme al contrato, y de la compensación de negocios reversados prevista en el parágrafo tercero de la cláusula TERCERA.');
@@ -6287,7 +6325,7 @@ async function wordContratoPS(p){if(!p.doc)return toast('Escriba el número de d
   b+=C('DÉCIMA SEXTA. – INDEMNIDAD Y CESIÓN.','EL CONTRATISTA mantendrá indemne a EL CONTRATANTE frente a reclamaciones de terceros originadas en sus actos u omisiones en la ejecución del contrato. EL CONTRATISTA no podrá ceder ni subcontratar el contrato sin autorización previa y escrita de EL CONTRATANTE.');
   b+=C('DÉCIMA SÉPTIMA. – SOLUCIÓN DE CONTROVERSIAS.',`Las diferencias sobre la celebración, ejecución o terminación del contrato se resolverán, en primer lugar, por arreglo directo. De no lograrse, las partes podrán acudir a un centro de conciliación autorizado y, en su defecto, a la jurisdicción ordinaria civil. El domicilio contractual es la ciudad de ${E.ciu}.`);
   b+=C('DÉCIMA OCTAVA. – DISPOSICIONES GENERALES.','Este documento contiene la totalidad de los acuerdos entre las partes sobre su objeto. Reemplaza y deja sin efecto cualquier contrato o acuerdo previo, verbal o escrito, entre las partes sobre la misma materia. Los honorarios causados bajo un contrato anterior se liquidarán y pagarán conforme a sus condiciones. Toda modificación deberá constar por escrito y ser suscrita por ambas partes. La nulidad de alguna estipulación no afectará la validez de las demás.');
-  b+=T(`En constancia de lo anterior, las partes aceptan de forma voluntaria las condiciones establecidas y suscriben el presente contrato en dos (2) ejemplares del mismo tenor, en ${E.ciu}, a los ${dd} días del mes de ${MESESL[mm-1].toLowerCase()} de ${y}.`);
+  b+=T(`En constancia de lo anterior, las partes aceptan de forma voluntaria las condiciones establecidas y suscriben el presente contrato en dos (2) ejemplares del mismo tenor, en ${E.ciu}, ${dd===1?'al primer (1) día':`a los ${psNL(dd).toLowerCase().replace(/uno$/,'ún')} (${dd}) días`} del mes de ${MESESL[mm-1].toLowerCase()} de ${y}.`);
   b+=wP('',{after:600})+wTbl([[{t:'______________________________',sz:20},{t:'______________________________',sz:20}],[{t:R.n,b:true,sz:19},{t:p.nombre,b:true,sz:19}],[{t:'Contratante',sz:19},{t:'Contratista',sz:19}],[{t:'NIT '+E.nit,sz:19},{t:(p.tipoDoc||'CC')+' '+cedula(p.doc),sz:19}]],[4419,4419],{noBorder:true});
   p.ctrs=[...(p.ctrs||[]),{fecha:todayCO(),inicio:f}];bitacora(`Generó el contrato de prestación de servicios de ${p.nombre}`);persist('ps');
   await docTH(b,'Contrato de prestación de servicios',`CONTRATO_PRESTACION_SERVICIOS_${slug(p.nombre)}.docx`);renderPS()}
@@ -6774,20 +6812,20 @@ function certPSGuardar(F){const nom=String(F.nombre||'').trim().toUpperCase(),do
   if(String(CT.eid).startsWith('p:')){const p=psD().lista[CT.eid.slice(2)];Object.assign(p,{nombre:nom,doc,tipoDoc:F.tipoDoc||'CC',inicio:F.inicio||p.inicio||'',objetoCert:F.objeto||''});if(term){p.retirado=true;p.retiro=F.fin||p.retiro||''}persist('ps')}
   else{const e=S.emps[CT.eid];Object.assign(e,{nombre:nom,doc,tipoDoc:F.tipoDoc||'CC',ingreso:F.inicio||e.ingreso||'',objetoPS:F.objeto||'',honTxtPS:F.honTxt||'mensuales'});if(+F.honorarios)e.salario=+F.honorarios;if(term){e.retiro=F.fin||e.retiro||'';e.activo=false}else{e.retiro='';e.activo=true}persist('emp',e.id)}
   bitacora(`Actualizó los datos del prestador ${nom} desde Certificaciones`);toast('Datos guardados en la ficha del prestador');renderCert()}
-function textoCertPS(F){const fem=F.trato==='f',sr=fem?'la señora':'el señor',idf=fem?'identificada':'identificado',int_=fem?'de la interesada':'del interesado',vig=F.estado==='vigente';
+function textoCertPS(F){F=ortoF(F,ORTO_CERT).F;const fem=F.trato==='f',sr=fem?'la señora':'el señor',idf=fem?'identificada':'identificado',int_=fem?'de la interesada':'del interesado',vig=F.estado==='vigente';
   const td={CC:'C.C.',CE:'C.E.',PPT:'PPT',PEP:'PEP',Pasaporte:'pasaporte'}[F.tipoDoc||'CC']||'C.C.';
   const p1=`Que ${sr} ${(F.nombre||'').toUpperCase()}, ${idf} con ${td} No. ${cedula(F.doc)}, ${vig?'presta':'prestó'} sus servicios a nuestra compañía como contratista independiente, mediante contrato de prestación de servicios, ${vig?`desde el ${fCorta(F.inicio)} a la fecha`:`desde el ${fCorta(F.inicio)} hasta el ${fCorta(F.fin)}`}${F.objeto?`, con el objeto de ${F.objeto}`:''}`+(F.conHon&&F.honorarios?`, con honorarios de ${numLetras(F.honorarios)} (${money(F.honorarios)}) ${F.honTxt||'mensuales'}.`:'.');
   const p2=F.cumple?`Durante la ejecución del contrato, ${fem?'la contratista':'el contratista'} ${vig?'ha cumplido':'cumplió'} a satisfacción con las obligaciones pactadas.`:'';
   const p3=F.acl?'El contrato es de naturaleza civil, se ejecuta con autonomía técnica y administrativa y no genera relación laboral, salario ni prestaciones sociales.':'';
   const p4=`La presente se expide en ${F.ciudad}, a solicitud ${int_}, ${fechaCert(F.fecha)}.`;
   return {p1,p2,p3,p4}}
-async function wordCertPS(F){FONT_ACT=fuenteDe('cert');try{const c=S.config,T=textoCertPS(F),o={sz:22};
+async function wordCertPS(F){{const f=[!F.nombre&&'el nombre',!F.doc&&'el número de documento',!F.inicio&&'la fecha de inicio',F.estado==='terminado'&&!F.fin&&'la fecha de terminación'].filter(Boolean);if(f.length)return toast('Falta '+f.join(', ')+' para expedir la certificación')}FONT_ACT=fuenteDe('cert');try{const c=S.config,T=textoCertPS(F),o={sz:22};
   let b='';if(F.dirigido)b+=wP(wR(F.dirigido,o),{after:240});
   if(!disenoDe('cert'))b+=wP(wR(c.empresa.toUpperCase(),{b:true,sz:22}),{jc:'center',after:0})+wP(wR('Nit. '+c.nit,{b:true,sz:22}),{jc:'center',after:240});b+=wP(wR('CERTIFICA:',{b:true,sz:22}),{jc:'center',after:360});
   [T.p1,T.p2,T.p3].filter(Boolean).forEach(t=>{b+=wP(wR(t,o),{jc:'both',after:240,line:300})});
   b+=wP(wR('Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto'+(c.contacto?': '+c.contacto:'')+'.',o),{jc:'both',after:240,line:300});
   b+=wP(wR(T.p4,o),{jc:'both',after:360,line:300})+wP(wR('Atentamente,',o),{after:900});
-  b+=wP(wR((F.firmante||'').toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(F.cargoF||'',{b:true,sz:22}),{after:0});
+  b+=wP(wR((F.firmante||'').toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(ortoFix(F.cargoF||''),{b:true,sz:22}),{after:0});
   bitacora(`Expidió certificación de prestación de servicios a ${F.nombre}`);
   await generarDocx(b,'Certificación de prestación de servicios',`CERTIFICACION_PRESTACION_SERVICIOS_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert')}finally{FONT_ACT=null}}
 /* promedio salarial mensual: salario básico ponderado + promedio de recargos, extras y comisiones de los últimos 12 meses (o desde el ingreso) */
@@ -6800,7 +6838,7 @@ function certF(id){
     nombre:e.nombre,doc:e.doc||'',ingreso:e.ingreso||'',estado:e.activo===false||e.retiro?'retirado':'activo',retiro:e.retiro||'',cargo:e.cargo||'',contrato:/fijo/i.test(e.contrato||'')?'a término fijo':/aprendiz/i.test(e.contrato||'')?'de aprendizaje':/obra/i.test(e.contrato||'')?'por obra o labor':'a término indefinido',
     conSal:true,salario:sal,prom:promSalarial(e),afil:true,eps:capi(e.eps||''),afp:capi(e.afp||''),ccf:c.ccf||'',arl:c.arlEnt||'',dirigido:'',fecha:todayCO(),firmante:c.firmante||'',cargoF:c.cargoFirmante||'',ciudad:c.ciudad||'Bogotá',banco:c.bancoEmp||'',oficina:c.bancoOfi||'',ctaTipo:c.bancoTipo||'corriente',ctaNum:c.bancoCta||'',nuevaTipo:'de ahorros de nómina',firmaCta:c.cartaFirma||c.firmante||'',cargoCta:c.cartaCargo||c.cargoFirmante||''};
 }
-function textoCert(F){
+function textoCert(F){F=ortoF(F,ORTO_CERT).F;
   const fem=F.trato==='f',sr=fem?'la señora':'el señor',idf=fem?'identificada':'identificado',af=fem?'afiliada':'afiliado',int_=fem?'de la interesada':'del interesado',activo=F.estado==='activo';
   const pila=capi((F.nombre||'').split(/\s+/)[0]||'');
   const p1=`Que ${sr} ${F.nombre.toUpperCase()}, ${idf} con C.C. No. ${cedula(F.doc)}, ${activo?`labora en nuestra compañía desde el ${fCorta(F.ingreso)}, desempeñando actualmente el cargo de`:`laboró en nuestra compañía desde el ${fCorta(F.ingreso)} hasta el ${fCorta(F.retiro)}, desempeñando el cargo de`} ${F.cargo.toUpperCase()}, mediante contrato laboral ${F.contrato}`+(F.conSal?`, ${activo?'devengando':'devengando'} un salario básico mensual de ${numLetras(F.salario)} (${money(F.salario)})${F.prom?`, con un promedio salarial mensual de ${numLetras(F.prom)} (${money(F.prom)})`:''}, más prestaciones de ley.`:'.');
@@ -6809,7 +6847,7 @@ function textoCert(F){
   const p3=`La presente se expide en ${F.ciudad}, a solicitud ${int_}, ${fechaCert(F.fecha)}.`;
   return {p1,p2,af:af2,p3};
 }
-function textoCta(F){
+function textoCta(F){F=ortoF(F,ORTO_CERT).F;
   const c=S.config,fem=F.trato==='f',sr=fem?'la señora':'el señor',idf=fem?'identificada':'identificado',vin=fem?'vinculada':'vinculado';
   const p1=`Por medio de la presente, ${c.empresa.toUpperCase()}, identificada con NIT ${c.nit}, titular de la cuenta ${F.ctaTipo} No. ${F.ctaNum||'__________'}${F.oficina?`, radicada en la oficina ${F.oficina}`:''} de su entidad, solicita de manera respetuosa la apertura de una cuenta ${F.nuevaTipo} a nombre de ${sr} ${F.nombre.toUpperCase()}, ${idf} con C.C. No. ${cedula(F.doc)}.`;
   const p2=`${fem?'La señora':'El señor'} ${capi((F.nombre||'').split(/\s+/)[0]||'')} se encuentra ${vin} a nuestra compañía desde el ${fCorta(F.ingreso)}, mediante contrato laboral ${F.contrato}, en el cargo de ${F.cargo.toUpperCase()}`+(F.conSal?`, con un salario básico mensual de ${numLetras(F.salario)} (${money(F.salario)})${F.prom?`, con un promedio salarial mensual de ${numLetras(F.prom)} (${money(F.prom)})`:''}.`:'.');
@@ -6822,7 +6860,7 @@ function renderCert(){
   if(CT.tipo==='ps'&&!certPSLista().length&&!F)h+=`<div class="panel empty" style="margin-top:12px"><b>No hay prestadores de servicios registrados</b>Escoja «＋ Otro prestador» y escriba sus datos: puede guardarlo para la próxima vez.</div>`;
   if(F&&cta){
     const T=textoCta(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
-    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
+    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px" spellcheck="true" lang="es">
       <label class="f">Tratamiento<select data-ct="trato" id="ct-trato"><option value="m"${F.trato==='m'?' selected':''}>Señor</option><option value="f"${F.trato==='f'?' selected':''}>Señora</option></select></label>
       ${inp('nombre','Nombre completo')}${inp('doc','Cédula')}${inp('cargo','Cargo')}${inp('ingreso','Fecha de ingreso','date')}
       <label class="f">Tipo de contrato<select data-ct="contrato" id="ct-contrato">${['a término indefinido','a término fijo','por obra o labor','de aprendizaje'].map(t=>`<option${F.contrato===t?' selected':''}>${t}</option>`).join('')}</select></label>
@@ -6845,7 +6883,7 @@ function renderCert(){
       <p>Atentamente,</p><div style="height:48px"></div><p><b>${esc(F.firmaCta.toUpperCase())}</b><br>${esc(F.cargoCta)}<br>${esc(S.config.empresa)}</p></article>`;
   }else if(F&&CT.tipo==='ps'){
     const T=textoCertPS(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
-    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
+    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px" spellcheck="true" lang="es">
       <label class="f">Tratamiento<select data-ct="trato" id="ct-trato"><option value="m"${F.trato==='m'?' selected':''}>Señor</option><option value="f"${F.trato==='f'?' selected':''}>Señora</option></select></label>
       ${inp('nombre','Nombre completo')}<label class="f">Tipo de documento<select data-ct="tipoDoc" id="ct-tipoDoc">${['CC','CE','PPT','PEP','Pasaporte'].map(t=>`<option${(F.tipoDoc||'CC')===t?' selected':''}>${t}</option>`).join('')}</select></label>${inp('doc','Número de documento')}${inp('inicio','Fecha de inicio del contrato','date')}
       <label class="f">Estado<select data-ct="estado" id="ct-estado"><option value="vigente"${F.estado==='vigente'?' selected':''}>Contrato vigente</option><option value="terminado"${F.estado==='terminado'?' selected':''}>Contrato terminado</option></select></label>
@@ -6868,7 +6906,7 @@ function renderCert(){
       <p class="j">${esc(T.p4)}</p><p>Atentamente,</p><div style="height:48px"></div><p><b>${esc((F.firmante||'').toUpperCase())}</b><br>${esc(F.cargoF||'')}</p></article>`;
   }else if(F){
     const T=textoCert(F),inp=(k,lab,t='text',ex='')=>`<label class="f">${lab}<input data-ct="${k}" id="ct-${k}" type="${t}" value="${esc(F[k]??'')}" ${ex}></label>`;
-    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px">
+    h+=`<form class="panel grid-form" id="ctF" style="margin-top:12px" spellcheck="true" lang="es">
       <label class="f">Tratamiento<select data-ct="trato" id="ct-trato"><option value="m"${F.trato==='m'?' selected':''}>Señor</option><option value="f"${F.trato==='f'?' selected':''}>Señora</option></select></label>
       ${inp('nombre','Nombre completo')}${inp('doc','Cédula')}${inp('cargo','Cargo')}
       ${inp('ingreso','Fecha de ingreso','date')}
@@ -6890,14 +6928,15 @@ function renderCert(){
       <p class="j">Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto${S.config.contacto?': '+esc(S.config.contacto):''}.</p>
       <p class="j">${esc(T.p3)}</p><p>Atentamente,</p><div style="height:48px"></div><p><b>${esc(F.firmante.toUpperCase())}</b><br>${esc(F.cargoF)}</p></article>`;
   }
+  if(F){const L=ortoF(F,ORTO_CERT).lista;if(L.length){const u=[];L.forEach(x=>{if(!u.some(y=>y.a===x.a&&y.b===x.b))u.push(x)});h=h.replace('<div class="bar" style="margin-top:14px"><span class="grow note">Vista previa',`<div class="alert info" style="margin-top:10px"><b>Revisión de ortografía:</b> el documento sale corregido así: ${u.map(x=>`«${esc(x.a)}» → «${esc(x.b)}» <span class="status">(${esc(x.lab)})</span>`).join(' · ')}. <button class="free ghost" id="ctOrto">Corregir también en el formulario${CT.eid&&CT.eid!=='__nuevo'&&!String(CT.eid).startsWith('p:')&&S.emps[CT.eid]?' y en la ficha':''}</button></div><div class="bar" style="margin-top:14px"><span class="grow note">Vista previa`)}}
   {const pp=portalPend().filter(x=>!(x.d&&['permiso','reporte','datos','horario'].includes(x.d.tipo)));if(pp.length)h=h.replace('</h2></div>',`</h2></div><div class="alert" style="margin-bottom:10px"><b>${pp.length} solicitud${pp.length>1?'es':''} de certificado firmado desde el portal:</b> ${pp.map(x=>`<span style="white-space:nowrap">${esc(x.e?x.e.nombre:'(empleado no encontrado)')}${x.d&&x.d.dirigido?' — '+esc(x.d.dirigido):''} ${x.e?`<button class="free ghost" data-ptc="${esc(x.id)}">Hacer certificado</button>`:''}<button class="free ghost" data-ptok="${esc(x.id)}">Marcar atendida</button></span>`).join(' · ')}</div>`);else if(!PT.sols&&portalAuto())setTimeout(portalSols,50)}
   $('#v-cert').innerHTML=h;bindPtSols();
   $('#ctE').onchange=ev=>abrirCert(ev.target.value);$('#ctT').onchange=ev=>{const a=CT.tipo;CT.tipo=ev.target.value;if((a==='ps')!==(CT.tipo==='ps')){CT.eid='';CT.f=null}else if(CT.eid)CT.f=CT.tipo==='ps'?certPSF(CT.eid):certF(CT.eid);renderCert()};
   if(F){document.querySelectorAll('[data-ct]').forEach(x=>x.onchange=()=>{const k=x.dataset.ct;F[k]=x.type==='checkbox'?x.checked:x.type==='number'?+x.value||0:x.value;
       const M={banco:'bancoEmp',oficina:'bancoOfi',ctaTipo:'bancoTipo',ctaNum:'bancoCta',firmaCta:'cartaFirma',cargoCta:'cartaCargo'};if(M[k]&&PERM.write){S.config[M[k]]=F[k];saveCfg()}renderCert()});
-    $('#ctW').onclick=()=>cta?wordCta(F):CT.tipo==='ps'?wordCertPS(F):wordCert(F);{const g=$('#ctPSG');if(g)g.onclick=()=>certPSGuardar(F)}const pp=$('#ctP');if(pp)pp.onclick=()=>pdfCta(F)}
+    $('#ctW').onclick=()=>cta?wordCta(F):CT.tipo==='ps'?wordCertPS(F):wordCert(F);{const g=$('#ctPSG');if(g)g.onclick=()=>certPSGuardar(F)}{const o=$('#ctOrto');if(o)o.onclick=()=>{const r=ortoF(F,ORTO_CERT);Object.assign(F,r.F);const e=CT.eid&&S.emps[CT.eid];if(e&&PERM.write){let ch=false;if(e.cargo){const v=ortoFix(e.cargo);if(v!==e.cargo){e.cargo=v;ch=true}}if(e.objetoPS){const v=ortoFix(e.objetoPS);if(v!==e.objetoPS){e.objetoPS=v;ch=true}}['eps','afp'].forEach(k=>{if(e[k]){const v=ortoFix(e[k]);if(v!==e[k]){e[k]=v;ch=true}}});if(ch){persist('emp',e.id);bitacora(`Corrigió la ortografía de los datos de ${e.nombre}`)}}if(F.cargoF&&PERM.write&&S.config.cargoFirmante){S.config.cargoFirmante=ortoFix(S.config.cargoFirmante);saveCfg()}toast('Ortografía corregida');renderCert()}}const pp=$('#ctP');if(pp)pp.onclick=()=>pdfCta(F)}
 }
-async function wordCert(F){
+async function wordCert(F){{const f=[!F.nombre&&'el nombre',!F.doc&&'la cédula',!F.ingreso&&'la fecha de ingreso',!F.cargo&&'el cargo',F.estado==='retirado'&&!F.retiro&&'la fecha de retiro'].filter(Boolean);if(f.length)return toast('Falta '+f.join(', ')+' para expedir el certificado')}
   FONT_ACT=fuenteDe('cert');try{return await wordCert0(F)}finally{FONT_ACT=null}}
 function partesCta(F){const c=S.config,T=textoCta(F);return {enc:[`${F.ciudad}, ${fechaLarga(F.fecha)}`],dest:['Señores',(F.banco||'__________').toUpperCase(),...(F.oficina?['Oficina '+F.oficina]:[]),'Ciudad'],asunto:'Solicitud de apertura de cuenta '+F.nuevaTipo,
   pars:[T.p1,T.p2,T.p3,'Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto'+(c.contacto?': '+c.contacto:'')+'.'],firma:[(F.firmaCta||'').toUpperCase(),F.cargoCta||'',c.empresa]}}
@@ -6947,7 +6986,7 @@ async function wordCert0(F){
   if(T.p2){b+=wP(wR(T.p2,o),{jc:'both',after:200,line:300});T.af.forEach(a=>{b+=wP(wR(a[0]+': ',{...o,b:true})+wR(a[1],o),{after:40})});b+=wP('',{after:160})}
   b+=wP(wR('Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto'+(c.contacto?': '+c.contacto:'')+'.',o),{jc:'both',after:240,line:300});
   b+=wP(wR(T.p3,o),{jc:'both',after:360,line:300})+wP(wR('Atentamente,',o),{after:900});
-  b+=wP(wR(F.firmante.toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(F.cargoF,{b:true,sz:22}),{after:0});
+  b+=wP(wR(F.firmante.toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(ortoFix(F.cargoF),{b:true,sz:22}),{after:0});
   await generarDocx(b,'Certificación Laboral',`CERTIFICADO_LABORAL_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert');
 }
 
@@ -6994,7 +7033,7 @@ function arreglarLenys(D){ // Lenys Corredor: vacaciones del 6 al 22 de octubre 
   if(!ci[q2]){const d=nov[q2]||(nov[q2]={por:{}});d.por=d.por||{};const x=d.por[id]||(d.por[id]={});if(x.vacD===undefined){delete x.vac;delete x.lnr;x.vacD=7;if(!x.obs||/Labor[oó] 7 d[ií]as/.test(x.obs))x.obs='Regresó de vacaciones el 23 de octubre (vacaciones pagadas en la 1.ª quincena)';ch=true}}
   return ch}
 const DATOS_EMP={'901594919':{direccion:'Av. Américas No 62-84 Local 1-34, Bogotá',correoEmp:'Talentohumano.escalautos@gmail.com',repLegal:'LUISA FERNANDA SABOGAL BASTILLA',cargoRep:'Representante Legal (S)',periodicidadCtr:'Mensual'},
-  '901182851':{direccion:'Cr 7 No 14-04, Soacha, Cundinamarca',correoEmp:'talentohumanofarmaser@gmail.com',repLegal:'MARIA FERNANDA GAITAN HERNANDEZ',cargoRep:'Representante Legal (S)',periodicidadCtr:'Quincenal'}};
+  '901182851':{direccion:'Cr 7 No 14-04, Soacha, Cundinamarca',correoEmp:'talentohumanofarmaser@gmail.com',repLegal:'DANIEL FELIPE GAITAN HERNANDEZ',cargoRep:'Representante Legal',periodicidadCtr:'Quincenal'}};
 function datosEmpresa(cfg){if(!cfg||cfg.mig7)return false;const d=DATOS_EMP[String(cfg.nit||'').replace(/\D/g,'').slice(0,9)];if(d)Object.entries(d).forEach(([k,v])=>{if(!cfg[k])cfg[k]=v});cfg.mig7=true;return true}
 function migSST(){ // datos de SST de Escalautos según la autoevaluación 2025 (Ministerio) y el informe de ARL SURA de julio de 2026
   if(MODO==='general'||!esEscalautos()||S.config.migSST1)return false;const d=sstD();
@@ -7019,7 +7058,7 @@ function migrar(){
   if(MODO==='general'&&DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(em.config&&!em.config.mig6&&/901\.?182\.?851/.test(em.config.nit||'')){sinMartin(em);em.config.mig6=true;ch=true}});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}
   if(MODO==='general'&&DATA&&DATA.empresas){sync();let ch=false;Object.values(DATA.empresas).forEach(em=>{if(em.config&&!em.config.mig5&&/901\.?182\.?851/.test(em.config.nit||'')){arreglarLenys(em);em.config.mig5=true;ch=true}});if(ch){if(DATA.actual&&DATA.empresas[DATA.actual])cargarDatos(DATA.empresas[DATA.actual]);saveLocal()}}
   if(MODO==='farmaser'&&!S.config.mig2){if(!S.config.ccf)S.config.ccf='Compensar';if(!S.config.arlEnt)S.config.arlEnt='Sura';S.config.mig2=true;saveLocal()}
-  if(MODO==='farmaser'&&!S.config.mig3){const c=S.config;if(!c.firmante)c.firmante='MARIA FERNANDA GAITAN HERNANDEZ';if(!c.cargoFirmante||c.cargoFirmante==='Representante legal')c.cargoFirmante='Representante Legal (S)';if(!c.ciudad||c.ciudad==='Bogotá')c.ciudad='Soacha';c.mig3=true;saveLocal()}
+  if(MODO==='farmaser'&&!S.config.mig3){const c=S.config;if(!c.firmante)c.firmante='DANIEL FELIPE GAITAN HERNANDEZ';if(!c.cargoFirmante||c.cargoFirmante==='Representante legal')c.cargoFirmante='Representante Legal (S)';if(!c.ciudad||c.ciudad==='Bogotá')c.ciudad='Soacha';c.mig3=true;saveLocal()}
   if(MODO==='farmaser'&&!S.config.mig4){const d=S.config.disenos||{};if(d.desp&&d.desp.id==='memb')delete d.desp;S.config.mig4=true;saveLocal()}
   // Eliana Solórzano y Jeisson Pinilla se liquidaron por aparte: se retiran de la base de Escalautos
   if(MODO!=='escalautos'||S.config.mig1)return;['emp-1016945282','emp-1022931960'].forEach(id=>{delete S.emps[id];delete S.cuentas[id];Object.values(S.nov).forEach(n=>{if(n.por)delete n.por[id]})});S.config.mig1=true;saveLocal()}
