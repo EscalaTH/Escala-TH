@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 11:41';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='23/11/2026 11:47';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -5773,8 +5773,7 @@ const VI_CHK=[
  ['rnmc','Comparendos y medidas correctivas (Código de Policía)','Policía Nacional – RNMC','https://srvcnpc.policia.gov.co/PSC/frm_cnp_consulta.aspx'],
  ['simit','Comparendos y multas de tránsito','SIMIT – Federación Colombiana de Municipios','https://www.fcm.org.co/simit/#/estado-cuenta'],
  ['rama','Procesos judiciales','Rama Judicial – Consulta de Procesos','https://consultaprocesos.ramajudicial.gov.co/Procesos/NombreRazonSocial'],
- ['sex','Inhabilidades por delitos sexuales contra menores (Ley 1918 de 2018)','Policía Nacional','https://inhabilidades.policia.gov.co:8080/'],
- ['redam','Deudores alimentarios morosos – REDAM (Ley 2097 de 2021)','Carpeta Ciudadana – gov.co','https://www.gov.co/']];
+ ['sex','Inhabilidades por delitos sexuales contra menores (Ley 1918 de 2018)','Policía Nacional','https://inhabilidades.policia.gov.co:8080/']];
 const VI_EST=[['','Pendiente'],['ok','Sin novedad'],['nov','Con novedad'],['na','No aplica']];
 const VI_CON=[['','Sin concepto'],['fav','Favorable'],['obs','Favorable con observaciones'],['no','No favorable']];
 const VIV={id:null,ask:null,nuevo:false,q:''};
@@ -5783,7 +5782,7 @@ const viKey=(v,id)=>docKey('vi_'+v.id,id);
 const viVer=v=>/^administrador$/i.test(String(v.verificador||'').trim())?'':String(v.verificador||'').trim();
 const viFH=v=>{const h=v.hora||'';let t=fechaTxt(v.fecha);if(h){const [H,M]=h.split(':').map(Number);t+=`, ${((H+11)%12)+1}:${String(M).padStart(2,'0')} ${H<12?'a. m.':'p. m.'}`}return t};
 const viEstTxt=k=>(VI_EST.find(x=>x[0]===(k||''))||VI_EST[0])[1];
-function viAvance(v){const req=VI_CHK.filter(c=>c[0]!=='sex'&&c[0]!=='redam');const ch=v.chk||{};const done=VI_CHK.filter(c=>(ch[c[0]]||{}).est).length,nov=VI_CHK.filter(c=>(ch[c[0]]||{}).est==='nov').length;
+function viAvance(v){const req=VI_CHK.filter(c=>c[0]!=='sex');const ch=v.chk||{};const done=VI_CHK.filter(c=>(ch[c[0]]||{}).est).length,nov=VI_CHK.filter(c=>(ch[c[0]]||{}).est==='nov').length;
   const lab=(v.lab||[]).filter(x=>x.res==='conf').length,labT=(v.lab||[]).length,labD=(v.lab||[]).filter(x=>x.res==='disc'||x.res==='nc').length,per=(v.per||[]).filter(x=>x.res==='conf').length;
   return {done,tot:VI_CHK.length,nov,lab,labT,labD,per,perT:(v.per||[]).length,proc:(v.procs||[]).length,falta:req.filter(c=>!(ch[c[0]]||{}).est).length}}
 function viNuevo(o){const id='v'+uid().replace(/[^a-z0-9]/gi,'').slice(0,12);viD()[id]={id,creado:todayCO(),fecha:todayCO(),tipo:'candidato',nombre:'',tipoDoc:'CC',doc:'',cargo:'',sede:'',verificador:'',hora:new Date().toLocaleTimeString('en-GB',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'}),chk:{},procs:[],lab:[],per:[],acad:[],docs:[],concepto:'',just:'',...o,id};return viD()[id]}
