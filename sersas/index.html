@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 14:45';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='23/11/2026 14:52';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -390,7 +390,11 @@ async function nubeFetch(op,body,url,n){const u=url||NUBE.url;if(!u)throw 'sin n
   const sg=(ms)=>{try{return AbortSignal.timeout(ms)}catch(e){return undefined}};
   if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow',signal:sg(90000)});
   else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow',signal:sg(45000)});
-  if(!r.ok)throw 'HTTP '+r.status;return r.json()}
+  if(!r.ok)throw 'HTTP '+r.status;const t=await r.text();try{return JSON.parse(t)}catch(e){throw /<html|<!doctype/i.test(t)?(/quota|límite|too many|Service invoked/i.test(t)?'cuota':/authoriz|autoriz|permission|permiso|sign in|iniciar sesi/i.test(t)?'autoriza':'html'):'respuesta'}}
+function nubeErrTxt(e){const m=String((e&&(e.name==='TimeoutError'||e.name==='AbortError'))?'timeout':(e&&e.message)||e||'');
+  if(/timeout|timed out|aborted/i.test(m))return 'la nube tardó demasiado en responder';if(/failed to fetch|networkerror|load failed|network/i.test(m))return 'no hay internet en este momento o la conexión con Google se cortó';
+  if(m==='cuota')return 'Google limitó el uso de la nube por hoy (cuota diaria de Apps Script); vuelve a funcionar sola más tarde';if(m==='autoriza')return 'el script de la nube pide autorización otra vez en Google';if(m==='html'||m==='respuesta')return 'Google respondió con una página de error';
+  if(/^HTTP (\d+)/.test(m))return 'Google respondió con error '+m.slice(5);if(/no se pudo guardar|sin respuesta/i.test(m))return 'la nube no confirmó el guardado';return m.slice(0,120)}
 async function nubeTok(){const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array([...DEKRAW,...new TextEncoder().encode('|nube|'+LKEY)])));return [...h].map(x=>x.toString(16).padStart(2,'0')).join('')}
 const esObjN=v=>v&&typeof v==='object'&&!Array.isArray(v);
 function deepEq(a,b){if(a===b)return true;if(typeof a!==typeof b||a===null||b===null||typeof a!=='object')return a===b||(a==null&&b==null);
@@ -440,7 +444,7 @@ async function nubeSync(forzar){
         if(p.conflict)continue;if(!p.ok)throw p.error==='auth'?'auth':(p.error||'no se pudo guardar');rver=p.ver}
       {const nb={ver:rver,box:await cifrar(KEY,res),tab:TAB_ID};await sesOp('put',NB_TAB(),nb);await sesOp('put',LKEY+'.nb',nb)}NUBE.ver=rver;NUBE.ult=NUBE.url+'#'+rver;break}
     NUBE.t=new Date();NUBE.err='';nubeDocsPend();
-  }catch(e){NUBE.err=e==='auth'?'La nube no aceptó este equipo (la clave de los datos es distinta)':'Sin conexión con la nube: los cambios quedan en este computador y se suben al volver la conexión'}
+  }catch(e){console.error('nube',e);NUBE.err=e==='auth'?'La nube no aceptó este equipo (la clave de los datos es distinta)':`Sin conexión con la nube (${nubeErrTxt(e)}). Los cambios quedan guardados en este computador y se suben solos cuando vuelva la conexión; también puede tocar «Sincronizar ahora».`;clearTimeout(NUBE.tr);NUBE.tr=setTimeout(()=>{if(NUBE.err)nubeSync()},60000)}
   finally{NUBE.ocup=false;nubeBarra();if(NUBE.pend){NUBE.pend=false;clearTimeout(NUBE.tp);NUBE.tp=setTimeout(nubeSync,4000)}}}
 function nubeProgramar(){if(!NUBE.url||!KEY)return;clearTimeout(NUBE.tp);NUBE.tp=setTimeout(nubeSync,2500)}
 function nubeIniciar(){if(!NUBE.url)return;clearInterval(NUBE.iv);NUBE.iv=setInterval(()=>{if(!document.hidden)nubeSync()},20000);setTimeout(nubeSync,300)}
