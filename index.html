@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 17:21';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='23/11/2026 17:22';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -5820,7 +5820,7 @@ const VI_CON=[['','Sin concepto'],['fav','Favorable'],['obs','Favorable con obse
 const VIV={id:null,ask:null,nuevo:false,q:''};
 const viD=()=>{const t=thD();t.verif=t.verif||{};return t.verif};
 const viKey=(v,id)=>docKey('vi_'+v.id,id);
-const viArch=v=>`Verificación ${String(v.nombre||'aspirante').replace(/[\\/:*?"<>|_]+/g,' ').replace(/\s+/g,' ').trim()} ${String(v.doc||'').replace(/\D/g,'')}`.trim();
+const viArch=v=>`Verificacion ${String(v.nombre||'aspirante').replace(/[\\/:*?"<>|_]+/g,' ').replace(/\s+/g,' ').trim()} ${String(v.doc||'').replace(/\D/g,'')}`.trim();
 const viVer=v=>/^administrador$/i.test(String(v.verificador||'').trim())?'':String(v.verificador||'').trim();
 const viFH=v=>{const h=v.hora||'';let t=fechaTxt(v.fecha);if(h){const [H,M]=h.split(':').map(Number);t+=`, ${((H+11)%12)+1}:${String(M).padStart(2,'0')} ${H<12?'a. m.':'p. m.'}`}return t};
 const viEstTxt=k=>(VI_EST.find(x=>x[0]===(k||''))||VI_EST[0])[1];
