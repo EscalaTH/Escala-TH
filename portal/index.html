@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 17:22';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='23/11/2026 18:00';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -4462,7 +4462,7 @@ function renderLiq(){
   const lista=empAll().filter(e=>e.activo!==false||e.retiro),e=LQ.eid?S.emps[LQ.eid]:null;
   let h=`<div class="bar"><h2 class="grow">Liquidación final de contrato</h2></div>
   <div class="panel grid-form"><label class="f">Trabajador<select id="lqE" class="free"><option value="">Elija…</option>${lista.map(x=>`<option value="${x.id}"${LQ.eid===x.id?' selected':''}>${esc(x.nombre)}${x.activo===false?' (retirado)':''}</option>`).join('')}</select></label></div>`;
-  if(e&&(e.retiro||e.activo===false))h+=panelDocsRet(e);
+  if(e){if(!(e.retiro||e.activo===false))h+=`<div class="alert info" style="margin-top:12px">${esc(e.nombre)} todavía no tiene fecha de retiro. Puede preparar y adjuntar los documentos de retiro (paz y salvo, aceptación de renuncia…) aquí abajo; registre la fecha de retiro en su ficha de Empleados cuando termine el contrato.</div>`;h+=panelDocsRet(e)}
   if(e){
     const F=LQ.f,L=calcLiq(e,F);LQ.L=L;
     const inp=(id,lab,v,t='number',ex='')=>`<label class="f">${lab}<input id="${id}" type="${t}" ${t==='number'?'min="0"':''} value="${esc(v??'')}" ${ex}></label>`;
@@ -4509,7 +4509,7 @@ function renderLiq(){
   }
   const hist=Object.values(S.liq||{}).sort((a,b)=>a.retiro<b.retiro?1:-1);
   h+=`<div class="section"><h2 style="margin-bottom:10px">Liquidaciones guardadas</h2>${hist.length?`<div class="panel scroll"><table><thead><tr><th>Trabajador</th><th>Retiro</th><th>Causa</th><th class="n">Neto</th><th></th></tr></thead><tbody>${hist.map(l=>`<tr><td>${esc(l.nombre)}${l.pdf?' <span class="pill" title="Liquidación registrada desde el PDF firmado">PDF firmado</span>':''}</td><td>${fCorta(l.retiro)}</td><td>${esc(l.pdf&&l.pdf.causa?l.pdf.causa.charAt(0)+l.pdf.causa.slice(1).toLowerCase():(MOTIVOS[l.f.motivo]||''))}</td><td class="n">${money(l.neto)}</td><td><button class="ghost free" data-lqv="${esc(l.id)}">Abrir</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="panel empty"><b>Aún no hay liquidaciones guardadas</b></div>'}</div>`;
-  $('#v-liq').innerHTML=h;{const e2=LQ.eid?S.emps[LQ.eid]:null;if(e2&&(e2.retiro||e2.activo===false))bindDocsRet(e2)}
+  $('#v-liq').innerHTML=h;{const e2=LQ.eid?S.emps[LQ.eid]:null;if(e2)bindDocsRet(e2)}
   $('#lqE').onchange=ev=>abrirLiq(ev.target.value);
   if(e){
     const on=(id,k,fn)=>{const x=$(id);if(x)x.onchange=ev=>{LQ.f[k]=fn?fn(ev.target):ev.target.value;renderLiq()}};
@@ -6040,7 +6040,7 @@ const psRT=p=>{p.ret=p.ret||{};return p.ret};
 function psRetiroHTML(p){const r=psRT(p),w=PERM.write?'':' disabled',ven=psVence(p),hoy=todayCO();
   if(p.retirado){const mot=(PS_MOT.find(x=>x[0]===r.motivo)||[0,'—'])[1];
     return `<div class="section" id="psRet"><h3 style="margin-bottom:8px">Retiro</h3><div class="panel" style="padding:12px"><div class="alert info" style="margin:0 0 8px"><b>Contrato terminado el ${fCorta(p.retiro)||'—'}.</b> ${esc(mot)}${r.carta?` · carta del ${fCorta(r.carta)}`:''}${r.obs?` · ${esc(r.obs)}`:''}</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="free primary" id="psRCarta">Carta de terminación (Word)</button><button class="free" id="psRActa">Acta de terminación y liquidación final (Word)</button><span class="grow"></span>${PERM.write?'<button class="free ghost" id="psRReact">Reactivar (volvió a firmar)</button>':''}</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="free primary" id="psRCarta">Carta de terminación (Word)</button><button class="free" id="psRActa">Acta de terminación y liquidación final (Word)</button>${(()=>{const d=(p.docs||[]).filter(x=>x.tipo==='Acta de terminación y paz y salvo firmados').slice(-1)[0];return `${d?`<button class="free" data-psdv="${d.id}">Ver acta y paz y salvo firmados</button>`:''}${PERM.write?`<label style="cursor:pointer"><input type="file" data-psdu="Acta de terminación y paz y salvo firmados" hidden accept=".pdf,.jpg,.jpeg,.png"><span class="btn free" style="display:inline-block;border:1px solid var(--line);border-radius:7px;padding:7px 12px">${d?'Cambiar acta firmada':'Adjuntar acta y paz y salvo firmados'}</span></label>`:''}`})()}<span class="grow"></span>${PERM.write?'<button class="free ghost" id="psRReact">Reactivar (volvió a firmar)</button>':''}</div>
     <p class="note" style="margin:8px 0 0">Los honorarios causados hasta la fecha de terminación se liquidan en «2. Ventas y honorarios» en el mes de ${p.retiro?psMesTxt(p.retiro.slice(0,7)):'—'}. Desde el mes siguiente ya no aparece en las listas del mes.</p></div></div>`}
   const mot=r.motivo||'venc',fT=r.fecha||(mot==='venc'&&ven?ven:addDays(hoy,5)),fC=r.carta||hoy,dias=Math.round((D(fT)-D(fC))/864e5);
   const aviso=(mot==='venc'||mot==='aviso')&&dias<5?`<div class="alert" style="margin-top:8px">El contrato exige aviso escrito con <b>5 días calendario</b> de antelación: entre la carta (${fCorta(fC)}) y la terminación (${fCorta(fT)}) hay ${dias} día${dias===1?'':'s'}.${mot==='venc'?' Si no alcanza, el contrato se prorroga por otro periodo; use «Terminación con aviso de 5 días».':''}</div>`:'';
