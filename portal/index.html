@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='22/11/2026 20:46';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='22/11/2026 21:30';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -818,12 +818,24 @@ function renderInicio(){
 let CV_DEPTH=0;
 function conservarVista(id,fn){const v=$('#'+id);if(!v||CV_DEPTH)return fn();const tab=UI.tab,y=scrollY,x=scrollX,sc=[],els=v.querySelectorAll('*');
   for(let i=0;i<els.length;i++){const el=els[i];if(el.scrollTop||el.scrollLeft)sc.push([i,el.scrollTop,el.scrollLeft])}
-  const a=document.activeElement;let foco=null;if(a&&v.contains(a)&&a!==document.body){const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));if(at.length)foco=a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join('')}
+  const a=document.activeElement;let foco=null;if(!TABNAV&&a&&v.contains(a)&&a!==document.body){const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));if(at.length)foco=a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join('')}
   let movio=false;const sT=window.scrollTo,sI=Element.prototype.scrollIntoView;window.scrollTo=function(){movio=true;return sT.apply(window,arguments)};Element.prototype.scrollIntoView=function(){movio=true;return sI.apply(this,arguments)};
   let r;CV_DEPTH++;try{r=fn()}finally{CV_DEPTH--;window.scrollTo=sT;Element.prototype.scrollIntoView=sI}
   if(UI.tab!==tab||movio)return r; // cambió de pestaña o la vista pidió moverse: no se toca
   const n=v.querySelectorAll('*');sc.forEach(([i,t,l])=>{const el=n[i];if(el){el.scrollTop=t;el.scrollLeft=l}});
   scrollTo(x,y);if(foco){try{const f=v.querySelector(foco);if(f&&document.activeElement!==f)f.focus({preventScroll:true})}catch(e){}}return r}
+/* tabulador: guarda la casilla y pasa a la siguiente aunque la vista se vuelva a pintar */
+const FOC_SEL='input:not([type=hidden]):not([type=file]):not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href],summary,[tabindex]:not([tabindex="-1"])';
+const focVis=v=>[...v.querySelectorAll(FOC_SEL)].filter(e=>!e.hidden&&e.offsetParent!==null&&e.tabIndex>=0);
+const selDe=a=>{const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));return at.length?a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join(''):null};
+let TABNAV=false;
+document.addEventListener('keydown',e=>{if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey||e.defaultPrevented)return;const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;
+  const v=a.closest('section[id^="v-"],#app');if(!v)return;const L=focVis(v),i=L.indexOf(a);if(i<0)return;const sel=selDe(a),uniq=!!sel&&v.querySelectorAll(sel).length===1;
+  e.preventDefault();TABNAV=true;try{a.blur()}catch(x){}finally{TABNAV=false}
+  const L2=focVis(v);let j=-1;if(uniq){const f=v.querySelector(sel);j=f?L2.indexOf(f):-1}if(j<0)j=Math.min(i,L2.length-1);
+  const t=L2[j+(e.shiftKey?-1:1)];if(t){t.focus();if(t.tagName==='INPUT'&&/^(text|number|search|tel|email|)$/.test(t.type||''))try{t.select()}catch(x){}}},true);
+/* la rueda del ratón no cambia los números: al desplazar la página la casilla numérica suelta el foco y guarda */
+document.addEventListener('wheel',e=>{const a=document.activeElement;if(a&&a.tagName==='INPUT'&&a.type==='number'&&(a===e.target||a.contains(e.target)))a.blur()},{passive:true});
 /* todas las pestañas conservan dónde iba el usuario al guardar, crear o modificar algo */
 function fijarVistas(){['renderAfil','renderAsis','renderCert','renderContratos','renderEmps','renderHor','renderInicio','renderLiq','renderMalla','renderNomina','renderNov','renderParams','renderPila','renderPrest','renderProv','renderPS','renderSST','renderTH','renderVac','renderLegal'].forEach(nm=>{const f=window[nm];if(typeof f!=='function'||f.__fijo)return;const w=function(){const t=UI.tab;return conservarVista('v-'+t,()=>f.apply(this,arguments))};w.__fijo=true;window[nm]=w})}
 let RENDER_TAB=null;
