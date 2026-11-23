@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 18:00';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='23/11/2026 18:33';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -388,8 +388,8 @@ try{NUBE.docPend=JSON.parse(localStorage.getItem(NB_K+'.docs')||'[]')}catch(e){}
 addEventListener('keydown',()=>{NUBE.tecla=Date.now()},true);
 async function nubeFetch(op,body,url,n){const u=url||NUBE.url;if(!u)throw 'sin nube';let r;
   const sg=(ms)=>{try{return AbortSignal.timeout(ms)}catch(e){return undefined}};
-  if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow',signal:sg(90000)});
-  else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow',signal:sg(45000)});
+  if(body)r=await fetch(u,{method:'POST',body:JSON.stringify({...body,op,w:LKEY}),redirect:'follow',signal:sg(op==='put'?180000:90000)});
+  else r=await fetch(u+'?op='+op+'&w='+encodeURIComponent(LKEY)+(n?'&n='+encodeURIComponent(n):'')+'&_='+Date.now(),{redirect:'follow',signal:sg(op==='get'?120000:60000)});
   if(!r.ok)throw 'HTTP '+r.status;const t=await r.text();try{return JSON.parse(t)}catch(e){throw /<html|<!doctype/i.test(t)?(/quota|límite|too many|Service invoked/i.test(t)?'cuota':/authoriz|autoriz|permission|permiso|sign in|iniciar sesi/i.test(t)?'autoriza':'html'):'respuesta'}}
 function nubeErrTxt(e){const m=String((e&&(e.name==='TimeoutError'||e.name==='AbortError'))?'timeout':(e&&e.message)||e||'');
   if(/timeout|timed out|aborted/i.test(m))return 'la nube tardó demasiado en responder';if(/failed to fetch|networkerror|load failed|network/i.test(m))return 'no hay internet en este momento o la conexión con Google se cortó';
@@ -421,7 +421,7 @@ function nubeAplicar(res,loc){
     if(!$('#app').hidden){try{render()}catch(e){}}else if(MODO==='general'&&!$('#picker').hidden){try{renderPicker()}catch(e){}}
     toast('Se recibieron cambios hechos en otro computador')}}
 const TAB_ID=(()=>{try{let t=sessionStorage.getItem('gth.tab');if(!t){t=Math.random().toString(36).slice(2);sessionStorage.setItem('gth.tab',t)}return t}catch(e){return Math.random().toString(36).slice(2)}})();
-async function nubeSync(forzar){
+async function nubeSync(forzar){try{await rdMigrar()}catch(e){}
   if(!NUBE.url||!KEY||!DEKRAW||NUBE.elegir||NUBE.llave)return;if(NUBE.ocup&&Date.now()-(NUBE.ocupT||0)<120000){NUBE.pend=true;return}NUBE.ocup=true;NUBE.ocupT=Date.now(); // si una sincronización se quedó colgada más de 2 min, se libera
   try{const tok=await nubeTok();
     for(let i=0;i<5;i++){
@@ -473,7 +473,8 @@ function nubeBarra(){let el=$('#nbBar');if(!el){const st=document.querySelector(
     $('#nbLlOk').onclick=async()=>{const bt=$('#nbLlOk'),pw=$('#nbPw').value;bt.disabled=true;$('#nbLlE').textContent='Revisando…';try{await nubeCambiarLlave(pw)}catch(e){bt.disabled=false;$('#nbLlE').textContent=typeof e==='string'?e:'No se pudo unir: '+(e&&e.message||e)}};return}
   el.innerHTML=NUBE.url&&NUBE.err?`<div class="alert info" style="margin:6px 0">${esc(NUBE.err)}</div>`:'';
   const s=$('#nbEst');if(s)s.innerHTML=nubeEstado()}
-function nubeEstado(){return !NUBE.url?'<span class="pill">Sin conectar</span>':NUBE.err?`<span class="pill bad">Con problemas</span> <span class="status">${esc(NUBE.err)}</span>`:NUBE.t?`<span class="pill good">Conectada</span> <span class="status">Sincronizado a las ${NUBE.t.toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})}</span>`:'<span class="pill">Conectando…</span>'}
+function nubeTam(){try{const t=JSON.stringify(payload()).length/1048576;return t>1.5?` <span class="status">· Los datos pesan ${t.toFixed(1).replace('.',',')} MB sin comprimir</span>`:''}catch(e){return ''}}
+function nubeEstado(){return nubeTam()+!NUBE.url?'<span class="pill">Sin conectar</span>':NUBE.err?`<span class="pill bad">Con problemas</span> <span class="status">${esc(NUBE.err)}</span>`:NUBE.t?`<span class="pill good">Conectada</span> <span class="status">Sincronizado a las ${NUBE.t.toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})}</span>`:'<span class="pill">Conectando…</span>'}
 function nubeEnlace(){const web=/^https:/.test(location.protocol)&&!/claude|anthropic/.test(location.host)?location.origin+location.pathname:(LKEY==='nomina.escalautos.cifrada.v1'?'https://escalath.github.io/Escala-TH/':'');return web?web+'#nube='+encodeURIComponent(NUBE.url):''}
 function panelNube(){const enl=NUBE.url?nubeEnlace():'';
   return `<div class="section"><h2 style="margin-bottom:8px">Trabajar en varios computadores (nube en Google Drive)</h2><div class="panel imp">
@@ -4334,6 +4335,11 @@ function cesAplica(e){const ret=e.retiro||todayCO(),y=+ret.slice(0,4),ing=e.ingr
   if(ret<`${y}-02-15`&&ing>`${y-2}-12-31`)return {ok:true,txt:`Revise: las cesantías de ${y-1} se consignan hasta el 14 de febrero. Si aún no se consignaron, páguelas en la liquidación.`};
   return {ok:true,txt:`Aplica: más de un año de servicio y cesantías consignadas en ${e.fces||'su fondo'}.`}}
 function retDocsDe(e){e.retDocs=e.retDocs||{};return e.retDocs}
+const rdKey=(e,k)=>docKey(e.id,'ret_'+k);
+async function rdGuardar(e,k,file){const buf=new Uint8Array(await file.arrayBuffer()),iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,buf);await idbPut(rdKey(e,k),{iv,ct});retDocsDe(e)[k+'File']={n:file.name,t:file.type||'application/octet-stream',f:todayCO(),idb:1}}
+async function rdLeer(e,k){const a=retDocsDe(e)[k+'File'];if(!a)return null;if(a.d){const m=a.d.match(/^data:([^;]*);base64,(.*)$/);return new Blob([fromB64(m[2])],{type:m[1]||a.t})}const v=await idbGet(rdKey(e,k));if(!v)throw 'No se encontró el adjunto en este computador ni en la nube';return new Blob([await crypto.subtle.decrypt({name:'AES-GCM',iv:v.iv},KEY,v.ct)],{type:a.t})}
+/* los adjuntos viejos que estaban dentro de los datos (hacían pesada la sincronización) pasan al almacén de documentos */
+async function rdMigrar(){if(!KEY||rdMigrar.hecho)return;rdMigrar.hecho=1;let n=0;for(const e of Object.values(S.emps||{})){const R=e.retDocs;if(!R)continue;for(const k of Object.keys(R)){const a=R[k];if(!/File$/.test(k)||!a||!a.d)continue;try{const m=a.d.match(/^data:([^;]*);base64,(.*)$/);if(!m)continue;const kk=k.replace(/File$/,'');const buf=fromB64(m[2]),iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,buf);await idbPut(rdKey(e,kk),{iv,ct});R[k]={n:a.n,t:a.t||m[1],f:a.f,idb:1};n++}catch(x){console.error(x)}}if(n)persist('emp',e.id)}if(n)console.log('adjuntos de retiro migrados',n)}
 function liqDe(e){const sv=Object.values(S.liq||{}).filter(l=>l.empId===e.id).sort((a,b)=>a._en<b._en?1:-1)[0];const F=sv?{...sv.f}:(LQ.eid===e.id&&LQ.f?LQ.f:liqF(e.id));return {F,L:calcLiq(e,F)}}
 function partesAcep(e,o){const c=S.config,fem=femDe(e),ult=o.ultimo||e.retiro||todayCO(),efe=o.efectiva||ult;
   return {enc:[`${c.ciudad||'Bogotá'}, ${fechaLarga(o.fecha||todayCO())}`],dest:[fem?'Señora:':'Señor:',(e.nombre||'').toUpperCase(),'C.C. '+cedula(e.doc)],asunto:'Aceptación de renuncia.',saludo:'Cordial saludo,',
@@ -4444,14 +4450,14 @@ function bindDocsRet(e){
   }catch(er){console.error(er);toast(/pdf/i.test(String(er))||!window.PDFLib?'No se pudo cargar el generador de PDF. Revise la conexión a internet.':'No se pudo generar: '+(er&&er.message||er))}};
   document.querySelectorAll('[data-rdg]').forEach(bt=>bt.onclick=()=>gen(bt.dataset.rdg));
   document.querySelectorAll('[data-rdup]').forEach(inp=>inp.onchange=()=>{const f=inp.files[0];if(!f)return;if(f.size>4e6){toast('El archivo es muy grande (máximo 4 MB)');return}
-    const rd=new FileReader();rd.onload=()=>{R[inp.dataset.rdup+'File']={n:f.name,t:f.type,d:rd.result,f:todayCO()};try{sv();toast('Documento adjuntado')}catch(x){delete R[inp.dataset.rdup+'File'];toast('No hay espacio para guardar este adjunto en este computador')}renderLiq()};rd.readAsDataURL(f)});
-  document.querySelectorAll('[data-rdver]').forEach(bt=>bt.onclick=()=>{const a=R[bt.dataset.rdver+'File'];if(!a)return;const m=a.d.match(/^data:([^;]*);base64,(.*)$/);guardarArchivo(a.n,new Blob([fromB64(m[2])],{type:m[1]||a.t}))});
-  document.querySelectorAll('[data-rdx]').forEach(bt=>bt.onclick=()=>{delete R[bt.dataset.rdx+'File'];sv();renderLiq()});
+    rdGuardar(e,inp.dataset.rdup,f).then(()=>{sv();bitacora(`Adjuntó «${inp.dataset.rdup==='pys'?'Paz y salvo':inp.dataset.rdup}» de ${e.nombre}`);toast('Documento adjuntado');renderLiq()}).catch(()=>toast('No se pudo guardar el adjunto'))});
+  document.querySelectorAll('[data-rdver]').forEach(bt=>bt.onclick=async()=>{const a=R[bt.dataset.rdver+'File'];if(!a)return;try{guardarArchivo(a.n,await rdLeer(e,bt.dataset.rdver))}catch(x){toast(typeof x==='string'?x:'No se pudo abrir el adjunto')}});
+  document.querySelectorAll('[data-rdx]').forEach(bt=>bt.onclick=()=>{idbDel(rdKey(e,bt.dataset.rdx)).catch(()=>{});delete R[bt.dataset.rdx+'File'];sv();renderLiq()});
   $('#rdZip').onclick=async()=>{if(typeof JSZip==='undefined'){toast('No se pudo cargar el compresor. Revise la conexión.');return}
     const zip=new JSZip(),orig=window.guardarArchivo,b=$('#rdZip');b.disabled=true;b.textContent='Preparando…';let n=0;
     try{window.guardarArchivo=async(nm,blob)=>{zip.file(nm,blob);n++;return true};
       for(const k of ['acep','liq','cert',...(cesAplica(e).ok?['ces']:[])])await gen(k);
-      ['pys','apo'].forEach(k=>{const a=R[k+'File'];if(a){const m=a.d.match(/^data:([^;]*);base64,(.*)$/);zip.file(a.n,m[2],{base64:true});n++}});
+      for(const k of ['pys','apo']){const a=R[k+'File'];if(a){try{zip.file(a.n,await rdLeer(e,k));n++}catch(x){}}}
       if(!R.pysFile&&PYS_TPL.length>100)await gen('pys');
     }finally{window.guardarArchivo=orig;b.disabled=false;b.textContent='Descargar todos (.zip)'}
     if(!n){toast('No se generó ningún documento');return}
