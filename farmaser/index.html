@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='22/11/2026 21:30';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='22/11/2026 21:40';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -815,15 +815,18 @@ function renderInicio(){
   document.querySelectorAll('#v-inicio [data-go]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.go;if(b.dataset.gopp!==undefined){const L=b.dataset.gopp.split(',').filter(Boolean);UI.pp=L.length===1?L[0]:null}saveUI();render();scrollTo({top:0});if(b.dataset.gopp!==undefined)setTimeout(()=>{const d=$('#ppDet')||$('#ppLista');if(d)d.scrollIntoView({block:'start'})},60)});
 }
 /* al volver a pintar una pestaña se conserva dónde iba (desplazamiento y casilla activa) */
-let CV_DEPTH=0;
+let CV_DEPTH=0;const LASTCHG={el:null,t:0,n:0};document.addEventListener('change',e=>{LASTCHG.el=e.target;LASTCHG.t=Date.now();LASTCHG.n++},true);
 function conservarVista(id,fn){const v=$('#'+id);if(!v||CV_DEPTH)return fn();const tab=UI.tab,y=scrollY,x=scrollX,sc=[],els=v.querySelectorAll('*');
   for(let i=0;i<els.length;i++){const el=els[i];if(el.scrollTop||el.scrollLeft)sc.push([i,el.scrollTop,el.scrollLeft])}
-  const a=document.activeElement;let foco=null;if(!TABNAV&&a&&v.contains(a)&&a!==document.body){const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));if(at.length)foco=a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join('')}
+  const a=document.activeElement;let foco=null,av=null,s0=null,s1=null;if(!TABNAV&&a&&v.contains(a)&&a!==document.body){if(/^(INPUT|TEXTAREA)$/.test(a.tagName)){av=a.value;try{s0=a.selectionStart;s1=a.selectionEnd}catch(e){}}const at=[...a.attributes].filter(t=>t.name==='id'||(t.name.startsWith('data-')&&t.value!==''));if(at.length)foco=a.tagName.toLowerCase()+at.map(t=>`[${t.name}="${CSS.escape(t.value)}"]`).join('')}
   let movio=false;const sT=window.scrollTo,sI=Element.prototype.scrollIntoView;window.scrollTo=function(){movio=true;return sT.apply(window,arguments)};Element.prototype.scrollIntoView=function(){movio=true;return sI.apply(this,arguments)};
-  let r;CV_DEPTH++;try{r=fn()}finally{CV_DEPTH--;window.scrollTo=sT;Element.prototype.scrollIntoView=sI}
+  const n0=LASTCHG.n;let r;CV_DEPTH++;try{r=fn()}finally{CV_DEPTH--;window.scrollTo=sT;Element.prototype.scrollIntoView=sI}
   if(UI.tab!==tab||movio)return r; // cambió de pestaña o la vista pidió moverse: no se toca
   const n=v.querySelectorAll('*');sc.forEach(([i,t,l])=>{const el=n[i];if(el){el.scrollTop=t;el.scrollLeft=l}});
-  scrollTo(x,y);if(foco){try{const f=v.querySelector(foco);if(f&&document.activeElement!==f)f.focus({preventScroll:true})}catch(e){}}return r}
+  scrollTo(x,y);if(foco){try{const f=v.querySelector(foco);if(f&&document.activeElement!==f){f.focus({preventScroll:true});
+    if(av!=null&&/^(INPUT|TEXTAREA)$/.test(f.tagName)){const propio=LASTCHG.el===a&&LASTCHG.n===n0&&Date.now()-LASTCHG.t<1500; // si lo pintó otra cosa (no el cambio de esta casilla), se conserva lo que estaba escribiendo
+      if(!propio&&f.value!==av)f.value=av;const n=f.value.length;try{if(f.value===av&&s0!=null)f.setSelectionRange(Math.min(s0,n),Math.min(s1??s0,n));else f.setSelectionRange(n,n)}catch(e){}}}}catch(e){}}return r}
+
 /* tabulador: guarda la casilla y pasa a la siguiente aunque la vista se vuelva a pintar */
 const FOC_SEL='input:not([type=hidden]):not([type=file]):not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href],summary,[tabindex]:not([tabindex="-1"])';
 const focVis=v=>[...v.querySelectorAll(FOC_SEL)].filter(e=>!e.hidden&&e.offsetParent!==null&&e.tabIndex>=0);
