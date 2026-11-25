@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='25/11/2026 09:34';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='25/11/2026 09:41';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -2725,7 +2725,7 @@ function bindNom(){
   document.querySelectorAll('tr.click').forEach(tr=>{const go=()=>{UI.det=+tr.dataset.i;renderDetalle(ULTIMA[UI.det],periodo(UI.mes,UI.tipo))};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter')go()}});
   $('#nXls').onclick=descargarExcel;const nd=$('#nDesp');if(nd)nd.onclick=()=>wordDesp(ULTIMA,periodo(UI.mes,UI.tipo));const np=$('#nPrint');if(np)np.onclick=()=>imprimirDesp(ULTIMA,periodo(UI.mes,UI.tipo));const nml=$('#nMail');if(nml)nml.onclick=()=>panelMail(ULTIMA,periodo(UI.mes,UI.tipo));const npd=$('#nPdf');if(npd)npd.onclick=()=>pdfDesprendibles(ULTIMA,periodo(UI.mes,UI.tipo));
 }
-async function guardarArchivo(name,blob){
+async function guardarArchivo(name,blob){name=String(name||'documento').replace(/_+/g,' ').replace(/ +[-–·] +/g,' ').replace(/\s+/g,' ').replace(/ (\.[a-z0-9]+)$/i,'$1').trim();
   if(window.claude&&claude.use){try{const dl=await claude.use('downloads');if(dl){await dl.save({filename:name,data:blob});return true}}catch(e){if(e&&e.code&&e.code!=='unavailable'){toast('Descarga cancelada');return false}}}
   try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return true}catch(e){}
   toast('Este visor no permite descargar archivos');return false;
@@ -4174,7 +4174,7 @@ async function wordDesp0(lista,P){
   zip.file('word/_rels/document.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rel}</Relationships>`);
   zip.file('word/document.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS_W}><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="400" w:right="850" w:bottom="300" w:left="850" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`);
   const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-  const nom=lista.length===1?`DESPRENDIBLE_${nrm(lista[0].e.nombre).replace(/\s+/g,'_').toUpperCase()}_${P.key.toUpperCase()}.docx`:`DESPRENDIBLES_${P.key.toUpperCase()}.docx`;
+  const nom=lista.length===1?nomLimpio(lista[0].e.nombre+' '+perTxt(P))+'.docx':`DESPRENDIBLES_${P.key.toUpperCase()}.docx`;
   await guardarArchivo(nom,blob);
 }
 /* ---------- desprendibles en PDF: un archivo por empleado, tamaño media carta ---------- */
@@ -4227,7 +4227,7 @@ async function pdfDesprendibles(lista,P){
   if(lista.length>1&&typeof JSZip==='undefined')return toast('No se pudo cargar el compresor de archivos. Revise la conexión.');
   toast(lista.length>1?`Generando ${lista.length} desprendibles en PDF…`:'Generando el PDF…');
   const lg=logoDoc()||'',m=lg.match(/^data:image\/(png|jpe?g);base64,(.*)$/),lb=m?fromB64(m[2]):null,lt=m?(m[1]==='png'?'png':'jpg'):null;
-  const nom=r=>PORTAL?nomPortal(r.e.nombre,perTxt(P)):`DESPRENDIBLE_${nomArch(r.e.nombre)}_${P.key.toUpperCase()}.pdf`;
+  const nom=r=>nomPortal(r.e.nombre,perTxt(P));
   if(lista.length===1){const b=await pdfDesp(lista[0],P,PL,lb,lt);return guardarArchivo(nom(lista[0]),new Blob([b],{type:'application/pdf'}))}
   const zip=new JSZip(),usados={};
   for(const r of lista){let n=nom(r);if(usados[n])n=n.replace('.pdf',`_${++usados[n]}.pdf`);else usados[n]=1;zip.file(n,await pdfDesp(r,P,PL,lb,lt))}
@@ -4445,13 +4445,13 @@ function bindDocsRet(e){
   document.querySelectorAll('[data-rdenv]').forEach(i=>i.onchange=()=>{R[i.dataset.rdenv]=i.checked?todayCO():'';sv();renderLiq()});
   const o=()=>({fecha:R.fecha||todayCO(),ultimo:R.ultimo||e.retiro,efectiva:R.efectiva||R.ultimo||e.retiro,fondo:e.fces}),nom=t=>`${t} ${e.nombre}`;
   const gen=async k=>{try{
-    if(k==='acep')return await guardarArchivo(`ACEPTACION_RENUNCIA_${nomArch(e.nombre)}.pdf`,await cartaPDF(partesAcep(e,o()),nom('Aceptación de renuncia')));
+    if(k==='acep')return await guardarArchivo(nomLimpio(e.nombre)+'.pdf',await cartaPDF(partesAcep(e,o()),nom('Aceptación de renuncia')));
     if(k==='acepW')return await cartaWord(partesAcep(e,o()),nom('Aceptacion renuncia'));
-    if(k==='ces')return await guardarArchivo(`AUTORIZACION_RETIRO_CESANTIAS_${nomArch(e.nombre)}.pdf`,await cartaPDF(partesCes(e,o()),nom('Autorización retiro de cesantías')));
+    if(k==='ces')return await guardarArchivo(nomLimpio(e.nombre)+'.pdf',await cartaPDF(partesCes(e,o()),nom('Autorización retiro de cesantías')));
     if(k==='cesW')return await cartaWord(partesCes(e,o()),nom('Autorizacion retiro cesantias'));
     if(k==='liq'||k==='liqW'){const {F,L}=liqDe(e);return k==='liq'?await pdfLiq(e,F,L):await wordLiq(e,F,L)}
     if(k==='cert'){const F=certF(e.id);F.estado='retirado';F.retiro=e.retiro||F.retiro;F.fecha=R.fecha||todayCO();return await wordCert(F)}
-    if(k==='pys')return await guardarArchivo(`PAZ_Y_SALVO_${nomArch(e.nombre)}.pdf`,await pdfPazSalvo(e));
+    if(k==='pys')return await guardarArchivo(nomLimpio(e.nombre)+'.pdf',await pdfPazSalvo(e));
   }catch(er){console.error(er);toast(/pdf/i.test(String(er))||!window.PDFLib?'No se pudo cargar el generador de PDF. Revise la conexión a internet.':'No se pudo generar: '+(er&&er.message||er))}};
   document.querySelectorAll('[data-rdg]').forEach(bt=>bt.onclick=()=>gen(bt.dataset.rdg));
   document.querySelectorAll('[data-rdup]').forEach(inp=>inp.onchange=()=>{const f=inp.files[0];if(!f)return;if(f.size>4e6){toast('El archivo es muy grande (máximo 4 MB)');return}
@@ -4466,7 +4466,7 @@ function bindDocsRet(e){
       if(!R.pysFile&&PYS_TPL.length>100)await gen('pys');
     }finally{window.guardarArchivo=orig;b.disabled=false;b.textContent='Descargar todos (.zip)'}
     if(!n){toast('No se generó ningún documento');return}
-    await guardarArchivo(`DOCUMENTOS_RETIRO_${nomArch(e.nombre)}.zip`,await zip.generateAsync({type:'blob'}));
+    await guardarArchivo(nomLimpio(e.nombre)+'.zip',await zip.generateAsync({type:'blob'}));
     if(!R.apoFile)toast('Falta adjuntar la certificación de aportes')};
 }
 function renderLiq(){
@@ -4582,7 +4582,7 @@ async function wordLiq0(e,F,L){
   b+=wP('',{after:500});
   b+=wTbl([[{t:'______________________________'},{t:'______________________________'}],[{t:e.nombre,b:true},{t:c.empresa.toUpperCase(),b:true}],['C.C. '+cedula(e.doc),'NIT '+c.nit],['Trabajador',(c.firmante||'')+(c.cargoFirmante?' · '+c.cargoFirmante:'')]],[4419,4419],{noBorder:true});
   b+=wP(wR(`${c.ciudad||'Bogotá'}, ${fechaLarga(todayCO())}`,{sz:17,color:'555B66'}),{before:200});
-  await generarDocx(b,'Liquidación de Contrato',`LIQUIDACION_${nrm(e.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.retiro}.docx`,'liq');
+  await generarDocx(b,'Liquidación de Contrato',nomLimpio(e.nombre)+'.docx','liq');
 }
 /* liquidación en PDF: una sola hoja, sin membrete */
 async function pdfLiq(e,F,L){
@@ -4628,7 +4628,7 @@ async function pdfLiq(e,F,L){
     return y};
   let k=1.15;while(medir(k,false)<M&&k>0.6)k-=0.03; // que quepa en una sola hoja
   medir(k,true);
-  await guardarArchivo(`LIQUIDACION_${nomArch(e.nombre)}_${F.retiro}.pdf`,new Blob([await doc.save()],{type:'application/pdf'}));
+  await guardarArchivo(nomLimpio(e.nombre)+'.pdf',new Blob([await doc.save()],{type:'application/pdf'}));
 }
 async function excelLiq(e,F,L){
   if(typeof XLSX==='undefined'){toast('No se pudo cargar el generador de Excel');return}
@@ -4639,7 +4639,7 @@ async function excelLiq(e,F,L){
     ['RESUMEN DESCUENTOS','','','','VALOR'],...L.ded.map(d=>[d.c,'','','',d.v]),['TOTAL DEDUCCIONES','','','',L.totDed],[],['VALOR LIQUIDACIÓN','','','',L.neto],['SON: '+L.letras],[],...(F.obs?[['OBSERVACIONES: '+F.obs]]:[])];
   const sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:44},{wch:16},{wch:14},{wch:30},{wch:16}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Liquidacion');
-  await guardarArchivo(`LIQUIDACION_${nrm(e.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.retiro}.xlsx`,new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  await guardarArchivo(nomLimpio(e.nombre)+'.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 }
 
 /* ===================== prestaciones sociales (prima, cesantías, intereses, vacaciones) ===================== */
@@ -5025,7 +5025,7 @@ async function wordContrato(e,F,P){
   b+=wP(wR(`En constancia se firma en ${D.CIUDAD}, el ${D.FECHA_FIRMA_LETRAS} en dos (2) ejemplares de un mismo tenor, de los cuales uno (1) será para el Empleador y uno (1) para el Trabajador, el cual declara haberlo recibido.`,{sz:20}),{jc:'both',before:240,after:700});
   b+=wTbl([[{t:'El Empleador,'},{t:'El Trabajador,'}],[{t:' '},{t:' '}],[{t:'______________________________'},{t:'______________________________'}],[{t:D.REPRESENTANTE.toUpperCase(),b:true},{t:D.NOMBRE,b:true}],[D.CARGO_REPRESENTANTE,'C.C. '+D.CEDULA]].map(r=>r.map(x=>typeof x==='object'?{...x,sz:20}:{t:x,sz:20})),[4419,4419],{noBorder:true});
   const mf=F.anexoManual!==false&&F.tipo!=='aprendizaje'?manualDe(F.cargo):null;if(mf)b+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+wP(wR('ANEXO No. 1 AL CONTRATO DE TRABAJO',{b:true,sz:20}),{jc:'center',after:120})+manualXml(mf,e)+firmaManual(e);
-  await generarDocx(b,'Contrato de trabajo',`CONTRATO_${nrm(D.NOMBRE).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}_${F.inicio||''}.docx`,'ctr');
+  await generarDocx(b,'Contrato de trabajo',nomLimpio(D.NOMBRE)+'.docx','ctr');
   }finally{FONT_ACT=null}
 }
 /* ---------- catálogo de otrosíes ---------- */
@@ -5113,7 +5113,7 @@ async function wordOtrosi(e,F,reg){
   b+=wP(wR(`En constancia se firma en ${D.CIUDAD}, el ${fechaLetrasCtr(F.firma)}, en dos (2) ejemplares del mismo tenor.`,{sz:20}),{jc:'both',before:240,after:700});
   b+=wTbl([[{t:'El Empleador,'},{t:'El Trabajador,'}],[{t:' '},{t:' '}],[{t:'______________________________'},{t:'______________________________'}],[{t:D.REPRESENTANTE.toUpperCase(),b:true},{t:D.NOMBRE,b:true}],[D.CARGO_REPRESENTANTE,'C.C. '+D.CEDULA]].map(r=>r.map(x=>typeof x==='object'?{...x,sz:20}:{t:x,sz:20})),[4419,4419],{noBorder:true});
   const mo=(F.cDir&&manualDe(F.cargoDir))||(F.cCargo&&manualDe(F.cargoNuevo));if(mo)b+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+wP(wR(`ANEXO AL OTROSÍ No. ${n}`,{b:true,sz:20}),{jc:'center',after:120})+manualXml(mo,e)+firmaManual(e);
-  await generarDocx(b,'Otrosí al contrato de trabajo',`OTROSI_${n}_${nrm(D.NOMBRE).replace(/[^a-z0-9]+/gi,'_').toUpperCase()}_${F.desde||''}.docx`,'ctr');
+  await generarDocx(b,'Otrosí al contrato de trabajo',nomLimpio(D.NOMBRE)+'.docx','ctr');
   }finally{FONT_ACT=null}
 }
 /* ===================== manual de funciones por cargo ===================== */
@@ -5320,7 +5320,7 @@ function bindContratos(){
   const noPr=async(id,word)=>{const e=S.emps[id];if(!e)return;const I=fijoInfo(e),hoy=todayCO();if(!I.fin)return toast('Escriba primero la fecha de terminación del contrato en la columna «Termina»');
     const d=Math.round((D(I.fin)-D(hoy))/864e5);if(d<30&&!confirm(`Faltan ${d} días para el vencimiento (${fCorta(I.fin)}). El preaviso debe entregarse con al menos 30 días de anticipación; si se entrega tarde, el contrato se entiende prorrogado. ¿Generar la carta de todas formas?`))return;
     const X=partesNoProrr(e,{fecha:hoy}),nom=`No prorroga contrato ${e.nombre}`;
-    try{if(word)await cartaWord(X,nom);else await guardarArchivo(`NO_PRORROGA_CONTRATO_${nomArch(e.nombre)}.pdf`,await cartaPDF(X,nom));
+    try{if(word)await cartaWord(X,nom);else await guardarArchivo(nomLimpio(e.nombre)+'.pdf',await cartaPDF(X,nom));
       e.noProrr={fecha:hoy,fin:I.fin};persist('emp',e.id);bitacora(`Generó la carta de no prórroga de ${e.nombre} (vence ${fCorta(I.fin)})`);renderContratos()}catch(er){console.error(er);toast('No se pudo generar la carta: '+(er&&er.message||er))}};
   document.querySelectorAll('[data-fjnp]').forEach(b=>b.onclick=()=>noPr(b.dataset.fjnp,false));document.querySelectorAll('[data-fjnpw]').forEach(b=>b.onclick=()=>noPr(b.dataset.fjnpw,true));
   document.querySelectorAll('[data-cf]').forEach(i=>i.onchange=()=>{const k=i.dataset.cf,F=CTU.f;F[k]=i.type==='checkbox'?i.checked:i.value;
@@ -5543,7 +5543,7 @@ async function wordActaDot(lista,anio,n){FONT_ACT=fuenteDe('ctr');try{const brk=
     b+=P_('El trabajador declara que recibió a satisfacción la dotación descrita, nueva y adecuada a la naturaleza de sus labores, y se compromete a usarla durante la jornada de trabajo, de conformidad con el artículo 233 del Código Sustantivo del Trabajo. Si no la usa, el empleador quedará eximido de entregarle la siguiente.');
     if(x.obs)b+=P_('Observaciones: '+x.obs);
     b+=wP('',{after:500})+wTbl([[{t:'______________________________',sz:20},{t:'______________________________',sz:20}],[{t:(e.nombre||'').toUpperCase(),b:true,sz:20},{t:'Entrega: talento humano',b:true,sz:20}],[{t:'C.C. '+cedula(e.doc),sz:18},{t:'',sz:18}]],[4419,4419],{noBorder:true});return b}).join(brk);
-  await generarDocx(body,'Entrega de dotación',lista.length===1?`ACTA_DOTACION_${slug(lista[0].e.nombre)}_${anio}_${n}.docx`:`ACTAS_DOTACION_${anio}_${n}.docx`,'ctr')}finally{FONT_ACT=null}}
+  await generarDocx(body,'Entrega de dotación',lista.length===1?nomLimpio(lista[0].e.nombre)+'.docx':`ACTAS_DOTACION_${anio}_${n}.docx`,'ctr')}finally{FONT_ACT=null}}
 function renderDot(){
   const c=S.config,hoy=todayCO(),anio=TH.dotAnio||+hoy.slice(0,4),n=TH.dotN||(ENTREGAS.find(x=>`${anio}-${x[2]}`>=hoy)||ENTREGAS[2])[0],L=thD().dot,items=(c.dotItems||'Camisa o blusa (2)|Pantalón (2)|Par de zapatos (1)');
   const emps=empAll().filter(e=>e.activo!==false||(e.retiro&&e.retiro>=`${anio}-01-01`)),reg=e=>L.find(x=>x.empId===e.id&&x.anio===anio&&x.n===n);
@@ -5604,7 +5604,7 @@ function bindExp(){const e=TH.expE?S.emps[TH.expE]:null;
   document.querySelectorAll('[data-exd]').forEach(b=>b.onclick=async()=>{await idbDel(docKey(e.id,b.dataset.exd));e.docsIng=(e.docsIng||[]).filter(x=>x.id!==b.dataset.exd);persist('emp',e.id);renderTH()});
   const z=$('#exZip');if(z)z.onclick=async()=>{if(typeof JSZip==='undefined')return toast('No se pudo cargar el compresor. Revise la conexión.');const zip=new JSZip();let n=0,f=0;
     for(const d of (e.docsIng||[])){try{zip.file(`${slug(d.tipo)}/${d.nombre}`,await leerDocEmp(e,d));n++}catch(er){f++}}
-    if(!n)return toast('Este empleado no tiene archivos guardados en este computador');await guardarArchivo(`EXPEDIENTE_${slug(e.nombre)}.zip`,await zip.generateAsync({type:'blob'}));if(f)toast(`${f} archivo(s) no estaban en este computador`)};
+    if(!n)return toast('Este empleado no tiene archivos guardados en este computador');await guardarArchivo(nomLimpio(e.nombre)+'.zip',await zip.generateAsync({type:'blob'}));if(f)toast(`${f} archivo(s) no estaban en este computador`)};
 }
 /* ================= Firma electrónica de documentos (Ley 527 de 1999 · Decreto 2364 de 2012, compilado en el Decreto 1074 de 2015) ================= */
 const feD=()=>{const P=ptD();P.firmas=P.firmas||{};return P.firmas};
@@ -6540,7 +6540,7 @@ function bindPtSols(){document.querySelectorAll('[data-ptc]').forEach(b=>b.oncli
     sstL('rep').push({id:sstId(),fecha:d.fecha||String(x.fecha).slice(0,10),tipo:d.clase||'Condición insegura',sede:d.sede||'',lugar:d.lugar||'',desc:d.desc||'',quien:(x.e?x.e.nombre:d.nombre||'')+' (portal)',estado:'Abierto'});sstSave();bitacora('Pasó a SST un reporte del portal');
     try{await nubeFetchW('psolset',{id:x.id,estado:'atendida',tok:await nubeTok()},PW)}catch(e){}toast('Reporte agregado en SST › Reportes e incidentes');PT.t=0;portalSols()});marcar('data-ptap','aprobada','Aprobó');marcar('data-ptng','negada','Negó');
   document.querySelectorAll('[data-ptpdf]').forEach(b=>b.onclick=async()=>{const x=(PT.sols||[]).find(s=>s.id===b.dataset.ptpdf);if(!x)return;const E=x.e||{nombre:x.d.nombre,doc:x.d.doc,cargo:x.d.cargo};
-    try{const bl=await pdfSolPermiso({...x.d,estado:x.estado,atendida:x.atendida},E,portalCfg());await guardarArchivo(`SOLICITUD_${nomArch(x.d.clase==='Otro'?x.d.otro:x.d.clase)}_${nomArch(E.nombre)}.pdf`,new Blob([bl],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el PDF')}})}
+    try{const bl=await pdfSolPermiso({...x.d,estado:x.estado,atendida:x.atendida},E,portalCfg());await guardarArchivo(nomLimpio(E.nombre)+'.pdf',new Blob([bl],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el PDF')}})}
 
 /* ---------- certificado laboral en PDF con sello ---------- */
 async function pdfCertSello(F,C){const PL=await cargarPdfLib();const {PDFDocument,StandardFonts,rgb}=PL;const doc=await PDFDocument.create(),pg=doc.addPage([612,792]);
@@ -6852,7 +6852,7 @@ async function wordCertPS(F){{const f=[!F.nombre&&'el nombre',!F.doc&&'el númer
   b+=wP(wR(T.p4,o),{jc:'both',after:360,line:300})+wP(wR('Atentamente,',o),{after:900});
   b+=wP(wR((F.firmante||'').toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(ortoFix(F.cargoF||''),{b:true,sz:22}),{after:0});
   bitacora(`Expidió certificación de prestación de servicios a ${F.nombre}`);
-  await generarDocx(b,'Certificación de prestación de servicios',`CERTIFICACION_PRESTACION_SERVICIOS_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert')}finally{FONT_ACT=null}}
+  await generarDocx(b,'Certificación de prestación de servicios',nomLimpio(F.nombre)+'.docx','cert')}finally{FONT_ACT=null}}
 /* promedio salarial mensual: salario básico ponderado + promedio de recargos, extras y comisiones de los últimos 12 meses (o desde el ingreso) */
 function promSalarial(e){try{const hoy=todayCO(),fin=e.retiro&&e.retiro<hoy?e.retiro:hoy,ini=maxF(e.ingreso||fin,addDays(fin,-364));if(fin<ini)return 0;
   let t=0,d=0;mesesEntre(ini,fin).forEach(m=>{const a=maxF(ini,m+'-01'),b=finMes(m)<fin?finMes(m):fin,dd=d360(a,b);t+=salarioEn(e,{ini:a})*dd;d+=dd});
@@ -6973,7 +6973,7 @@ async function wordCta(F){FONT_ACT=fuenteDe('cert');try{
   b+=wP(wR('Asunto: ',{...o,b:true})+wR(X.asunto,o),{after:200})+wP(wR('Respetados señores:',o),{after:160});
   X.pars.forEach(t=>{b+=wP(wR(t,o),{jc:'both',after:160,line:276})});
   b+=wP(wR('Atentamente,',o),{before:80,after:720,keep:true})+wP(wR(X.firma[0],{b:true,sz:22}),{after:0,keep:true})+wP(wR(X.firma[1],{b:true,sz:22}),{after:0,keep:true})+wP(wR(X.firma[2],o),{after:0});
-  await generarDocx(b,'Carta de apertura de cuenta',`CARTA_APERTURA_CUENTA_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert');
+  await generarDocx(b,'Carta de apertura de cuenta',nomLimpio(F.nombre)+'.docx','cert');
 }finally{FONT_ACT=null}}
 async function pdfCta(F){
   let PL;try{PL=await cargarPdfLib()}catch(e){return toast('No se pudo cargar el generador de PDF. Revise la conexión a internet.')}
@@ -7002,7 +7002,7 @@ async function pdfCta(F){
     if(o.just){const ws=t.split(' ');if(ws.length>1){const wt=ws.reduce((a,w)=>a+f.widthOfTextAtSize(w,sz),0),sp=(TW-wt)/(ws.length-1);let x=izq;ws.forEach(w=>{pg.drawText(w,{x,y,size:sz,font:f,color:NEG});x+=f.widthOfTextAtSize(w,sz)+sp});return}}
     pg.drawText(t,{x:izq,y,size:sz,font:f,color:NEG})});
   const bytes=await doc.save();
-  await guardarArchivo(`CARTA_APERTURA_CUENTA_${nomArch(F.nombre)}_${F.fecha}.pdf`,new Blob([bytes],{type:'application/pdf'}));
+  await guardarArchivo(nomLimpio(F.nombre)+'.pdf',new Blob([bytes],{type:'application/pdf'}));
 }
 async function wordCert0(F){
   const c=S.config,T=textoCert(F),o={sz:22};
@@ -7013,7 +7013,7 @@ async function wordCert0(F){
   b+=wP(wR('Cualquier información adicional, con gusto será suministrada por medio de nuestros canales de contacto'+(c.contacto?': '+c.contacto:'')+'.',o),{jc:'both',after:240,line:300});
   b+=wP(wR(T.p3,o),{jc:'both',after:360,line:300})+wP(wR('Atentamente,',o),{after:900});
   b+=wP(wR(F.firmante.toUpperCase(),{b:true,sz:22}),{after:0})+wP(wR(ortoFix(F.cargoF),{b:true,sz:22}),{after:0});
-  await generarDocx(b,'Certificación Laboral',`CERTIFICADO_LABORAL_${nrm(F.nombre).replace(/\s+/g,'_').toUpperCase()}_${F.fecha}.docx`,'cert');
+  await generarDocx(b,'Certificación Laboral',nomLimpio(F.nombre)+'.docx','cert');
 }
 
 /* ===================== arranque ===================== */
