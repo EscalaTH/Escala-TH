@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='23/11/2026 20:21';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='25/11/2026 09:34';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -4216,7 +4216,7 @@ async function pdfDesp(r,P,PL,logoBytes,logoTipo){
   tabla(rows,[3700,1570,3700,1570]);
   y-=10;txt(`IBC: ${money(r.ibc)}`+(X.obs?' · Observaciones: '+X.obs:''),M,y,{s:6.5,col:GR,max:TW});
   // firmas
-  const fy=Math.max(M+22,y-34),half=TW/2;
+  const fy=Math.max(M+22,y-34),half=TW/2,fRL=await pdfFirmaRL(doc,cfgFirma());pdfPonFirma(pg,fRL,M+half+8,fy,110,Math.min(28,y-fy-4));
   [[r.e.nombre+' · C.C. '+cedula(r.e.doc),'Recibí conforme'],[(c.empresa||'').toUpperCase()+' · NIT '+(c.nit||''),'Empleador']].forEach(([a,b2],i)=>{const x=M+i*half;
     pg.drawLine({start:{x,y:fy},end:{x:x+half*.72,y:fy},thickness:.6,color:NEG});txt(a,x,fy-10,{b:true,s:7,max:half-10});txt(b2,x,fy-19,{s:7,col:GR})});
   return doc.save();
@@ -4227,7 +4227,7 @@ async function pdfDesprendibles(lista,P){
   if(lista.length>1&&typeof JSZip==='undefined')return toast('No se pudo cargar el compresor de archivos. Revise la conexión.');
   toast(lista.length>1?`Generando ${lista.length} desprendibles en PDF…`:'Generando el PDF…');
   const lg=logoDoc()||'',m=lg.match(/^data:image\/(png|jpe?g);base64,(.*)$/),lb=m?fromB64(m[2]):null,lt=m?(m[1]==='png'?'png':'jpg'):null;
-  const nom=r=>`DESPRENDIBLE_${nomArch(r.e.nombre)}_${P.key.toUpperCase()}.pdf`;
+  const nom=r=>PORTAL?nomPortal(r.e.nombre,perTxt(P)):`DESPRENDIBLE_${nomArch(r.e.nombre)}_${P.key.toUpperCase()}.pdf`;
   if(lista.length===1){const b=await pdfDesp(lista[0],P,PL,lb,lt);return guardarArchivo(nom(lista[0]),new Blob([b],{type:'application/pdf'}))}
   const zip=new JSZip(),usados={};
   for(const r of lista){let n=nom(r);if(usados[n])n=n.replace('.pdf',`_${++usados[n]}.pdf`);else usados[n]=1;zip.file(n,await pdfDesp(r,P,PL,lb,lt))}
@@ -4370,7 +4370,7 @@ function partesNoProrr(e,o){const tc=t=>String(t||'').toLowerCase().replace(/(^|
 async function cartaPDF(X,nombre,PL){
   PL=PL||await cargarPdfLib();const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,doc=await PDFDocument.create(),W=612,H=792,pg=doc.addPage([W,H]),NEG=rgb(.07,.07,.07);
   const serif=SERIF_F.test(fuenteDe('cert')),FN=await doc.embedFont(serif?StandardFonts.TimesRoman:StandardFonts.Helvetica),FB=await doc.embedFont(serif?StandardFonts.TimesRomanBold:StandardFonts.HelveticaBold);doc.setTitle(nombre);doc.setAuthor(c.empresa||'');
-  const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
+  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
   let top=cm(2.5),bot=cm(2.5),izq=cm(3),der=cm(2.5);
   if(dz&&dz.tipo==='img'){const im=await img(dz.data);if(im)pg.drawImage(im,{x:0,y:0,width:W,height:H});top=cm(+dz.mt||5);bot=cm(+dz.mb||4.5);izq=der=cm(+dz.mi||3)}
   else{const im=await img(logoDoc());let y0=H-cm(1.5);if(im){const h=40,w=Math.min(170,im.width*h/im.height);pg.drawImage(im,{x:izq,y:y0-h,width:w,height:h})}
@@ -4385,7 +4385,7 @@ async function cartaPDF(X,nombre,PL){
     if(pintar){const a='Asunto: ';pg.drawText(a,{x:izq,y,size:sz,font:FB,color:NEG});pg.drawText(ok(X.asunto,FN),{x:izq+FB.widthOfTextAtSize(a,sz),y,size:sz,font:FN,color:NEG})}y-=sz*lh+gap;
     if(X.saludo)par(X.saludo,false,false);
     X.pars.forEach(p=>typeof p==='string'?par(p,false,true):par(p.t,!!p.b,false));
-    par(X.cierre||'Atentamente,',false,false);y-=sz*3.2;
+    par(X.cierre||'Atentamente,',false,false);y-=sz*3.2;if(pintar&&FRL)pdfPonFirma(pg,FRL,izq+4,y+sz*1.1,160,sz*3.2-2);
     X.firma.filter(Boolean).forEach((t,i)=>par(t,i<2||!X.firmaLinea,false,0));
     if(X.recibido){y-=gap*3;par('CONSTANCIA DE RECIBIDO',true,false,gap);['Nombre del trabajador','Firma y cédula','Fecha y hora de recibido'].forEach(t=>{y-=sz*1.4;if(pintar){pg.drawText(t,{x:izq,y,size:sz*.92,font:FN,color:NEG});pg.drawLine({start:{x:izq+FB.widthOfTextAtSize('Fecha y hora de recibido',sz*.92)+12,y:y-2},end:{x:izq+TW*.82,y:y-2},thickness:.6,color:NEG})}y-=sz*.9})}
     return y};
@@ -4588,7 +4588,7 @@ async function wordLiq0(e,F,L){
 async function pdfLiq(e,F,L){
   let PL;try{PL=await cargarPdfLib()}catch(er){return toast('No se pudo cargar el generador de PDF. Revise la conexión a internet.')}
   const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,doc=await PDFDocument.create(),W=612,H=792,M=40,TW=W-2*M,pg=doc.addPage([W,H]);
-  const FN=await doc.embedFont(StandardFonts.Helvetica),FB=await doc.embedFont(StandardFonts.HelveticaBold);doc.setTitle('Liquidación · '+e.nombre);doc.setAuthor(c.empresa||'');
+  const FN=await doc.embedFont(StandardFonts.Helvetica),FB=await doc.embedFont(StandardFonts.HelveticaBold),FRL=(!c.firmante||esRepLegal(c.firmante,c))?await pdfFirmaRL(doc,c):null;doc.setTitle('Liquidación · '+e.nombre);doc.setAuthor(c.empresa||'');
   const hx=h=>{h=String(h||'').replace('#','');return rgb(parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255)},K=hx(DC()),KS=hx(DS()),NEG=rgb(.1,.1,.12),GR=rgb(.55,.57,.62),BL=rgb(1,1,1);
   const ok=(t,f)=>{let o='';for(const ch of String(t??'')){try{f.encodeText(ch);o+=ch}catch(x){o+=' '}}return o};
   const wrap=(t,f,sz,w)=>{const ws=ok(t,f).split(/\s+/);const out=[];let l='';ws.forEach(x=>{const n=l?l+' '+x:x;if(f.widthOfTextAtSize(n,sz)>w&&l){out.push(l);l=x}else l=n});out.push(l);return out};
@@ -4618,7 +4618,7 @@ async function pdfLiq(e,F,L){
       if(bl.tipo==='p'){const sz=bl.sz*k,f=bl.b?FB:FN,ls=wrap(bl.t,f,sz,TW);ls.forEach((l,i)=>{y-=lh(sz);if(dibujar){let x=M;const wd=f.widthOfTextAtSize(l,sz);if(bl.jc==='center')x=M+(TW-wd)/2;
           if(bl.jc==='j'&&i<ls.length-1){const ws=l.split(' ');if(ws.length>1){const tw=ws.reduce((a,w)=>a+f.widthOfTextAtSize(w,sz),0),sp=(TW-tw)/(ws.length-1);let xx=M;ws.forEach(w=>{pg.drawText(w,{x:xx,y:y+sz*.25,size:sz,font:f,color:bl.col||NEG});xx+=f.widthOfTextAtSize(w,sz)+sp});return}}
           pg.drawText(l,{x,y:y+sz*.25,size:sz,font:f,color:bl.col||NEG})}});y-=(bl.gap||2)*k;continue}
-      if(bl.tipo==='firmas'){y-=34*k;if(dibujar){const cw=TW/2-20,sz=7.5*k;[[e.nombre,'C.C. '+cedula(e.doc),'Trabajador'],[(c.empresa||'').toUpperCase(),'NIT '+(c.nit||''),(c.firmante||'')+(c.cargoFirmante?' · '+c.cargoFirmante:'')]].forEach((ls,j)=>{const x=M+j*(TW/2)+(j?20:0);pg.drawLine({start:{x,y},end:{x:x+cw,y},thickness:.6,color:NEG});ls.forEach((t,i)=>pg.drawText(ok(t,i===0?FB:FN),{x,y:y-10*k-i*9*k,size:sz,font:i===0?FB:FN,color:NEG}))})}y-=34*k;continue}
+      if(bl.tipo==='firmas'){y-=34*k;if(dibujar){const cw=TW/2-20,sz=7.5*k;pdfPonFirma(pg,FRL,M+TW/2+26,y,120*k,30*k);[[e.nombre,'C.C. '+cedula(e.doc),'Trabajador'],[(c.empresa||'').toUpperCase(),'NIT '+(c.nit||''),(c.firmante||'')+(c.cargoFirmante?' · '+c.cargoFirmante:'')]].forEach((ls,j)=>{const x=M+j*(TW/2)+(j?20:0);pg.drawLine({start:{x,y},end:{x:x+cw,y},thickness:.6,color:NEG});ls.forEach((t,i)=>pg.drawText(ok(t,i===0?FB:FN),{x,y:y-10*k-i*9*k,size:sz,font:i===0?FB:FN,color:NEG}))})}y-=34*k;continue}
       if(bl.tipo==='tbl'){const sz=(bl.big?10:7.5)*k,pad=2.5*k,ws=bl.cols.map(x=>x*TW);
         for(const r of bl.rows){const cells=[];let ci=0;r.map(C).forEach(cl=>{const sp=cl.span||1,w=ws.slice(ci,ci+sp).reduce((a,b)=>a+b,0);cells.push({...cl,x:M+ws.slice(0,ci).reduce((a,b)=>a+b,0),w});ci+=sp});
           const lines=cells.map(cl=>wrap(cl.t,cl.b?FB:FN,sz,cl.w-2*pad)),rh=Math.max(...lines.map(l=>l.length))*sz*1.2+2*pad;
@@ -5371,6 +5371,15 @@ function firmasCarta(e,{trab=true,testigos=false}={}){const c=S.config,rep=(c.re
   return b}
 async function docTH(body,titulo,nombre){FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,'ctr')}finally{FONT_ACT=null}}
 const slug=t=>nrm(t||'').replace(/[^a-z0-9]+/gi,'_').toUpperCase();
+/* nombres de archivo del portal: solo el nombre del empleado, con espacios y sin guiones */
+const nomLimpio=t=>String(t||'').replace(/[\\/:*?"<>|_·]+/g,' ').replace(/\s+/g,' ').trim()||'Documento';
+const nomPortal=(nombre,extra)=>nomLimpio(nombre)+(extra?' '+nomLimpio(extra):'')+'.pdf';
+const perTxt=P=>P?`${MESESL[P.m-1]||''} ${P.y}${P.tipo==='q1'?' 1a quincena':P.tipo==='q2'?' 2a quincena':''}`:'';
+/* firma escaneada del representante legal en los PDF (si está cargada en Parámetros) */
+async function pdfFirmaRL(doc,cfg){const m=String((cfg&&cfg.firmaRL)||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}}
+function pdfPonFirma(pg,im,x,yLinea,maxW,maxH){if(!im)return;const s=Math.min(maxW/im.width,maxH/im.height);pg.drawImage(im,{x,y:yLinea+1,width:im.width*s,height:im.height*s})}
+const cfgFirma=()=>{const c=(typeof S!=='undefined'&&S&&S.config)||{};if(c.firmaRL)return c;return (PORTAL&&typeof PP!=='undefined'&&PP.com&&PP.com.cfg)||c};
+const esRepLegal=(t,cfg)=>{const r=nrm((cfg&&cfg.repLegal)||'').replace(/\s+/g,' ').trim();return !!r&&nrm(String(t||'')).replace(/\s+/g,' ').trim()===r};
 /* ---- Claude (solo cuando la app se abre como artifact en claude.ai) ---- */
 let IA=null;(async()=>{try{if(window.claude&&claude.use){IA=await claude.use('sample');if(IA&&UI.tab==='th')renderTH()}}catch(e){IA=null}})();
 async function iaRedactar(btn,campo,instr){if(!IA)return;const ta=$('#'+campo);const prev=btn.textContent;btn.disabled=true;btn.textContent='Redactando…';
@@ -5715,12 +5724,12 @@ async function portalFirmaCargar(f){try{const r=await nubeFetchW('getdoc',null,P
   const EK=await aesKey(PP.ek),b=fromB64(decT(await aesDec(EK,JSON.parse(r.doc))));if(await sha256Hex(b)!==f.h)throw 'El documento no coincide con el que envió Talento Humano. No lo firme y avise.';
   PFIR.bytes=b;if(PFIR.url)URL.revokeObjectURL(PFIR.url);PFIR.url=URL.createObjectURL(new Blob([b],{type:'application/pdf'}))}catch(e){PFIR.act=null;PFIR.msg=typeof e==='string'?e:'No se pudo cargar el documento. Revise el internet.'}portalVista();const s=$('#pt-fir');if(s)s.scrollIntoView({block:'start'})}
 function portalFirmaBind(){document.querySelectorAll('[data-pfa]').forEach(b=>b.onclick=()=>{const f=PP.d.fir.find(x=>x.id===b.dataset.pfa);PFIR.act=f.id;PFIR.url=null;PFIR.bytes=null;PFIR.msg=null;PFIR.trazo=false;portalVista();portalFirmaCargar(f)});
-  document.querySelectorAll('[data-pfs]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const r=await nubeFetchW('getdoc',null,PW,'pfs_'+b.dataset.pfs);if(!r||!r.ok||!r.doc)throw 0;const EK=await aesKey(PP.ek),u=fromB64(decT(await aesDec(EK,JSON.parse(r.doc))));const f=PP.d.fir.find(x=>x.id===b.dataset.pfs);await guardarArchivo(`${slug(f.t)}_FIRMADO.pdf`,new Blob([u],{type:'application/pdf'}))}catch(e){alertaPortal('Todavía no está disponible la copia firmada. Intente más tarde.')}b.disabled=false});
+  document.querySelectorAll('[data-pfs]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const r=await nubeFetchW('getdoc',null,PW,'pfs_'+b.dataset.pfs);if(!r||!r.ok||!r.doc)throw 0;const EK=await aesKey(PP.ek),u=fromB64(decT(await aesDec(EK,JSON.parse(r.doc))));const f=PP.d.fir.find(x=>x.id===b.dataset.pfs);await guardarArchivo(nomPortal(PP.d.emp.nombre,'firmado'),new Blob([u],{type:'application/pdf'}))}catch(e){alertaPortal('Todavía no está disponible la copia firmada. Intente más tarde.')}b.disabled=false});
   const cv=$('#pfCv');if(!cv)return;const f=PP.d.fir.find(x=>x.id===PFIR.act),ctx=cv.getContext('2d');ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#14223d';let dib=false;
   const pt=ev=>{const r=cv.getBoundingClientRect();return [(ev.clientX-r.left)*cv.width/r.width,(ev.clientY-r.top)*cv.height/r.height]};
   cv.onpointerdown=ev=>{dib=true;cv.setPointerCapture(ev.pointerId);const [x,y]=pt(ev);ctx.beginPath();ctx.moveTo(x,y)};cv.onpointermove=ev=>{if(!dib)return;const [x,y]=pt(ev);ctx.lineTo(x,y);ctx.stroke();PFIR.trazo=true};cv.onpointerup=cv.onpointercancel=()=>{dib=false};
   $('#pfClr').onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);PFIR.trazo=false};$('#pfCan').onclick=()=>{PFIR.act=null;portalVista()};
-  const dl=$('#pfDl');if(dl)dl.onclick=()=>guardarArchivo(f.a||'documento.pdf',new Blob([PFIR.bytes],{type:'application/pdf'}));
+  const dl=$('#pfDl');if(dl)dl.onclick=()=>guardarArchivo(nomPortal(PP.d.emp.nombre),new Blob([PFIR.bytes],{type:'application/pdf'}));
   const er=$('#pfErr'),E=PP.d.emp;
   const enviar=async sol=>{const r=await nubeFetchW('psol',{n:PP.n,auth:PP.auth,sol:{...sol,fid:f.id,nombre:E.nombre,doc:E.doc,cargo:E.cargo,enviada:new Date().toISOString()}},PW);if(!r||!r.ok)throw 0;let env={};try{env=JSON.parse(localStorage.getItem(PW+'.fir.'+PP.n)||'{}')}catch(e){}env[f.id]=sol.tipo;try{localStorage.setItem(PW+'.fir.'+PP.n,JSON.stringify(env))}catch(e){}};
   $('#pfFirmar').onclick=async ev=>{er.textContent='';const nom=$('#pfNom').value.trim(),doc=$('#pfDoc').value.replace(/\D/g,'');
@@ -6545,8 +6554,8 @@ async function pdfCertSello(F,C){const PL=await cargarPdfLib();const {PDFDocumen
     out.forEach((ln,i)=>{const x0=L+(o.ind||0);if(i<out.length-1&&!o.noJust){const tw=ln.reduce((a,w)=>a+f.widthOfTextAtSize(w,s),0),gap=(W-(o.ind||0)-tw)/Math.max(1,ln.length-1);let x=x0;ln.forEach(w=>{pg.drawText(w,{x,y,size:s,font:f,color:ink});x+=f.widthOfTextAtSize(w,s)+gap})}else pg.drawText(ln.join(' '),{x:x0,y,size:s,font:f,color:ink});y-=16});y-=8};
   const T=F.ps?(()=>{const t=textoCertPS(F);return {p1:t.p1,p2:'',af:[],p3:t.p4,acl:t.p3}})():textoCert(F);par(T.p1);if(T.acl)par(T.acl);if(T.p2){par(T.p2);T.af.forEach(([k,v])=>{pg.drawText(k+':',{x:L+24,y,size:11,font:fB,color:ink});pg.drawText(String(v),{x:L+110,y,size:11,font:fR,color:ink});y-=16});y-=8}
   if(F.dirigido)par('Este certificado se dirige a: '+F.dirigido+'.');par(T.p3);y-=10;pg.drawText('Atentamente,',{x:L,y,size:11,font:fR,color:ink});y-=16;
-  const se=await img(C.sello);let sy=y-72;if(se){const s=Math.min(135/se.width,52/se.height);pg.drawImage(se,{x:L+8,y:sy+6,width:se.width*s,height:se.height*s})}
-  pg.drawLine({start:{x:L,y:sy},end:{x:L+230,y:sy},thickness:.8,color:gris});pg.drawText(C.firma||emp,{x:L,y:sy-14,size:10.5,font:fB,color:ink});pg.drawText('NIT '+(cfg.nit||''),{x:L,y:sy-27,size:9.5,font:fR,color:gris});
+  const se=await img(C.sello),fRL=await pdfFirmaRL(doc,cfg.firmaRL?cfg:cfgFirma());let sy=y-72;if(se){const s=Math.min(135/se.width,52/se.height);pg.drawImage(se,{x:fRL?L+150:L+8,y:sy+6,width:se.width*s,height:se.height*s})}pdfPonFirma(pg,fRL,L+6,sy,170,54);
+  pg.drawLine({start:{x:L,y:sy},end:{x:L+230,y:sy},thickness:.8,color:gris});let fyy=sy-14;if(fRL&&cfg.repLegal){pg.drawText(String(cfg.repLegal).toUpperCase(),{x:L,y:fyy,size:10.5,font:fB,color:ink});fyy-=13;pg.drawText('Representante Legal · '+(C.firma||emp),{x:L,y:fyy,size:9.5,font:fR,color:gris});fyy-=13}else{pg.drawText(C.firma||emp,{x:L,y:fyy,size:10.5,font:fB,color:ink});fyy-=13}pg.drawText('NIT '+(cfg.nit||''),{x:L,y:fyy,size:9.5,font:fR,color:gris});
   const pie=[cfg.direccion,(cfg.direccion||'').includes(cfg.ciudad||'§')?'':cfg.ciudad,cfg.correoEmp,cfg.contacto].filter(Boolean).join(' · ');if(pie)pg.drawText(pie.slice(0,120),{x:(612-fR.widthOfTextAtSize(pie.slice(0,120),8))/2,y:46,size:8,font:fR,color:gris});
   const ver=`Expedido en el portal de empleados el ${new Date().toLocaleString('es-CO')}. Certificado general con sello de la empresa.`;pg.drawText(ver,{x:(612-fR.widthOfTextAtSize(ver,7.5))/2,y:34,size:7.5,font:fR,color:gris});
   return doc.save()}
@@ -6616,7 +6625,7 @@ async function pdfSolPermiso(d,E,C){const PL=await cargarPdfLib();const {PDFDocu
   [['Reposición de tiempo',d.repo==='si'],['No reposición de tiempo',d.repo==='no']].forEach(([t,on],k)=>{const x=L+k*W/2;pg.drawRectangle({x,y:y-16,width:W/2,height:16,borderColor:lin,borderWidth:.6});caja(x+5,y-12,on);pg.drawText(t,{x:x+17,y:y-11.5,size:8.5,font:fR,color:ink})});y-=16;
   sec('V. SOPORTES ANEXOS');opciones(SOP_PERM,3,o=>(d.sop||[]).includes(o));
   sec('VI. AUTORIZA');const est=d.estado==='aprobada'?'APROBADA':d.estado==='negada'?'NEGADA':'';fila(['Jefe inmediato',''],['Talento Humano',est?est+(d.atendida?' · '+fCorta(String(d.atendida).slice(0,10)):''):'']);
-  y-=34;pg.drawText('FIRMA EMPLEADO____________________________.',{x:L,y,size:9.5,font:fB,color:ink});y-=24;
+  y-=34;if(d.estado==='aprobada'){const fRL=await pdfFirmaRL(doc,cfg.firmaRL?cfg:cfgFirma());if(fRL){const xa=L+W/2+20;pdfPonFirma(pg,fRL,xa+6,y-2,150,34);pg.drawLine({start:{x:xa,y:y-2},end:{x:R,y:y-2},thickness:.6,color:ink});pg.drawText('AUTORIZÓ TALENTO HUMANO',{x:xa,y:y-13,size:8.5,font:fB,color:ink});const rl=String(cfg.repLegal||'').toUpperCase();if(rl)pg.drawText(rl,{x:xa,y:y-24,size:8,font:fR,color:gris})}}pg.drawText('FIRMA EMPLEADO____________________________.',{x:L,y,size:9.5,font:fB,color:ink});y-=24;
   pg.drawText('NOMBRES Y APELLIDOS: ',{x:L,y,size:9.5,font:fB,color:ink});pg.drawText((E.nombre||'').toUpperCase(),{x:L+fB.widthOfTextAtSize('NOMBRES Y APELLIDOS: ',9.5),y,size:9.5,font:fR,color:ink});y-=24;
   pg.drawText('CC: ',{x:L,y,size:9.5,font:fB,color:ink});pg.drawText(cedula(E.doc),{x:L+fB.widthOfTextAtSize('CC: ',9.5),y,size:9.5,font:fR,color:ink});
   const pie=['NIT: '+(cfg.nit||''),cfg.ciudad||'',cfg.direccion||'',cfg.correoEmp||''].filter(x=>x&&x!=='NIT: ');let py=70;pie.forEach(t=>{pg.drawText(t,{x:R-fR.widthOfTextAtSize(t,8),y:py,size:8,font:fR,color:gris});py-=11});
@@ -6670,7 +6679,7 @@ function portalRitImprimir(){const R=PP.rit;const w=window.open('','_blank');if(
 async function portalAbrirDoc(id){const C=PP.com||{},d=(C.docs||[]).find(x=>x.id===id);if(!d)return;
   const r=await nubeFetchW('getdoc',null,PW,'pd_'+id);if(!r||!r.ok||!r.doc)throw 'no';const txt=decT(await aesDec(PP.CK,JSON.parse(r.doc)));
   if(d.tipo==='rit'){PP.rit=JSON.parse(txt);PP.ritQ='';PP.vista='rit';portalVista();scrollTo({top:0});return}
-  const mm=txt.match(/^data:([^;]+);base64,(.*)$/);if(!mm)throw 'no';await guardarArchivo(nomArch(d.t)+'.pdf',new Blob([fromB64(mm[2])],{type:mm[1]}))}
+  const mm=txt.match(/^data:([^;]+);base64,(.*)$/);if(!mm)throw 'no';await guardarArchivo(nomLimpio(d.t)+'.pdf',new Blob([fromB64(mm[2])],{type:mm[1]}))}
 function portalPermHTML(E,nn){const C=PP.com||{},cfg=C.cfg||{},o=PP.perm||{};const sel=(v,t)=>`<option${o.clase===v?' selected':''}>${esc(t||v)}</option>`;
   return `<div id="pt-perm"></div><details class="panel ptSec" style="margin-top:12px" id="ppPermD" ${PP.permAbierto?'open':''}><summary style="cursor:pointer">${ptH(nn,'perm','Solicitar permiso, licencia o vacaciones',1)}</summary>
    <p class="note">Llene la solicitud y envíela a Talento Humano. También puede descargarla en PDF para firmarla con su jefe inmediato.${cfg.correoEmp?` Los soportes envíelos al correo <b>${esc(cfg.correoEmp)}</b>.`:''}</p>
@@ -6697,7 +6706,7 @@ function portalPermBind(){const E=PP.d.emp,D=$('#ppPermD');if(!D)return;D.ontogg
   const hh=()=>{const a=$('#pmHd').value,b=$('#pmHh').value;if(a&&b&&b>a&&!$('#pmHoras').dataset.man){const [h1,m1]=a.split(':').map(Number),[h2,m2]=b.split(':').map(Number);$('#pmHoras').value=Math.round(((h2*60+m2)-(h1*60+m1))/30)/2}guarda()};
   $('#pmHd').onchange=hh;$('#pmHh').onchange=hh;$('#pmHoras').oninput=ev=>{ev.target.dataset.man=1};
   const valida=d=>{if(!d.clase)return 'Elija el tipo de solicitud';if(d.clase==='Otro'&&!d.otro)return 'Escriba cuál es la solicitud';if(!d.desde)return 'Escriba la fecha desde';if(d.hasta&&d.hasta<d.desde)return 'La fecha hasta es anterior a la fecha desde';if(!d.just)return 'Escriba la justificación';return ''};
-  $('#pmPdf').onclick=async()=>{const d=portalPermLeer(),er=valida(d);$('#pmErr').textContent=er;if(er)return;try{const b=await pdfSolPermiso(d,E,PP.com);await guardarArchivo(`SOLICITUD_${nomArch(d.clase==='Otro'?d.otro:d.clase)}_${nomArch(E.nombre)}.pdf`,new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el PDF. Revise el internet.')}};
+  $('#pmPdf').onclick=async()=>{const d=portalPermLeer(),er=valida(d);$('#pmErr').textContent=er;if(er)return;try{const b=await pdfSolPermiso(d,E,PP.com);await guardarArchivo(nomPortal(E.nombre),new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el PDF. Revise el internet.')}};
   $('#pmEnv').onclick=async()=>{const b=$('#pmEnv'),d=portalPermLeer(),er=valida(d);$('#pmErr').textContent=er;if(er)return;b.disabled=true;b.textContent='Enviando…';
     try{const r=await nubeFetchW('psol',{n:PP.n,auth:PP.auth,sol:{...d,nombre:E.nombre,doc:E.doc,cargo:E.cargo,enviada:new Date().toISOString()}},PW);if(!r.ok)throw 0;
       PP.perm=null;PP.permAbierto=false;PP.msg=`Su solicitud de <b>${esc(d.clase==='Otro'?d.otro:d.clase)}</b> quedó enviada a Talento Humano.${(PP.com.cfg||{}).correoEmp&&d.sop.length?` Recuerde enviar los soportes al correo ${esc(PP.com.cfg.correoEmp)}.`:''}`;portalVista();scrollTo({top:0})}
@@ -6792,7 +6801,7 @@ function portalBind(){const s=$('#ppSalir');if(s)s.onclick=()=>{PP.d=null;PP.aut
   const cf=$('#ppCf');if(cf)cf.onsubmit=async ev=>{ev.preventDefault();const e=$('#ppCe'),a=$('#ppC0').value,b1=$('#ppC1').value,b2=$('#ppC2').value;if(b1.length<8)return e.textContent='La clave nueva debe tener mínimo 8 caracteres';if(b1!==b2)return e.textContent='Las claves nuevas no coinciden';
     $('#ppCb').disabled=true;try{const d0=await pbDerive(PP.doc,a,PP.salt);if(d0.auth!==PP.auth)throw 'La clave actual no es correcta';const d1=await pbDerive(PP.doc,b1,PP.salt);const wpin=await aesEnc(d1.k,PP.ek);
       const r=await nubeFetchW('ppin',{n:PP.n,auth:d0.auth,nauth:d1.auth,wpin},PW);if(!r.ok)throw r.error==='clave'?'La clave actual no es correcta':'No se pudo guardar';PP.auth=d1.auth;PP.vista='inicio';PP.msg='Su clave quedó cambiada.';portalVista()}catch(x){e.textContent=typeof x==='string'?x:'No se pudo guardar. Revise el internet.';$('#ppCb').disabled=false}};
-  const c=$('#ppCert');if(c)c.onclick=async()=>{c.disabled=true;c.textContent='Generando…';try{const b=await pdfCertSello(portalCertF(),PP.com);await guardarArchivo(`${PP.d.emp.ps?'CERTIFICACION_PRESTACION_SERVICIOS':'CERTIFICADO_LABORAL'}_${nomArch(PP.d.emp.nombre)}.pdf`,new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el certificado. Revise el internet.')}c.disabled=false;c.textContent='Descargar certificado (PDF)'};
+  const c=$('#ppCert');if(c)c.onclick=async()=>{c.disabled=true;c.textContent='Generando…';try{const b=await pdfCertSello(portalCertF(),PP.com);await guardarArchivo(nomPortal(PP.d.emp.nombre),new Blob([b],{type:'application/pdf'}))}catch(e){toast('No se pudo generar el certificado. Revise el internet.')}c.disabled=false;c.textContent='Descargar certificado (PDF)'};
   const se=$('#psEnv');if(se)se.onclick=async()=>{se.disabled=true;try{const r=await nubeFetchW('psol',{n:PP.n,auth:PP.auth,sol:{tipo:'cert_firmado',dirigido:$('#psDir').value.trim(),conSal:$('#psSal').checked,obs:$('#psObs').value.trim(),contacto:$('#psCon').value.trim(),nombre:PP.d.emp.nombre}},PW);if(!r.ok)throw 0;PP.msg='Solicitud enviada. Talento Humano le enviará el certificado firmado.';portalVista()}catch(e){se.disabled=false;toast('No se pudo enviar la solicitud. Intente de nuevo.')}};
   document.querySelectorAll('[data-ppd]').forEach(b=>b.onclick=async()=>{const x=PP.d.desp[+b.dataset.ppd];const [mes,tipo]=x.k.split('_');try{await pdfDesprendibles([x.row],periodo(mes,tipo))}catch(e){toast('No se pudo generar el PDF')}})}
 
@@ -6971,7 +6980,7 @@ async function pdfCta(F){
   const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,X=partesCta(F),doc=await PDFDocument.create(),W=612,H=792,pg=doc.addPage([W,H]);
   const serif=SERIF_F.test(fuenteDe('cert')),FN=await doc.embedFont(serif?StandardFonts.TimesRoman:StandardFonts.Helvetica),FB=await doc.embedFont(serif?StandardFonts.TimesRomanBold:StandardFonts.HelveticaBold),NEG=rgb(.07,.07,.07);
   doc.setTitle('Carta de apertura de cuenta · '+F.nombre);doc.setAuthor(c.empresa||'');
-  const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
+  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
   let top=cm(2.5),bot=cm(2.5),izq=cm(3),der=cm(2.5);
   if(dz&&dz.tipo==='img'){const im=await img(dz.data);if(im)pg.drawImage(im,{x:0,y:0,width:W,height:H});top=cm(+dz.mt||5);bot=cm(+dz.mb||4.5);izq=der=cm(+dz.mi||3)}
   else{const im=await img(logoDoc());let y0=H-cm(1.5);if(im){const h=40,w=Math.min(170,im.width*h/im.height);pg.drawImage(im,{x:izq,y:y0-h,width:w,height:h})}
@@ -6982,11 +6991,12 @@ async function pdfCta(F){
     const par=(t,o={})=>{const f=o.b?FB:FN,L=lineas(t,f,sz);L.forEach((l,i)=>{put(l,{...o,just:o.just&&i<L.length-1});y-=sz*lh});y-=gap};
     par(X.enc[0]);X.dest.forEach((t,i)=>{put(ok(t,i===1?FB:FN),{b:i===1});y-=sz*lh});y-=gap;
     out.push({t:'',y,o:{asunto:true}});y-=sz*lh+gap;par('Respetados señores:');
-    X.pars.forEach(t=>par(t,{just:true}));y-=gap*0.5;par('Atentamente,');y-=sz*3.2;
+    X.pars.forEach(t=>par(t,{just:true}));y-=gap*0.5;par('Atentamente,');y-=sz*3.2;out.push({t:'',y:y+sz*1.1,o:{firmaRL:true}});
     X.firma.forEach((t,i)=>{put(ok(t,i<2?FB:FN),{b:i<2});y-=sz*lh});return {out,fin:y}};
   let sz=11,lh=1.45,gap=9,R=draw(sz,lh,gap);
   while(R.fin<bot&&sz>8.5){sz-=.25;lh=Math.max(1.25,lh-.03);gap=Math.max(5,gap-.6);R=draw(sz,lh,gap)} // que quede en una sola hoja
   R.out.forEach(({t,y,o})=>{
+    if(o.firmaRL){pdfPonFirma(pg,FRL,izq+4,y,160,sz*3.2-2);return}
     if(o.asunto){const a='Asunto: ';pg.drawText(a,{x:izq,y,size:sz,font:FB,color:NEG});pg.drawText(ok(X.asunto,FN),{x:izq+FB.widthOfTextAtSize(a,sz),y,size:sz,font:FN,color:NEG});return}
     const f=o.b?FB:FN;
     if(o.just){const ws=t.split(' ');if(ws.length>1){const wt=ws.reduce((a,w)=>a+f.widthOfTextAtSize(w,sz),0),sp=(TW-wt)/(ws.length-1);let x=izq;ws.forEach(w=>{pg.drawText(w,{x,y,size:sz,font:f,color:NEG});x+=f.widthOfTextAtSize(w,sz)+sp});return}}
