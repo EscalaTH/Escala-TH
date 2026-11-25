@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='25/11/2026 13:04';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='25/11/2026 13:11';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -4309,7 +4309,7 @@ function calcLiq(e,F){
   it('Vacaciones pendientes',L.baseVac,30,Math.round(vP*100)/100,C100(L.baseVac/30*vP));
   const ces=C100(L.base/360*dC);it('Cesantías',L.base,360,dC,ces);
   it('Intereses de cesantías',ces,360,dC,C100(ces/360*dC*0.12),'× 12 %');
-  if(F.cesAnt){const ya=String(+y-1),dA=d360(maxF(ing,`${ya}-01-01`),`${ya}-12-30`);if(dA>0&&ing<=`${ya}-12-31`){const cA=C100(L.base/360*dA);it(`Cesantías ${ya} no consignadas`,L.base,360,dA,cA);it(`Intereses cesantías ${ya}`,cA,360,dA,C100(cA/360*dA*0.12),'× 12 %')}}
+  if(F.cesAnt){const ya=String(+y-1),dA=d360(maxF(ing,`${ya}-01-01`),`${ya}-12-31`);if(dA>0&&ing<=`${ya}-12-31`){const cA=C100(L.base/360*dA);it(`Cesantías ${ya} no consignadas`,L.base,360,dA,cA);it(`Intereses cesantías ${ya}`,cA,360,dA,C100(cA/360*dA*0.12),'× 12 %')}}
   if(!F.primaPagada)it('Prima de servicios',L.base,360,dP,C100(L.base/360*dP));
   const ds=+F.diasSal||0;let salP=0;
   L.diasSal=ds;
@@ -4320,9 +4320,14 @@ function calcLiq(e,F){
     const he=r.hed+r.hen+r.hedf+r.hendf;if(op.ext&&r.vExt){const v=C100(r.vExt);recH+=v;it(`Horas extra (${hTx(he)} según el horario)`,'','','',v)}}
   const rp=+F.recPend||0;if(rp)it(F.recC||'Recargos u otros devengos pendientes','','','',rp);
   if(F.motivo==='sinjusta'){const vd=L.baseInd/30;let dd,n;
-    if(F.tipo==='fijo'){const falt=F.finFijo&&F.finFijo>F.retiro?d360(addDays(F.retiro,1),F.finFijo):0;dd=Math.max(15,falt);n='Días faltantes del plazo (mínimo 15)'}
-    else{const a=dT/360,alto=L.baseInd>=10*c.smmlv,p1=alto?20:30,pa=alto?15:20;dd=a<=1?p1:p1+pa*(a-1);n=`${p1} días el primer año${a>1?` + ${pa} por año adicional`:''}`}
-    it('Indemnización art. 64 CST',L.baseInd,30,Math.round(dd*100)/100,C100(vd*dd),n)}
+    const falt=F.finFijo&&F.finFijo>F.retiro?d360(addDays(F.retiro,1),F.finFijo):0;
+    if(F.tipo==='fijo'){dd=falt;n=`Salarios del tiempo que faltaba para el fin del plazo (${F.finFijo?fCorta(F.finFijo):'falta la fecha'})`;L.indSinFecha=!F.finFijo}
+    else if(F.tipo==='obra'){dd=Math.max(15,falt);n=`Tiempo que faltaba para terminar la obra${F.finFijo?' ('+fCorta(F.finFijo)+')':''}, mínimo 15 días`;L.indSinFecha=!F.finFijo}
+    else{const a=dT/360;if(ing<='1992-12-27'){ /* parágrafo transitorio art. 28 Ley 789 de 2002: 10 o más años al 27-dic-2002 → tabla de la Ley 50 de 1990 */
+        const pa=a>=10?40:a>=5?20:15;dd=a<=1?45:45+pa*(a-1);n=`Régimen de transición (Ley 50 de 1990): 45 días el primer año + ${pa} por año adicional`}
+      else{const alto=L.baseInd>=10*c.smmlv,p1=alto?20:30,pa=alto?15:20;dd=a<=1?p1:p1+pa*(a-1);n=`${p1} días por el primer año${a>1?` + ${pa} por cada año adicional y proporcional por fracción`:' (el primer año se paga completo)'}${alto?' · salario de 10 SMMLV o más':''}`}}
+    L.ind={dias:Math.round(dd*100)/100,nota:n,valor:C100(vd*dd),base:L.baseInd};
+    it('Indemnización por despido sin justa causa (art. 64 CST)',L.baseInd,30,Math.round(dd*100)/100,C100(vd*dd),n)}
   L.dev=L.items.reduce((a,i)=>a+i.v,0);
   const bSS=salP+rp+recH;if(bSS){L.ded.push({c:'Descuento salud',b:bSS,p:'4 %',v:C100(bSS*c.salud/100)},{c:'Descuento pensión',b:bSS,p:'4 %',v:C100(bSS*c.pension/100)})}
   if(+F.desc)L.ded.push({c:'Otros descuentos al empleado'+(F.descC?': '+F.descC:''),v:+F.desc});
@@ -4483,8 +4488,9 @@ function renderLiq(){
     h+=`<form class="panel grid-form" id="lqF" style="margin-top:12px">
       ${inp('lqR','Fecha de terminación',F.retiro,'date')}
       <label class="f">Causa de la liquidación<select id="lqM">${Object.entries(MOTIVOS).map(([k,t])=>`<option value="${k}"${F.motivo===k?' selected':''}>${t}</option>`).join('')}</select></label>
-      <label class="f">Tipo de contrato<select id="lqT"><option value="indefinido"${F.tipo==='indefinido'?' selected':''}>Término indefinido</option><option value="fijo"${F.tipo==='fijo'?' selected':''}>Término fijo</option></select></label>
-      ${F.tipo==='fijo'?inp('lqFin','Fin del plazo pactado',F.finFijo,'date'):''}
+      <label class="f">Tipo de contrato<select id="lqT"><option value="indefinido"${F.tipo==='indefinido'?' selected':''}>Término indefinido</option><option value="fijo"${F.tipo==='fijo'?' selected':''}>Término fijo</option><option value="obra"${F.tipo==='obra'?' selected':''}>Obra o labor</option></select></label>
+      ${F.tipo==='fijo'?inp('lqFin','Fin del plazo pactado',F.finFijo,'date'):F.tipo==='obra'?inp('lqFin','Fecha prevista de terminación de la obra',F.finFijo,'date'):''}
+      ${F.motivo==='sinjusta'&&L.ind?`<div class="alert ${L.indSinFecha?'':'info'}" style="grid-column:1/-1"><b>Indemnización por despido sin justa causa (art. 64 CST):</b> ${L.indSinFecha?`<b>escriba la ${F.tipo==='obra'?'fecha prevista de terminación de la obra':'fecha de fin del plazo pactado'}</b> para calcularla. `:''}${L.ind.dias.toLocaleString('es-CO')} días × ${money(Math.round(L.ind.base/30))} diarios = <b>${money(L.ind.valor)}</b>. ${esc(L.ind.nota)}. Base: salario ${money(L.sal)}${L.prom?` + promedio variable ${money(L.prom)}`:''} (sin auxilio de transporte). No tiene descuentos de salud ni pensión.</div>`:''}
       ${inp('lqCg','Cargo (como sale en el documento)',F.cargo,'text')}
       ${inp('lqP',`Promedio salario variable${F.meses?` (${F.meses} mes${F.meses>1?'es':''})`:''}`,F.prom,'number','step="1"')}
       ${inp('lqPv','Promedio para vacaciones (sin extras ni dominicales)',F.promVac??F.prom,'number','step="1"')}
@@ -4557,7 +4563,7 @@ function diasUltimo(e,retiro){
   const d=Math.max(0,d360(ini,retiro)-lnr);return {d,ini,lnr,nota:`del ${fCorta(ini)} al ${fCorta(retiro)}${lnr?`, menos ${lnr} día${lnr>1?'s':''} no remunerado${lnr>1?'s':''}`:''}`};
 }
 function liqF(id){const e=S.emps[id],ret=e.retiro||todayCO(),s=sugerencias(e,ret);
-  return {retiro:ret,motivo:'renuncia',tipo:/fijo/i.test(e.contrato||'')?'fijo':'indefinido',finFijo:'',cargo:e.cargo||'',vacDisf:(+e.vacTomadas||0)+vacRegistradas(e),prom:s.prom,promVac:s.promVac,lnrA:s.lnrA,lnrS:0,lnrT:s.lnrT,meses:s.meses,diasSal:diasUltimo(S.emps[id],ret).d,salIni:diasUltimo(S.emps[id],ret).ini,salNota:diasUltimo(S.emps[id],ret).nota,recPend:0,recC:'',desc:0,descC:'',descs:pendientesDesc(id),obs:'',primaPagada:!!((S.prest||{})[`prima_${ret.slice(0,4)}_${ret.slice(5,7)<='06'?1:2}`]||{por:{}}).por?.[id],cesAnt:false}}
+  return {retiro:ret,motivo:'renuncia',tipo:/fijo/i.test(e.contrato||'')?'fijo':/obra|labor/i.test(e.contrato||'')?'obra':'indefinido',finFijo:'',cargo:e.cargo||'',vacDisf:(+e.vacTomadas||0)+vacRegistradas(e),prom:s.prom,promVac:s.promVac,lnrA:s.lnrA,lnrS:0,lnrT:s.lnrT,meses:s.meses,diasSal:diasUltimo(S.emps[id],ret).d,salIni:diasUltimo(S.emps[id],ret).ini,salNota:diasUltimo(S.emps[id],ret).nota,recPend:0,recC:'',desc:0,descC:'',descs:pendientesDesc(id),obs:'',primaPagada:!!((S.prest||{})[`prima_${ret.slice(0,4)}_${ret.slice(5,7)<='06'?1:2}`]||{por:{}}).por?.[id],cesAnt:false}}
 function abrirLiq(id){LQ.eid=id;if(!id){LQ.f=null;renderLiq();return}LQ.f=liqF(id);renderLiq()}
 async function wordLiq(e,F,L){
   FONT_ACT=fuenteDe('liq');try{return await wordLiq0(e,F,L)}finally{FONT_ACT=null}}
@@ -4679,8 +4685,8 @@ function calcVac(e,corte){
 }
 function periodoPS(){
   const y=PS.anio,hoy=todayCO();
-  if(PS.tipo==='prima'){const ini=PS.sem===1?`${y}-01-01`:`${y}-07-01`,fin=PS.sem===1?`${y}-06-30`:`${y}-12-30`;return {ini,fin:PS.corte&&PS.corte<fin?PS.corte:fin,key:`prima_${y}_${PS.sem}`,tit:`Prima de servicios ${PS.sem===1?'primer':'segundo'} semestre ${y}`,limite:PS.sem===1?`30 de junio de ${y}`:`20 de diciembre de ${y}`}}
-  if(PS.tipo==='ces'){const ini=`${y}-01-01`,fin=`${y}-12-30`;return {ini,fin:PS.corte&&PS.corte<fin?PS.corte:fin,key:`ces_${y}`,tit:`Cesantías e intereses ${y}`,limite:`intereses al trabajador a más tardar el 31 de enero de ${y+1}; cesantías consignadas al fondo antes del 15 de febrero de ${y+1}`}}
+  if(PS.tipo==='prima'){const ini=PS.sem===1?`${y}-01-01`:`${y}-07-01`,fin=PS.sem===1?`${y}-06-30`:`${y}-12-31`;return {ini,fin:PS.corte&&PS.corte<fin?PS.corte:fin,key:`prima_${y}_${PS.sem}`,tit:`Prima de servicios ${PS.sem===1?'primer':'segundo'} semestre ${y}`,limite:PS.sem===1?`30 de junio de ${y}`:`20 de diciembre de ${y}`}}
+  if(PS.tipo==='ces'){const ini=`${y}-01-01`,fin=`${y}-12-31`;return {ini,fin:PS.corte&&PS.corte<fin?PS.corte:fin,key:`ces_${y}`,tit:`Cesantías e intereses ${y}`,limite:`intereses al trabajador a más tardar el 31 de enero de ${y+1}; cesantías consignadas al fondo antes del 15 de febrero de ${y+1}`}}
   return {fin:PS.corte||hoy,key:'vac',tit:'Saldo de vacaciones'};
 }
 const FONDOS_CES=['Porvenir','Protección','Colfondos','Skandia','Fondo Nacional del Ahorro'];
