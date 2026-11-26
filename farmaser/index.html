@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='26/11/2026 11:53';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='26/11/2026 11:56';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -351,7 +351,7 @@ const PERM={write:true,admin:true,me:null,uid:null,live:false};
 let DB=null,USER=null,MODE='local';
 const LKEY='nomina.farmaser.cifrada.v2';
 const SEED=null;
-const MODO='farmaser',SIN_SER=MODO==='escalautos'||MODO==='cliente'||MODO==='farmaser',LOGO_NEUTRO='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="#eef1f7"/><rect x="34" y="26" width="52" height="68" rx="6" fill="#fff" stroke="#5b6170" stroke-width="4"/><path d="M44 44h32M44 56h32M44 68h20" stroke="#5b6170" stroke-width="4" stroke-linecap="round"/></svg>'),TPL_DOCX='',LOGO_ESC='';
+const MODO='farmaser',SIN_SER=MODO==='escalautos'||MODO==='cliente'||MODO==='farmaser',LOGO_NEUTRO='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="#eef1f7"/><rect x="34" y="26" width="52" height="68" rx="6" fill="#fff" stroke="#5b6170" stroke-width="4"/><path d="M44 44h32M44 56h32M44 68h20" stroke="#5b6170" stroke-width="4" stroke-linecap="round"/></svg>'),TPL_DOCX='',MEMB_ESC='',LOGO_ESC='';
 /* cifrado AES-GCM con clave derivada de correo + contraseña (PBKDF2) */
 const toB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 const fromB64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -4036,7 +4036,7 @@ async function docxFirmaRL(zip){const c=S.config;if(!c.firmaRL||!c.repLegal)retu
 async function generarDocx(body,titulo,nombre,tipo,opt={}){
   const PG=opt.pg||{w:12240,h:15840,t:2000,r:1701,b:1417,l:1701,hd:600},TW=PG.w-PG.l-PG.r;
   if(typeof JSZip==='undefined'){toast('No se pudo cargar el generador de Word. Revise la conexión.');return}
-  let zip;const dz=tipo?disenoDe(tipo):null;
+  let zip;let dz=tipo?disenoDe(tipo):null;if(dz&&MODO==='escalautos'&&!(await disTieneMembrete(dz)))dz=null;
   if(dz&&dz.tipo==='docx'){try{zip=await docxConPlantilla(dz,body,titulo)}catch(e){toast('No se pudo usar el Word del diseño; revise el archivo en Parámetros');return}}
   else if(dz&&dz.tipo==='img')zip=await docxConFondo(dz,body,opt.pg);
   else if(MODO==='escalautos'&&!opt.pg){
@@ -4067,6 +4067,7 @@ async function generarDocx(body,titulo,nombre,tipo,opt={}){
 const DOCS_DIS=[['cert','Certificación laboral'],['liq','Liquidación de contrato'],['ctr','Contratos y documentos de talento humano']];
 const DC=()=>((S.config.colorDoc||'#1D3F99').replace('#','').toUpperCase());
 const DS=()=>{const h=DC(),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)||0).map(x=>Math.round(x+(255-x)*.86));return v.map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()};
+const disenoPdf=t=>{const d=disenoDe(t);if(d&&d.tipo==='img')return d;return MEMB_ESC?{tipo:'img',data:MEMB_ESC,mt:3.4,mb:3.6,mi:2.8,app:1}:d};
 const disenoDe=t=>{const c=S.config,d=(c.disenos||{})[t];if(!d||!d.id)return null;const a=(c.disArch||{})[d.id];return a?{...a,...d}:null};
 const NS_W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
 async function docxConPlantilla(dz,body,titulo){
@@ -4394,7 +4395,7 @@ function partesNoProrr(e,o){const tc=t=>String(t||'').toLowerCase().replace(/(^|
 async function cartaPDF(X,nombre,PL){
   PL=PL||await cargarPdfLib();const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,doc=await PDFDocument.create(),W=612,H=792,pg=doc.addPage([W,H]),NEG=rgb(.07,.07,.07);
   const serif=SERIF_F.test(fuenteDe('cert')),FN=await doc.embedFont(serif?StandardFonts.TimesRoman:StandardFonts.Helvetica),FB=await doc.embedFont(serif?StandardFonts.TimesRomanBold:StandardFonts.HelveticaBold);doc.setTitle(nombre);doc.setAuthor(c.empresa||'');
-  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
+  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoPdf('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
   let top=cm(2.5),bot=cm(2.5),izq=cm(3),der=cm(2.5);
   if(dz&&dz.tipo==='img'){const im=await img(dz.data);if(im)pg.drawImage(im,{x:0,y:0,width:W,height:H});top=cm(+dz.mt||5);bot=cm(+dz.mb||4.5);izq=der=cm(+dz.mi||3)}
   else{const im=await img(logoDoc());let y0=H-cm(1.5);if(im){const h=40,w=Math.min(170,im.width*h/im.height);pg.drawImage(im,{x:izq,y:y0-h,width:w,height:h})}
@@ -7187,7 +7188,7 @@ async function pdfCta(F){
   const {PDFDocument,StandardFonts,rgb}=PL,c=S.config,X=partesCta(F),doc=await PDFDocument.create(),W=612,H=792,pg=doc.addPage([W,H]);
   const serif=SERIF_F.test(fuenteDe('cert')),FN=await doc.embedFont(serif?StandardFonts.TimesRoman:StandardFonts.Helvetica),FB=await doc.embedFont(serif?StandardFonts.TimesRomanBold:StandardFonts.HelveticaBold),NEG=rgb(.07,.07,.07);
   doc.setTitle('Carta de apertura de cuenta · '+F.nombre);doc.setAuthor(c.empresa||'');
-  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoDe('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
+  const FRL=(X.firma||[]).some(t=>esRepLegal(t,c))?await pdfFirmaRL(doc,c):null;const cm=v=>v*72/2.54,dz=disenoPdf('cert'),img=async d=>{const m=String(d||'').match(/^data:image\/(png|jpe?g);base64,(.*)$/);if(!m)return null;try{return m[1]==='png'?await doc.embedPng(fromB64(m[2])):await doc.embedJpg(fromB64(m[2]))}catch(e){return null}};
   let top=cm(2.5),bot=cm(2.5),izq=cm(3),der=cm(2.5);
   if(dz&&dz.tipo==='img'){const im=await img(dz.data);if(im)pg.drawImage(im,{x:0,y:0,width:W,height:H});top=cm(+dz.mt||5);bot=cm(+dz.mb||4.5);izq=der=cm(+dz.mi||3)}
   else{const im=await img(logoDoc());let y0=H-cm(1.5);if(im){const h=40,w=Math.min(170,im.width*h/im.height);pg.drawImage(im,{x:izq,y:y0-h,width:w,height:h})}
