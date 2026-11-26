@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='26/11/2026 11:47';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='26/11/2026 11:53';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -5395,7 +5395,8 @@ function firmasCarta(e,{trab=true,testigos=false}={}){const c=S.config,rep=(c.re
   if(testigos)b+=wP('',{after:400})+wP(wR('Si el trabajador se niega a firmar, firman dos testigos:',{sz:18,i:true}),{after:300})+wTbl([[{t:'______________________________',sz:20},{t:'______________________________',sz:20}],[{t:'Testigo 1 · C.C.',sz:18},{t:'Testigo 2 · C.C.',sz:18}]],[4419,4419],{noBorder:true});
   return b}
 /* cartas a entidades: usan la hoja membreteada que la empresa subió (la de la certificación) y, si no hay, la de la app */
-async function docCarta(body,titulo,nombre){const t=disenoDe('cert')?'cert':disenoDe('ctr')?'ctr':disenoDe('liq')?'liq':'ctr';FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,t)}finally{FONT_ACT=null}}
+async function disTieneMembrete(d){if(!d)return false;if(d.tipo==='img')return true;if(d.tipo!=='docx')return false;try{const z=await JSZip.loadAsync(d.data.split(',').pop(),{base64:true});return Object.keys(z.files).some(n=>/^word\/media\//.test(n))}catch(e){return false}}
+async function docCarta(body,titulo,nombre){let t=null;for(const k of ['cert','ctr','liq']){if(await disTieneMembrete(disenoDe(k))){t=k;break}}if(!t&&MODO!=='escalautos')t='ctr';FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,t)}finally{FONT_ACT=null}}
 async function docTH(body,titulo,nombre){FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,'ctr')}finally{FONT_ACT=null}}
 const slug=t=>nrm(t||'').replace(/[^a-z0-9]+/gi,'_').toUpperCase();
 /* nombres de archivo del portal: solo el nombre del empleado, con espacios y sin guiones */
