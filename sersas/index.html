@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SER SAS"><meta name="application-name" content="SER SAS">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='25/11/2026 13:11';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
+<script>window.VER_APP='26/11/2026 04:45';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Gestor Talento Humano</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -5839,6 +5839,181 @@ function portalIncViaBind(){const E=PP.d&&PP.d.emp;if(!E)return;const send=async
   const pv=$('#pvEnv');if(pv)pv.onclick=()=>{const er=$('#pvErr');er.textContent='';const dest=$('#pvDest').value.trim();if(!dest||!$('#pvS').value)return er.textContent='Escriba el destino y la fecha de salida.';
     send({tipo:'viatico',destino:dest,salida:$('#pvS').value,regreso:$('#pvR2').value,transporte:$('#pvT').value,hospedaje:$('#pvH').value,anticipo:$('#pvA').value,jefe:$('#pvJ').value.trim(),motivo:$('#pvM').value.trim()},er,pv,'Su solicitud de viáticos llegó a Talento Humano.')}}
 
+/* ================= Selección de personal: vacante → candidatos → entrevista → verificación → oferta → contratación ================= */
+const SEL_EST=[['abierta','Abierta'],['proceso','En proceso'],['cerrada','Cerrada (cubierta)'],['cancelada','Cancelada']];
+const SEL_ETA=[['post','Postulado'],['ent','Entrevista'],['ver','Verificación'],['ofe','Oferta'],['cont','Contratado'],['desc','Descartado']];
+const SEL_FUENTE=['Referido','Computrabajo','elempleo','LinkedIn','Agencia Pública de Empleo (SENA)','Redes sociales','Hoja de vida en físico','Base de datos','Otra'];
+const SEL_CON=[['','Sin concepto'],['rec','Recomendado'],['recobs','Recomendado con observaciones'],['norec','No recomendado']];
+const SEL_PREG=[
+ ['Presentación','Cuénteme sobre usted y su trayectoria laboral.'],
+ ['Motivación','¿Por qué le interesa este cargo y esta empresa?'],
+ ['Experiencia','Describa sus funciones y logros en su último empleo.'],
+ ['Retiro anterior','¿Por qué terminó o quiere terminar su último trabajo?'],
+ ['Trabajo en equipo','Cuénteme una situación en la que tuvo que trabajar con otras personas para lograr un resultado. ¿Qué hizo usted?'],
+ ['Manejo de conflictos','Describa un desacuerdo con un compañero o jefe y cómo lo resolvió.'],
+ ['Servicio al cliente','Cuénteme de un cliente difícil que haya atendido y qué hizo.'],
+ ['Responsabilidad','Hábleme de una vez que cometió un error en el trabajo. ¿Qué pasó y qué aprendió?'],
+ ['Disponibilidad','¿Tiene disponibilidad para la jornada, los turnos y la fecha de ingreso del cargo?'],
+ ['Expectativas','¿Cuáles son sus expectativas de crecimiento y salariales?']];
+const SELV={vid:null,cid:null,ask:null,askC:null,nueva:false};
+const selD=()=>{const t=thD();t.sel=t.sel||{vac:{}};t.sel.vac=t.sel.vac||{};return t.sel};
+const selKey=(v,id)=>docKey('sel_'+v.id,id);
+const selEtaTxt=k=>(SEL_ETA.find(x=>x[0]===k)||SEL_ETA[0])[1];
+const selEstTxt=k=>(SEL_EST.find(x=>x[0]===k)||SEL_EST[0])[1];
+const selConTxt=k=>(SEL_CON.find(x=>x[0]===k)||SEL_CON[0])[1];
+const selLineas=t=>String(t||'').split(/\n+/).map(x=>x.replace(/^[\s•\-–*\d.)]+/,'').trim()).filter(Boolean);
+function selPreguntas(v){const comp=selLineas(v.competencias).map(c=>['Competencia: '+c,`Cuénteme una situación concreta en la que haya demostrado ${c.toLowerCase()}. ¿Qué hizo y cuál fue el resultado?`]);return [...SEL_PREG,...comp,...selLineas(v.pregExtra).map(p=>['Del cargo',p])]}
+function selPuntaje(c){const r=((c.ent||{}).resp||[]).filter(x=>+x.cal>0);if(!r.length)return null;const p=r.reduce((a,x)=>a+ +x.cal,0)/r.length;return {prom:Math.round(p*10)/10,pct:Math.round(p/5*100),n:r.length}}
+function selVerif(c){return c.vid?viD()[c.vid]:null}
+function selNuevaVac(o){const id='s'+uid().replace(/[^a-z0-9]/gi,'').slice(0,12),c=S.config;selD().vac[id]={id,creado:todayCO(),apertura:todayCO(),cierre:'',estado:'abierta',cargo:'',area:'',sede:'',plazas:1,salario:c.smmlv,contrato:'a término indefinido',jornada:'Tiempo completo',horario:'',modalidad:'Presencial',lugar:c.ciudad||'Bogotá',jefe:'',objetivo:'',funciones:'',formacion:'',experiencia:'',competencias:'Orientación al servicio\nTrabajo en equipo\nResponsabilidad',conocimientos:'',condiciones:'',pregExtra:'',cands:[],...o,id};return selD().vac[id]}
+function selVacStats(v){const n={};SEL_ETA.forEach(([k])=>n[k]=0);(v.cands||[]).forEach(c=>n[c.etapa||'post']++);return n}
+function renderSel(){
+  const L=Object.values(selD().vac).sort((a,b)=>(a.estado==='abierta'||a.estado==='proceso'?0:1)-(b.estado==='abierta'||b.estado==='proceso'?0:1)||(a.creado<b.creado?1:-1));
+  let h=`<p class="note" style="margin-top:0">Lleve cada vacante de principio a fin: perfil del cargo y aviso para publicar, candidatos con su hoja de vida, entrevista con calificación, verificación de antecedentes, carta oferta y creación del empleado para hacerle el contrato.</p>
+  <div class="bar"><span class="grow"></span>${PERM.write?'<button class="free primary" id="seNew">Nueva vacante</button>':''}</div>`;
+  if(SELV.nueva)h+=`<div class="panel" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px">Nueva vacante</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
+    <label class="f">Cargo<input id="seCar" list="seCargos" placeholder="Ej.: Asesor comercial"><datalist id="seCargos">${[...new Set(empAll().map(e=>e.cargo).filter(Boolean))].sort().map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+    <label class="f">Plazas<input id="sePla" type="number" min="1" value="1"></label><label class="f">Sede o área<input id="seSed"></label></div>
+    <div class="row" style="gap:6px;margin-top:8px"><button class="free primary" id="seCrear">Crear vacante</button><button class="free" id="seCan">Cancelar</button></div><p class="status" style="margin:6px 0 0">Si ya hay empleados con ese cargo, la app copia su salario para empezar.</p></div>`;
+  h+=L.length?`<div class="panel scroll"><table><thead><tr><th>Cargo</th><th>Sede o área</th><th class="n">Plazas</th><th>Abierta desde</th><th>Candidatos</th><th>Estado</th><th></th></tr></thead><tbody>${L.map(v=>{const n=selVacStats(v),tot=(v.cands||[]).length;return `<tr${SELV.vid===v.id?' style="background:var(--accent-soft)"':''}><td><b>${esc(v.cargo||'(sin cargo)')}</b></td><td>${esc(v.sede||v.area||'')}</td><td class="n">${n.cont}/${v.plazas||1}</td><td>${fCorta(v.apertura)}</td>
+    <td>${tot?`${tot} · ${SEL_ETA.filter(([k])=>n[k]&&k!=='post').map(([k,t])=>`${n[k]} ${t.toLowerCase()}`).join(' · ')||'postulados'}`:'—'}</td><td><span class="pill ${v.estado==='abierta'?'good':v.estado==='proceso'?'warn':'mute'}">${selEstTxt(v.estado)}</span></td>
+    <td style="white-space:nowrap"><button class="ghost free" data-sea="${v.id}">${SELV.vid===v.id?'Cerrar':'Abrir'}</button>${PERM.write?(SELV.ask===v.id?`<span class="confirm">¿Borrar la vacante, sus candidatos y adjuntos? <button class="free danger" data-sedx="${v.id}">Sí, borrar</button><button class="free" data-sedn="1">No</button></span>`:`<button class="ghost free danger" data-sed="${v.id}">Borrar</button>`):''}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="panel empty"><b>Todavía no hay vacantes</b>Use «Nueva vacante» para empezar un proceso de selección.</div>';
+  const v=SELV.vid&&selD().vac[SELV.vid];if(v)h+=selDetalle(v);
+  return h}
+function selDetalle(v){const w=PERM.write?'':' disabled';
+  const inp=(p,val,t='text',st='',ex='')=>`<input data-sv="${p}" type="${t}" value="${esc(val??'')}" style="${st}"${w} ${ex}>`;
+  const ta=(p,val,rows=3,ph='')=>`<textarea data-sv="${p}" rows="${rows}" placeholder="${esc(ph)}"${w}>${esc(val||'')}</textarea>`;
+  const sel=(p,val,opts)=>`<select data-sv="${p}"${w}>${opts.map(o=>Array.isArray(o)?o:[o,o]).map(([k,t])=>`<option value="${esc(k)}"${String(val||'')===k?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
+  let h=`<div class="section" id="seDet"><h3 style="margin-bottom:8px">Vacante: ${esc(v.cargo||'(sin cargo)')}</h3>`;
+  h+=`<details class="panel" style="padding:12px;margin-bottom:10px"${(v.cands||[]).length?'':' open'}><summary><b>1. Perfil del cargo y condiciones</b> <span class="status">(sale en el perfil del cargo, en el aviso y en la carta oferta)</span></summary><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:8px">
+    <label class="f">Cargo${inp('cargo',v.cargo)}</label><label class="f">Área o dependencia${inp('area',v.area)}</label><label class="f">Sede${inp('sede',v.sede)}</label><label class="f">Jefe inmediato${inp('jefe',v.jefe)}</label>
+    <label class="f">Plazas${inp('plazas',v.plazas,'number','','min="1"')}</label><label class="f">Salario mensual${inp('salario',v.salario,'number','','min="0" step="1000"')}</label>
+    <label class="f">Tipo de contrato${sel('contrato',v.contrato,['a término indefinido','a término fijo','por obra o labor','de aprendizaje'])}</label><label class="f">Jornada${sel('jornada',v.jornada,['Tiempo completo','Medio tiempo','Por turnos','Por horas'])}</label>
+    <label class="f">Horario${inp('horario',v.horario,'text','','placeholder="Lunes a sábado, turnos rotativos"')}</label><label class="f">Modalidad${sel('modalidad',v.modalidad,['Presencial','Híbrida','Remota'])}</label><label class="f">Lugar de trabajo${inp('lugar',v.lugar)}</label>
+    <label class="f">Abierta desde${inp('apertura',v.apertura,'date')}</label><label class="f">Recibir hojas de vida hasta${inp('cierre',v.cierre,'date')}</label><label class="f">Estado${sel('estado',v.estado,SEL_EST)}</label></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px">
+    <label class="f">Objetivo del cargo${ta('objetivo',v.objetivo,2,'Para qué existe el cargo, en una o dos frases')}</label>
+    <label class="f">Funciones principales (una por línea)${ta('funciones',v.funciones,5,'Atender a los clientes…\nRegistrar las ventas…')}</label>
+    <label class="f">Formación requerida${ta('formacion',v.formacion,2,'Bachiller, técnico en…')}</label>
+    <label class="f">Experiencia requerida${ta('experiencia',v.experiencia,2,'Mínimo 1 año en…')}</label>
+    <label class="f">Competencias (una por línea: se convierten en preguntas de entrevista)${ta('competencias',v.competencias,4)}</label>
+    <label class="f">Conocimientos específicos${ta('conocimientos',v.conocimientos,2,'Excel, manejo de caja, licencia de conducción…')}</label>
+    <label class="f">Beneficios y condiciones adicionales${ta('condiciones',v.condiciones,2,'Comisiones, auxilio de alimentación…')}</label>
+    <label class="f">Preguntas propias del cargo para la entrevista (una por línea)${ta('pregExtra',v.pregExtra,3)}</label></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="free" id="sePerf">Perfil del cargo (Word)</button><button class="free" id="seAviso">Copiar aviso para publicar</button></div></details>`;
+  const C=v.cands||[];
+  h+=`<div class="panel" style="padding:12px;margin-bottom:10px"><div class="bar" style="margin:0 0 6px"><h4 class="grow" style="margin:0">2. Candidatos <span class="status">(${C.length})</span></h4>${C.length?'<button class="free" id="seComp">Informe comparativo (Word)</button>':''}</div>
+   ${C.length?`<div class="scroll"><table><thead><tr><th>Candidato</th><th>Contacto</th><th>Fuente</th><th>Etapa</th><th>Entrevista</th><th>Verificación</th><th>Hoja de vida</th><th></th></tr></thead><tbody>${C.map(c=>{const pz=selPuntaje(c),vf=selVerif(c),hv=(c.docs||[]).filter(d=>d.sec==='hv');
+     return `<tr${SELV.cid===c.id?' style="background:var(--accent-soft)"':''}><td><b>${esc(c.nombre||'(sin nombre)')}</b><span class="status" style="display:block">${esc(c.tipoDoc||'CC')} ${esc(cedula(c.doc||''))}</span></td><td>${esc(c.tel||'')}${c.correo?`<span class="status" style="display:block">${esc(c.correo)}</span>`:''}</td><td>${esc(c.fuente||'')}</td>
+     <td><select data-sce="${c.id}"${w}>${SEL_ETA.map(([k,t])=>`<option value="${k}"${(c.etapa||'post')===k?' selected':''}>${t}</option>`).join('')}</select></td>
+     <td>${pz?`<span class="pill ${pz.prom>=4?'good':pz.prom>=3?'warn':'bad'}">${String(pz.prom).replace('.',',')} / 5</span>`:'—'}${(c.ent||{}).concepto?`<span class="status" style="display:block">${selConTxt(c.ent.concepto)}</span>`:''}</td>
+     <td>${vf?`<span class="pill ${vf.concepto==='fav'?'good':vf.concepto==='no'?'bad':vf.concepto?'warn':''}">${vf.concepto?viTextoConcepto(vf):'En curso'}</span>`:'—'}</td>
+     <td style="white-space:normal">${hv.map(d=>`<button class="ghost free" data-scdv="${c.id}" data-d="${d.id}" title="${esc(d.nombre)}">📎 ${esc(d.nombre.length>18?d.nombre.slice(0,16)+'…':d.nombre)}</button>`).join(' ')}${PERM.write?`<label style="cursor:pointer"><input type="file" data-scu="${c.id}" data-sec="hv" hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"><span class="pill">Adjuntar</span></label>`:''}</td>
+     <td style="white-space:nowrap"><button class="ghost free" data-sca="${c.id}">${SELV.cid===c.id?'Cerrar':'Abrir'}</button>${PERM.write?(SELV.askC===c.id?`<span class="confirm">¿Borrar? <button class="free danger" data-scdx="${c.id}">Sí</button><button class="free" data-scdn="1">No</button></span>`:`<button class="ghost free danger" data-scd="${c.id}">Borrar</button>`):''}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="status">Todavía no hay candidatos.</p>'}
+   ${PERM.write?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;margin-top:8px;align-items:end"><label class="f">Nombres y apellidos<input id="scNom"></label><label class="f">Cédula<input id="scDoc" inputmode="numeric"></label><label class="f">Celular<input id="scTel" inputmode="tel"></label><label class="f">Correo<input id="scMail" type="email"></label><label class="f">Fuente<select id="scFue"><option value="">—</option>${SEL_FUENTE.map(x=>`<option>${x}</option>`).join('')}</select></label><button class="free primary" id="scAdd">Agregar candidato</button></div>`:''}</div>`;
+  const c=SELV.cid&&C.find(x=>x.id===SELV.cid);if(c)h+=selCand(v,c);
+  return h+'</div>'}
+function selCand(v,c){const w=PERM.write?'':' disabled',e=c.ent||{},of=c.oferta||{},pz=selPuntaje(c),vf=selVerif(c),preg=selPreguntas(v),R=e.resp||[];
+  const inp=(p,val,t='text',st='',ex='')=>`<input data-sc="${p}" type="${t}" value="${esc(val??'')}" style="${st}"${w} ${ex}>`;
+  const sel=(p,val,opts)=>`<select data-sc="${p}"${w}>${opts.map(o=>Array.isArray(o)?o:[o,o]).map(([k,t])=>`<option value="${esc(k)}"${String(val||'')===k?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
+  let h=`<div class="panel" id="scDet" style="padding:12px;margin-bottom:10px;border-left:4px solid var(--accent)"><h4 style="margin:0 0 8px">Candidato: ${esc(c.nombre)}</h4>
+   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px"><label class="f">Nombres y apellidos${inp('nombre',c.nombre)}</label><label class="f">Tipo de documento${sel('tipoDoc',c.tipoDoc,['CC','CE','PPT','PEP','Pasaporte'])}</label><label class="f">Número${inp('doc',c.doc)}</label><label class="f">Celular${inp('tel',c.tel)}</label><label class="f">Correo${inp('correo',c.correo,'email')}</label><label class="f">Fuente${sel('fuente',c.fuente,['',...SEL_FUENTE])}</label><label class="f">Fecha de postulación${inp('fecha',c.fecha,'date')}</label></div>
+   <label class="f" style="margin-top:8px">Observaciones${`<textarea data-sc="obs" rows="2"${w}>${esc(c.obs||'')}</textarea>`}</label>
+   <h4 style="margin:14px 0 6px">a) Entrevista ${pz?`<span class="pill ${pz.prom>=4?'good':pz.prom>=3?'warn':'bad'}">${String(pz.prom).replace('.',',')} / 5 · ${pz.pct} %</span>`:''}</h4>
+   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px"><label class="f">Fecha${inp('ent.fecha',e.fecha,'date')}</label><label class="f">Hora${inp('ent.hora',e.hora,'time')}</label><label class="f">Entrevistó${inp('ent.quien',e.quien)}</label><label class="f">Modalidad${sel('ent.modo',e.modo,['Presencial','Videollamada','Telefónica'])}</label></div>
+   <p class="note" style="margin:8px 0">Califique de 1 (muy bajo) a 5 (excelente) y anote lo que respondió. No pregunte por embarazo, estado civil, religión, orientación sexual, opinión política ni afiliación sindical: son motivos prohibidos de discriminación (art. 13 de la Constitución, Ley 1482 de 2011), y la prueba de embarazo está prohibida salvo en actividades de alto riesgo (Resolución 3941 de 1994).</p>
+   <div class="scroll"><table><thead><tr><th style="width:38%">Pregunta</th><th>Calificación</th><th>Respuesta y observaciones</th></tr></thead><tbody>${preg.map(([t,q],i)=>{const r=R[i]||{};return `<tr><td><b>${esc(t)}</b><span class="status" style="display:block;white-space:normal">${esc(q)}</span></td><td><select data-sc="ent.resp.${i}.cal"${w}>${['','1','2','3','4','5'].map(k=>`<option value="${k}"${String(r.cal||'')===k?' selected':''}>${k||'—'}</option>`).join('')}</select></td><td><input data-sc="ent.resp.${i}.nota" value="${esc(r.nota||'')}" style="min-width:240px;width:100%"${w}><input type="hidden" data-sc="ent.resp.${i}.p" value="${esc(t)}"></td></tr>`}).join('')}</tbody></table></div>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:8px"><label class="f">Concepto de la entrevista${sel('ent.concepto',e.concepto,SEL_CON)}</label><label class="f" style="grid-column:span 2">Fortalezas, aspectos por mejorar y conclusión<textarea data-sc="ent.obsG" rows="2"${w}>${esc(e.obsG||'')}</textarea></label></div>
+   <div class="row" style="gap:6px;margin-top:6px"><button class="free" id="scEntW">Informe de entrevista (Word)</button></div>
+   <h4 style="margin:14px 0 6px">b) Verificación de antecedentes y referencias</h4>
+   ${vf?`<p style="margin:0 0 6px">Verificación creada el ${fCorta(vf.creado)} · ${(()=>{const a=viAvance(vf);return `${a.done}/${a.tot} consultas · ${a.nov} con novedad · concepto: <b>${vf.concepto?viTextoConcepto(vf):'pendiente'}</b>`})()}</p><button class="free" id="scVerA">Ir a la verificación</button>`:`<p class="status" style="margin:0 0 6px">Cree la verificación con los datos del candidato y complétela en «Verificación de ingreso».</p>${PERM.write?'<button class="free" id="scVerN">Crear verificación</button>':''}`}
+   <h4 style="margin:14px 0 6px">c) Carta oferta</h4>
+   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px"><label class="f">Fecha de la carta${inp('oferta.fecha',of.fecha||todayCO(),'date')}</label><label class="f">Salario ofrecido${inp('oferta.salario',of.salario??v.salario,'number','','min="0" step="1000"')}</label><label class="f">Tipo de contrato${sel('oferta.contrato',of.contrato||v.contrato,['a término indefinido','a término fijo','por obra o labor','de aprendizaje'])}</label>${(of.contrato||v.contrato)==='a término fijo'?`<label class="f">Duración${inp('oferta.dur',of.dur,'text','','placeholder="seis (6) meses"')}</label>`:''}<label class="f">Fecha de ingreso${inp('oferta.inicio',of.inicio,'date')}</label><label class="f">Responder a más tardar${inp('oferta.vence',of.vence,'date')}</label><label class="f">Respuesta${sel('oferta.estado',of.estado,[['','Sin enviar'],['env','Enviada'],['acep','Aceptada'],['rech','Rechazada']])}</label></div>
+   <div class="row" style="gap:6px;margin-top:6px"><button class="free" id="scOfW">Carta oferta (Word)</button></div>
+   <h4 style="margin:14px 0 6px">d) Contratación</h4>
+   ${c.empId&&S.emps[c.empId]?`<p style="margin:0 0 6px">Ya es empleado: <b>${esc(S.emps[c.empId].nombre)}</b>, ingreso ${fCorta(S.emps[c.empId].ingreso||'')}.</p><button class="free primary" id="scCtr">Hacer el contrato</button>`:PERM.write?`<p class="status" style="margin:0 0 6px">Crea el empleado con los datos del candidato y de la oferta (cargo, salario, tipo de contrato y fecha de ingreso). Luego complete su ficha en Empleados y genere el contrato.</p><button class="free primary" id="scHire">Contratar: crear empleado</button>`:''}
+   </div>`;
+  return h}
+function selAviso(v){const c=S.config,L=x=>selLineas(x).map(t=>'• '+t).join('\n');
+  return [`${(c.empresa||'').toUpperCase()} busca: ${String(v.cargo||'').toUpperCase()}${+v.plazas>1?` (${v.plazas} vacantes)`:''}`,v.objetivo||'',v.funciones?'Funciones:\n'+L(v.funciones):'',v.formacion?'Formación: '+v.formacion:'',v.experiencia?'Experiencia: '+v.experiencia:'',v.conocimientos?'Conocimientos: '+v.conocimientos:'',v.competencias?'Competencias:\n'+L(v.competencias):'',
+    `Ofrecemos: contrato ${v.contrato||''}, salario ${money(+v.salario||0)}${v.condiciones?' + '+v.condiciones:''}. Jornada: ${v.jornada||''}${v.horario?' ('+v.horario+')':''}. Modalidad ${String(v.modalidad||'').toLowerCase()} en ${v.lugar||''}.`,
+    `Envíe su hoja de vida${c.correo?' a '+c.correo:''}${v.cierre?' hasta el '+fechaTxt(v.cierre):''}.`,'Sus datos se tratarán según nuestra política de protección de datos personales (Ley 1581 de 2012).'].filter(Boolean).join('\n\n')}
+async function wordPerfil(v){const c=S.config,T=(t,o={})=>P_(t,{sz:20,...o}),H=t=>wP(wR(t,{b:true,sz:21,color:DC()}),{after:60,before:120,keep:true}),Li=x=>selLineas(x).map(t=>P_('•  '+t,{sz:20,p:{after:40,ind:360}})).join('')||T('—');
+  let b=wP(wR('PERFIL DEL CARGO',{b:true,sz:26}),{jc:'center',after:40})+wP(wR(String(v.cargo||'').toUpperCase(),{b:true,sz:23}),{jc:'center',after:160});
+  const F=(k,x)=>[{t:k,b:true,sz:18,fill:'EDEFF3'},{t:String(x||''),sz:18}];
+  b+=wTbl([[...F('Cargo',v.cargo),...F('Área',v.area)],[...F('Jefe inmediato',v.jefe),...F('Sede',v.sede||v.lugar)],[...F('Tipo de contrato',capi(v.contrato||'')),...F('Salario',money(+v.salario||0))],[...F('Jornada',v.jornada+(v.horario?' · '+v.horario:'')),...F('Modalidad',v.modalidad)]],[1700,2719,1500,2919]);
+  b+=H('1. Objetivo del cargo')+T(v.objetivo||'—')+H('2. Funciones principales')+Li(v.funciones)+H('3. Requisitos')+wTbl([[{t:'Formación',b:true,sz:18,fill:'EDEFF3'},{t:v.formacion||'—',sz:18}],[{t:'Experiencia',b:true,sz:18,fill:'EDEFF3'},{t:v.experiencia||'—',sz:18}],[{t:'Conocimientos',b:true,sz:18,fill:'EDEFF3'},{t:v.conocimientos||'—',sz:18}]],[2200,6638])+H('4. Competencias')+Li(v.competencias);
+  if(v.condiciones)b+=H('5. Beneficios y condiciones')+T(v.condiciones);
+  b+=wP('',{after:300})+wTbl([[{t:'Elaboró',b:true,sz:17},{t:'Revisó',b:true,sz:17},{t:'Aprobó',b:true,sz:17}],[{t:'\n\n',sz:17},{t:'',sz:17},{t:'',sz:17}]],[2946,2946,2946]);
+  await docTH(b,'Perfil del cargo',nomLimpio('Perfil del cargo '+(v.cargo||''))+'.docx')}
+async function wordEntrevista(v,c){const e=c.ent||{},pz=selPuntaje(c),T=(t,o={})=>P_(t,{sz:19,...o});
+  let b=wP(wR('INFORME DE ENTREVISTA',{b:true,sz:26}),{jc:'center',after:40})+wP(wR((S.config.empresa||'').toUpperCase(),{sz:19}),{jc:'center',after:160});
+  const F=(k,x)=>[{t:k,b:true,sz:18,fill:'EDEFF3'},{t:String(x||''),sz:18}];
+  b+=wTbl([[...F('Candidato',c.nombre),...F('Documento',(c.tipoDoc||'CC')+' '+cedula(c.doc||''))],[...F('Cargo',v.cargo),...F('Fecha',(e.fecha?fechaTxt(e.fecha):'')+(e.hora?' · '+e.hora:''))],[...F('Entrevistó',e.quien),...F('Modalidad',e.modo||'Presencial')]],[1500,2919,1500,2919])+wP('',{after:80});
+  const preg=selPreguntas(v),R=e.resp||[];
+  b+=wTbl([['Aspecto evaluado','Calificación (1 a 5)','Respuesta y observaciones'].map(t=>({t,b:true,fill:'D9D9D9',sz:16})),...preg.map(([t],i)=>{const r=R[i]||{};return [{t,sz:16,b:true},{t:r.cal?String(r.cal):'—',sz:16},{t:r.nota||'',sz:16}]})],[3000,1300,4538])+wP('',{after:80});
+  b+=T(`Calificación promedio: ${pz?String(pz.prom).replace('.',',')+' / 5 ('+pz.pct+' %), sobre '+pz.n+' aspectos':'sin calificar'}.`,{b:true})+T('Concepto: '+selConTxt(e.concepto),{b:true})+T(e.obsG||'');
+  b+=wP('',{after:300})+P_('______________________________')+P_(e.quien||'',{b:true})+P_('Entrevistó',{sz:18});
+  await docTH(b,'Informe de entrevista',nomLimpio('Entrevista '+(c.nombre||''))+'.docx')}
+async function wordComparativo(v){const C=(v.cands||[]),T=(t,o={})=>P_(t,{sz:19,...o});
+  let b=wP(wR('INFORME COMPARATIVO DE CANDIDATOS',{b:true,sz:26}),{jc:'center',after:40})+wP(wR(`${String(v.cargo||'').toUpperCase()} · ${(S.config.empresa||'').toUpperCase()}`,{sz:19}),{jc:'center',after:160});
+  b+=T(`Vacante abierta el ${fechaTxt(v.apertura)} · ${v.plazas||1} plaza(s) · ${C.length} candidato(s).`);
+  const orden=[...C].sort((a,b2)=>((selPuntaje(b2)||{}).prom||0)-((selPuntaje(a)||{}).prom||0));
+  b+=wTbl([['No.','Candidato','Fuente','Entrevista','Concepto entrevista','Verificación','Etapa'].map(t=>({t,b:true,fill:'D9D9D9',sz:15})),...orden.map((c,i)=>{const pz=selPuntaje(c),vf=selVerif(c);return [String(i+1),c.nombre+'\n'+(c.tipoDoc||'CC')+' '+cedula(c.doc||''),c.fuente||'',pz?String(pz.prom).replace('.',',')+' / 5':'—',selConTxt((c.ent||{}).concepto),vf?(vf.concepto?viTextoConcepto(vf):'En curso'):'—',selEtaTxt(c.etapa)].map(t=>({t,sz:15}))})],[500,2300,1200,1000,1500,1300,1038])+wP('',{after:120});
+  b+=T('Recomendación:',{b:true})+T('_____________________________________________________________________________')+wP('',{after:300})+P_('______________________________')+P_('Responsable del proceso de selección',{sz:18});
+  await docTH(b,'Informe comparativo de candidatos',nomLimpio('Comparativo '+(v.cargo||''))+'.docx')}
+async function wordOferta(v,c){const cfg=S.config,of=c.oferta||{},sal=+(of.salario??v.salario)||0,ctr=of.contrato||v.contrato,fem=typeof femDe==='function'?femDe({nombre:c.nombre}):false,T=(t,o={})=>P_(t,{sz:21,...o});
+  let b=T(`${cfg.ciudad||'Bogotá'}, ${fechaTxt(of.fecha||todayCO())}`,{p:{after:240}})+T(fem?'Señora':'Señor',{p:{after:0}})+T(String(c.nombre||'').toUpperCase(),{b:true,p:{after:0}})+T(`${c.tipoDoc||'CC'} ${cedula(c.doc||'')}`,{p:{after:0}})+(c.correo?T(c.correo,{p:{after:0}}):'')+T('Ciudad',{p:{after:240}});
+  b+=T('Asunto: Oferta laboral',{b:true,p:{after:200}})+T(`${fem?'Apreciada':'Apreciado'} ${capi(String(c.nombre||'').split(' ')[0].toLowerCase())}:`);
+  b+=T(`Nos complace informarle que, después del proceso de selección, ${cfg.empresa} ha decidido ofrecerle el cargo de ${String(v.cargo||'').toUpperCase()}, en las siguientes condiciones:`);
+  const F=(k,x)=>[{t:k,b:true,sz:20,fill:'EDEFF3'},{t:String(x||''),sz:20}];
+  b+=wTbl([F('Cargo',v.cargo),F('Tipo de contrato',`Contrato de trabajo ${ctr}${ctr==='a término fijo'&&of.dur?', por '+of.dur:''}`),F('Salario mensual',`${money(sal)} (${numLetras(sal)})${sal<=2*cfg.smmlv?', más auxilio de transporte de ley':''}`),F('Jornada',`${v.jornada||''}${v.horario?' · '+v.horario:''}`),F('Lugar de trabajo',`${v.lugar||''}${v.modalidad&&v.modalidad!=='Presencial'?' · modalidad '+v.modalidad.toLowerCase():''}`),F('Fecha de ingreso',of.inicio?fechaTxt(of.inicio):'Por definir'),...(v.condiciones?[F('Beneficios',v.condiciones)]:[])],[2600,6238])+wP('',{after:120});
+  b+=T('Además del salario, tendrá todas las prestaciones sociales de ley (prima de servicios, cesantías, intereses sobre cesantías y vacaciones) y la afiliación a salud, pensión, riesgos laborales y caja de compensación familiar.');
+  b+=T('Esta oferta queda sujeta a la entrega de los documentos de ingreso, al resultado satisfactorio de la verificación de antecedentes y referencias y del examen médico de ingreso, y a la firma del contrato de trabajo. El contrato incluirá el periodo de prueba que permite la ley (art. 78 del Código Sustantivo del Trabajo).');
+  b+=T(`Le agradecemos confirmar su aceptación${of.vence?' a más tardar el '+fechaTxt(of.vence):''}, respondiendo a este correo o firmando esta carta.`)+T('Bienvenido(a) a nuestro equipo.'.replace('Bienvenido(a)',fem?'Bienvenida':'Bienvenido'));
+  b+=T('Cordialmente,',{p:{after:600}})+T('______________________________',{p:{after:0}})+T(cfg.firmante||cfg.repLegal||'',{b:true,p:{after:0}})+T(cfg.cargoFirmante||'Representante Legal',{p:{after:0}})+T(cfg.empresa||'',{p:{after:360}});
+  b+=T('Acepto la oferta en las condiciones descritas:',{b:true,p:{before:200,after:500}})+T('______________________________',{p:{after:0}})+T(String(c.nombre||'').toUpperCase(),{b:true,p:{after:0}})+T(`${c.tipoDoc||'CC'} ${cedula(c.doc||'')}`,{p:{after:0}})+T('Fecha: ____________________');
+  await docTH(b,'Carta oferta',nomLimpio(c.nombre)+'.docx')}
+function bindSel(){
+  const sv=()=>{persist('th');renderTH()};
+  const nw=$('#seNew');if(nw)nw.onclick=()=>{SELV.nueva=true;renderTH();setTimeout(()=>{const i=$('#seCar');if(i)i.focus()},30)};
+  const cn=$('#seCan');if(cn)cn.onclick=()=>{SELV.nueva=false;renderTH()};
+  const cr=$('#seCrear');if(cr)cr.onclick=()=>{const car=$('#seCar').value.trim();if(!car)return toast('Escriba el cargo de la vacante');const ref=empAll().find(e=>nrm(e.cargo||'')===nrm(car)&&!e.retiro);
+    const v=selNuevaVac({cargo:car,plazas:Math.max(1,+$('#sePla').value||1),sede:$('#seSed').value.trim(),...(ref?{salario:salarioEn(ref,{ini:todayCO()})||+ref.salario||S.config.smmlv,contrato:/fijo/i.test(ref.contrato||'')?'a término fijo':/obra|labor/i.test(ref.contrato||'')?'por obra o labor':'a término indefinido'}:{})});
+    SELV.nueva=false;SELV.vid=v.id;SELV.cid=null;bitacora(`Abrió la vacante de ${car}`);sv();setTimeout(()=>{const d=$('#seDet');if(d)d.scrollIntoView({block:'start'})},40)};
+  document.querySelectorAll('[data-sea]').forEach(b=>b.onclick=()=>{SELV.vid=SELV.vid===b.dataset.sea?null:b.dataset.sea;SELV.cid=null;renderTH();if(SELV.vid)setTimeout(()=>{const d=$('#seDet');if(d)d.scrollIntoView({block:'start'})},40)});
+  document.querySelectorAll('[data-sed]').forEach(b=>b.onclick=()=>{SELV.ask=b.dataset.sed;renderTH()});document.querySelectorAll('[data-sedn]').forEach(b=>b.onclick=()=>{SELV.ask=null;renderTH()});
+  document.querySelectorAll('[data-sedx]').forEach(b=>b.onclick=async()=>{const v=selD().vac[b.dataset.sedx];for(const c of v.cands||[])for(const d of c.docs||[])await idbDel(selKey(v,d.id)).catch(()=>{});delete selD().vac[v.id];if(SELV.vid===v.id)SELV.vid=null;SELV.ask=null;bitacora(`Borró la vacante de ${v.cargo}`);sv()});
+  const v=SELV.vid&&selD().vac[SELV.vid];if(!v)return;
+  document.querySelectorAll('[data-sv]').forEach(i=>i.onchange=()=>{const p=i.dataset.sv;let val=i.value;if(p==='plazas')val=Math.max(1,+val||1);if(p==='salario')val=+val||0;v[p]=val;sv()});
+  $('#sePerf').onclick=()=>wordPerfil(v);{const cp=$('#seComp');if(cp)cp.onclick=()=>wordComparativo(v)}
+  $('#seAviso').onclick=async()=>{const t=selAviso(v);try{await navigator.clipboard.writeText(t);toast('Aviso copiado: péguelo en Computrabajo, elempleo, LinkedIn o WhatsApp')}catch(e){guardarArchivo(nomLimpio('Aviso '+(v.cargo||''))+'.txt',new Blob([t],{type:'text/plain'}))}};
+  const ad=$('#scAdd');if(ad)ad.onclick=()=>{const n=$('#scNom').value.trim().toUpperCase();if(!n)return toast('Escriba el nombre del candidato');const dc=$('#scDoc').value.replace(/\D/g,'');
+    if(dc&&(v.cands||[]).some(c=>String(c.doc||'')===dc))return toast('Ese candidato ya está en esta vacante');
+    const emp=dc&&empAll().find(e=>String(e.doc||'').replace(/\D/g,'')===dc);if(emp)toast(`Ojo: esa cédula es de ${emp.nombre}${emp.retiro?', retirado el '+fCorta(emp.retiro):', empleado activo'}`);
+    v.cands=[...(v.cands||[]),{id:'c'+uid().replace(/[^a-z0-9]/gi,'').slice(0,10),nombre:n,tipoDoc:'CC',doc:dc,tel:$('#scTel').value.trim(),correo:$('#scMail').value.trim(),fuente:$('#scFue').value,fecha:todayCO(),etapa:'post',docs:[]}];if(v.estado==='abierta'&&v.cands.length)v.estado='proceso';sv();setTimeout(()=>{const i=$('#scNom');if(i)i.focus()},30)};
+  document.querySelectorAll('[data-sce]').forEach(s=>s.onchange=()=>{const c=v.cands.find(x=>x.id===s.dataset.sce);c.etapa=s.value;bitacora(`${c.nombre}: etapa «${selEtaTxt(s.value)}» en la vacante de ${v.cargo}`);sv()});
+  document.querySelectorAll('[data-sca]').forEach(b=>b.onclick=()=>{SELV.cid=SELV.cid===b.dataset.sca?null:b.dataset.sca;renderTH();if(SELV.cid)setTimeout(()=>{const d=$('#scDet');if(d)d.scrollIntoView({block:'start'})},40)});
+  document.querySelectorAll('[data-scd]').forEach(b=>b.onclick=()=>{SELV.askC=b.dataset.scd;renderTH()});document.querySelectorAll('[data-scdn]').forEach(b=>b.onclick=()=>{SELV.askC=null;renderTH()});
+  document.querySelectorAll('[data-scdx]').forEach(b=>b.onclick=async()=>{const c=v.cands.find(x=>x.id===b.dataset.scdx);for(const d of c.docs||[])await idbDel(selKey(v,d.id)).catch(()=>{});v.cands=v.cands.filter(x=>x.id!==c.id);if(SELV.cid===c.id)SELV.cid=null;SELV.askC=null;sv()});
+  document.querySelectorAll('[data-scu]').forEach(i=>i.onchange=async()=>{const fl=i.files[0],c=v.cands.find(x=>x.id===i.dataset.scu);if(!fl||!c)return;if(fl.size>15e6)return toast('El archivo pesa más de 15 MB');try{const id=uid(),buf=new Uint8Array(await fl.arrayBuffer()),iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,buf);await idbPut(selKey(v,id),{iv,ct});c.docs=[...(c.docs||[]),{id,sec:i.dataset.sec||'hv',nombre:fl.name,mime:fl.type||'application/octet-stream',size:fl.size,fecha:todayCO()}];persist('th');toast('Hoja de vida guardada');renderTH()}catch(er){toast('No se pudo guardar el archivo')}});
+  document.querySelectorAll('[data-scdv]').forEach(b=>b.onclick=async()=>{const c=v.cands.find(x=>x.id===b.dataset.scdv),d=c&&c.docs.find(x=>x.id===b.dataset.d);try{const x=await idbGet(selKey(v,d.id));if(!x)throw 'No se encontró el archivo en este computador ni en la nube';await guardarArchivo(d.nombre,new Blob([await crypto.subtle.decrypt({name:'AES-GCM',iv:x.iv},KEY,x.ct)],{type:d.mime}))}catch(er){toast(typeof er==='string'?er:'No se pudo abrir')}});
+  const c=SELV.cid&&(v.cands||[]).find(x=>x.id===SELV.cid);if(!c)return;
+  document.querySelectorAll('[data-sc]').forEach(i=>{if(i.type==='hidden')return;i.onchange=()=>{const p=i.dataset.sc;let val=i.value;if(p==='nombre')val=val.toUpperCase().trim();if(p==='doc')val=val.replace(/[^\dA-Za-z]/g,'');if(p==='oferta.salario')val=+val||0;
+    viSet(c,p,val);const m=/^ent\.resp\.(\d+)\./.exec(p);if(m){const pr=selPreguntas(v)[+m[1]];c.ent.resp[+m[1]].p=pr?pr[0]:''}
+    if(p.startsWith('ent.')&&(c.etapa||'post')==='post')c.etapa='ent';if(p==='oferta.estado'&&val&&['post','ent','ver'].includes(c.etapa||'post'))c.etapa='ofe';if(p==='oferta.estado'&&val==='rech')c.etapa='desc';sv()}});
+  $('#scEntW').onclick=()=>wordEntrevista(v,c);$('#scOfW').onclick=()=>{if(!(c.oferta||{}).inicio)toast('Sugerencia: escriba la fecha de ingreso para que salga en la carta');wordOferta(v,c)};
+  const vn=$('#scVerN');if(vn)vn.onclick=()=>{const x=viNuevo({tipo:'empleado',nombre:c.nombre,tipoDoc:c.tipoDoc||'CC',doc:c.doc||'',cargo:v.cargo||'',sede:v.sede||'',selRef:v.id+':'+c.id,...(c.empId?{ref:'e:'+c.empId}:{})});c.vid=x.id;if(['post','ent'].includes(c.etapa||'post'))c.etapa='ver';bitacora(`Creó la verificación de ${c.nombre} desde Selección`);persist('th');TH.sub='verif';VIV.id=x.id;renderTH();setTimeout(()=>{const d=$('#viDet');if(d)d.scrollIntoView({block:'start'})},40)};
+  const va=$('#scVerA');if(va)va.onclick=()=>{TH.sub='verif';VIV.id=c.vid;renderTH();setTimeout(()=>{const d=$('#viDet');if(d)d.scrollIntoView({block:'start'})},40)};
+  const hi=$('#scHire');if(hi)hi.onclick=()=>{const dc=String(c.doc||'').replace(/\D/g,'');if(!dc)return toast('Escriba la cédula del candidato antes de contratarlo');
+    const otro=empAll().find(e=>String(e.doc||'').replace(/\D/g,'')===dc);if(otro&&!otro.retiro)return toast(`Esa cédula ya es del empleado activo ${otro.nombre}`);
+    const of=c.oferta||{},sal=+(of.salario??v.salario)||S.config.smmlv,id=otro?otro.id:uid(),ctr=of.contrato||v.contrato;
+    S.emps[id]={...(otro||{}),id,nombre:c.nombre,doc:dc,tipoDoc:c.tipoDoc||'CC',tel:c.tel||'',correo:c.correo||'',cargo:v.cargo||'',sede:v.sede||(otro&&otro.sede)||'',salario:sal,contrato:ctr,ingreso:of.inicio||todayCO(),retiro:'',activo:true,aux:sal<=2*S.config.smmlv,...(otro?{salarios:[...(otro.salarios||[]),{desde:of.inicio||todayCO(),valor:sal}]}:{})};
+    c.empId=id;c.etapa='cont';const vf=selVerif(c);if(vf&&!vf.ref)vf.ref='e:'+id;const n=(v.cands||[]).filter(x=>x.etapa==='cont').length;if(n>=(+v.plazas||1))v.estado='cerrada';
+    bitacora(`Contrató a ${c.nombre} como ${v.cargo} desde Selección`);saveLocal();persist('th');renderTH();toast(`${c.nombre} quedó creado en Empleados${otro?' (reingreso)':''}. Complete su ficha (EPS, pensión, cuenta…) y haga el contrato.`)};
+  const ct=$('#scCtr');if(ct)ct.onclick=()=>{const e=S.emps[c.empId];if(!e)return;CTU.eid=e.id;CTU.modo='contrato';CTU.f=formContrato(e);UI.tab='contratos';render();window.scrollTo(0,0)};
+}
+
 /* ================= Verificación de antecedentes y referencias para el ingreso ================= */
 const VI_CHK=[
  ['ident','Identidad y vigencia de la cédula','Registraduría Nacional','https://certvigenciacedula.registraduria.gov.co/'],
@@ -6820,12 +6995,12 @@ function portalBind(){const s=$('#ppSalir');if(s)s.onclick=()=>{PP.d=null;PP.aut
 
 /* ================= vista ================= */
 function renderTH(){
-  const subs=[['disc','Llamados y descargos'],['perm','Permisos y licencias'],['dot','Dotación'],['exp','Expediente y documentos'],['verif','Verificación de ingreso'],['eval','Evaluación de desempeño'],['firma','Firma electrónica'],['rit','Reglamento interno'],['portal','Portal de empleados']];
+  const subs=[['disc','Llamados y descargos'],['perm','Permisos y licencias'],['dot','Dotación'],['exp','Expediente y documentos'],['sel','Selección'],['verif','Verificación de ingreso'],['eval','Evaluación de desempeño'],['firma','Firma electrónica'],['rit','Reglamento interno'],['portal','Portal de empleados']];
   let h=`<div class="bar"><h2 class="grow">Talento humano</h2></div><nav class="tabs" style="margin-bottom:14px">${subs.map(([k,l])=>`<button class="free" data-ths="${k}" aria-selected="${TH.sub===k}">${l}</button>`).join('')}</nav>`;
-  h+=({disc:renderDisc,perm:renderPerm,dot:renderDot,exp:renderExp,verif:renderVerif,eval:renderEval,firma:renderFirma,rit:renderRIT,portal:renderPortalAdmin})[TH.sub]();
+  h+=({disc:renderDisc,perm:renderPerm,dot:renderDot,exp:renderExp,sel:renderSel,verif:renderVerif,eval:renderEval,firma:renderFirma,rit:renderRIT,portal:renderPortalAdmin})[TH.sub]();
   $('#v-th').innerHTML=h;
   document.querySelectorAll('[data-ths]').forEach(b=>b.onclick=()=>{TH.sub=b.dataset.ths;TH.f=null;TH.ask=null;renderTH()});
-  ({disc:bindDisc,perm:bindPerm,dot:bindDot,exp:bindExp,verif:bindVerif,eval:bindEval,firma:bindFirma,rit:bindRIT,portal:bindPortalAdmin})[TH.sub]();
+  ({disc:bindDisc,perm:bindPerm,dot:bindDot,exp:bindExp,sel:bindSel,verif:bindVerif,eval:bindEval,firma:bindFirma,rit:bindRIT,portal:bindPortalAdmin})[TH.sub]();
   document.querySelectorAll('[data-ia]').forEach(b=>b.onclick=()=>iaRedactar(b,b.dataset.ia,b.dataset.iains));
   lockUI();
 }
