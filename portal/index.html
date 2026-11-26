@@ -3,7 +3,7 @@
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Talento Humano"><meta name="application-name" content="Gestor Talento Humano">
 <style>html,body{margin:0}body{font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-<script>window.VER_APP='26/11/2026 11:42';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
+<script>window.VER_APP='26/11/2026 11:47';if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&navigator.serviceWorker.controller){rl=true;location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),30*60*1000)}).catch(()=>{})});addEventListener('load',()=>{const l=document.getElementById('lock');if(l)l.insertAdjacentHTML('beforeend','<p style="text-align:center;font-size:.72rem;opacity:.6;margin:8px 0 0">Versión del '+window.VER_APP+'</p>')})</script></head><body><title>Portal de empleados · Escalautos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -3324,7 +3324,7 @@ async function wordAdicion(e,o={}){
   b+=T('Agradecemos su atención y quedamos atentos a la confirmación de la novedad en el correo o teléfono indicados.',{p:{before:120}})+T('Cordialmente,',{p:{after:300}});
   b+=T('______________________________',{p:{after:0}})+T(rep.toUpperCase(),{b:true,p:{after:0}})+T((c.cargoRep||'Representante Legal')+(c.repDoc?' · C.C. '+cedula(c.repDoc):''),{p:{after:0}})+T(`${c.empresa||''} · NIT ${c.nit||''}`,{p:{after:120}});
   b+=T('Anexos: lo enunciado (3).',{sz:18,p:{after:0}});
-  await docTH(b,'Solicitud de adición de empleador',nomLimpio(e.nombre)+'.docx');
+  await docCarta(b,'Solicitud de adición de empleador',nomLimpio(e.nombre)+'.docx');
   if(!c.repDoc||!c.telEmp)toast('Para que la carta salga completa, escriba la cédula del representante legal y el teléfono de la empresa en Parámetros');
 }
 async function wordAfil(e,k){
@@ -3341,7 +3341,7 @@ async function wordAfil(e,k){
   b+=P_('Anexos: copia del documento de identidad del trabajador y formulario de afiliación de la entidad debidamente diligenciado y firmado.',{p:{before:160}});
   b+=P_('Agradecemos confirmar la afiliación y la fecha de cobertura al correo '+(c.correoEmp||'de la empresa')+'.');
   b+=wP('',{after:500})+P_('______________________________')+P_((c.firmante||c.repLegal||'').toUpperCase(),{b:true})+P_(c.cargoFirmante||c.cargoRep||'');
-  await docTH(b,'Solicitud de afiliación',`AFILIACION_${k.toUpperCase()}_${slug(e.nombre)}.docx`);
+  await docCarta(b,'Solicitud de afiliación',`AFILIACION_${k.toUpperCase()}_${slug(e.nombre)}.docx`);
 }
 function afAlertas(emps){
   const hoy=todayCO(),out=[];
@@ -5394,6 +5394,8 @@ function firmasCarta(e,{trab=true,testigos=false}={}){const c=S.config,rep=(c.re
   let b=wP('',{after:500})+wTbl([[{t:'______________________________',sz:20},{t:trab?'______________________________':'',sz:20}],[{t:rep,b:true,sz:20},{t:trab?(e.nombre||'').toUpperCase():'',b:true,sz:20}],[{t:car,sz:20},{t:trab?'C.C. '+cedula(e.doc)+' · Recibido el ____/____/______':'',sz:18}]],[4419,4419],{noBorder:true});
   if(testigos)b+=wP('',{after:400})+wP(wR('Si el trabajador se niega a firmar, firman dos testigos:',{sz:18,i:true}),{after:300})+wTbl([[{t:'______________________________',sz:20},{t:'______________________________',sz:20}],[{t:'Testigo 1 · C.C.',sz:18},{t:'Testigo 2 · C.C.',sz:18}]],[4419,4419],{noBorder:true});
   return b}
+/* cartas a entidades: usan la hoja membreteada que la empresa subió (la de la certificación) y, si no hay, la de la app */
+async function docCarta(body,titulo,nombre){const t=disenoDe('cert')?'cert':disenoDe('ctr')?'ctr':disenoDe('liq')?'liq':'ctr';FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,t)}finally{FONT_ACT=null}}
 async function docTH(body,titulo,nombre){FONT_ACT=fuenteDe('ctr');try{await generarDocx(body,titulo,nombre,'ctr')}finally{FONT_ACT=null}}
 const slug=t=>nrm(t||'').replace(/[^a-z0-9]+/gi,'_').toUpperCase();
 /* nombres de archivo del portal: solo el nombre del empleado, con espacios y sin guiones */
